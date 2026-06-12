@@ -1,1 +1,8 @@
-export class CreateClientDto {}
+export class CreateClientDto {
+  name: string;
+  rutOrId: string;
+  email: string;
+  phone: string;
+  address?: string;
+  city?: string;
+}
