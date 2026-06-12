@@ -17,6 +17,9 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { RoleName } from '@prisma/client';
 
+import { ApiBearerAuth } from '@nestjs/swagger';
+
+@ApiBearerAuth('JWT-auth')
 @Controller('projects')
 @UseGuards(JwtAuthGuard)
 export class ProjectsController {

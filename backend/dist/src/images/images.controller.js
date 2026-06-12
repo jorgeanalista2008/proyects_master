@@ -20,6 +20,7 @@ const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const client_1 = require("@prisma/client");
+const swagger_1 = require("@nestjs/swagger");
 let ImagesController = class ImagesController {
     imagesService;
     constructor(imagesService) {
@@ -82,6 +83,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ImagesController.prototype, "remove", null);
 exports.ImagesController = ImagesController = __decorate([
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, common_1.Controller)('images'),
     __metadata("design:paramtypes", [images_service_1.ImagesService])
 ], ImagesController);

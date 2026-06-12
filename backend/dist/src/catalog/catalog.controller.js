@@ -21,6 +21,7 @@ const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const client_1 = require("@prisma/client");
+const swagger_1 = require("@nestjs/swagger");
 let CatalogController = class CatalogController {
     catalogService;
     constructor(catalogService) {
@@ -85,6 +86,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CatalogController.prototype, "remove", null);
 exports.CatalogController = CatalogController = __decorate([
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, common_1.Controller)('catalog'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [catalog_service_1.CatalogService])
