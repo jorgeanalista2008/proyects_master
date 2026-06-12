@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
-import api from '../../lib/api';
+import { api } from '../../lib/api';
 
 interface DashboardStats {
   projects: {
