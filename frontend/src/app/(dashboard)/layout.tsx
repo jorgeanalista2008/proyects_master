@@ -118,6 +118,13 @@ export default function DashboardLayout({
       {mobileMenuOpen && (
         <div className="mobile-overlay" onClick={() => setMobileMenuOpen(false)}></div>
       )}
+
+      {/* Indicador de entorno de desarrollo */}
+      {process.env.NODE_ENV !== 'production' && (
+        <div className="dev-environment-badge">
+          🛠️ Modo Local (Desarrollo)
+        </div>
+      )}
     </div>
   );
 }

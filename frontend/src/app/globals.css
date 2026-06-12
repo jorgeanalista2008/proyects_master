@@ -836,3 +836,25 @@ body {
     color: #000000 !important;
   }
 }
+
+/* Indicador flotante de desarrollo */
+.dev-environment-badge {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(217, 119, 6, 0.95);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  z-index: 9999;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
