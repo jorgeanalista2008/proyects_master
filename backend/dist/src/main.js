@@ -7,21 +7,23 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.enableCors();
     app.setGlobalPrefix('api');
-    const config = new swagger_1.DocumentBuilder()
-        .setTitle('Security Projects & Quotes API')
-        .setDescription('Documentación interactiva de la API para el sistema de gestión de proyectos de seguridad y generación de presupuestos.')
-        .setVersion('1.0')
-        .addBearerAuth({
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Introduce tu token JWT para acceder a los endpoints protegidos',
-        in: 'header',
-    }, 'JWT-auth')
-        .build();
-    const document = swagger_1.SwaggerModule.createDocument(app, config);
-    swagger_1.SwaggerModule.setup('api/docs', app, document);
+    if (process.env.NODE_ENV !== 'production') {
+        const config = new swagger_1.DocumentBuilder()
+            .setTitle('Security Projects & Quotes API')
+            .setDescription('Documentación interactiva de la API para el sistema de gestión de proyectos de seguridad y generación de presupuestos.')
+            .setVersion('1.0')
+            .addBearerAuth({
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+            name: 'JWT',
+            description: 'Introduce tu token JWT para acceder a los endpoints protegidos',
+            in: 'header',
+        }, 'JWT-auth')
+            .build();
+        const document = swagger_1.SwaggerModule.createDocument(app, config);
+        swagger_1.SwaggerModule.setup('api/docs', app, document);
+    }
     await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
