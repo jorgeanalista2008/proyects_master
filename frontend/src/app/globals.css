@@ -1,49 +1,254 @@
+/* globals.css - Premium Modern Design System */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* HSL Color Palette (Dark Theme Optimized) */
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+  
+  --bg-primary: 222 47% 6%;
+  --bg-secondary: 222 47% 10%;
+  --bg-glass: 222 47% 6% / 0.65;
+  
+  /* Borders */
+  --border-glass: 217 32% 17% / 0.6;
+  --border-glass-glow: 250 80% 60% / 0.25;
+  
+  /* Brand/Accents */
+  --primary: 250 95% 68%;
+  --primary-hover: 250 95% 75%;
+  --primary-glow: 250 95% 68% / 0.4;
+  
+  --secondary: 190 95% 50%;
+  --secondary-hover: 190 95% 60%;
+  
+  --accent: 320 95% 60%;
+  --accent-glow: 320 95% 60% / 0.3;
+
+  /* Typography */
+  --text-primary: 210 40% 98%;
+  --text-secondary: 215 20.2% 75%;
+  --text-muted: 217.9 10.6% 55%;
+  
+  /* System States */
+  --danger: 0 84.2% 60.2%;
+  --success: 142.1 70.6% 45.3%;
+  --warning: 38 92% 50%;
+  
+  /* Sizing & Transitions */
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  --shadow-glass: 0 8px 32px 0 rgba(2, 4, 12, 0.6);
+  --shadow-glow: 0 0 25px 0 hsla(var(--primary), 0.15);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html {
-  height: 100%;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
+/* Base resets and defaults */
 * {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+  border: 0;
+  outline: none;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  background-color: hsl(var(--bg-primary));
+  color: hsl(var(--text-primary));
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+body {
+  display: flex;
+  flex-direction: column;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(var(--primary), 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(var(--accent), 0.08) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Custom premium container & main layout styles */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Glassmorphism Card Style */
+.glass-card {
+  background: hsl(var(--bg-glass));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border-glass));
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  box-shadow: var(--shadow-glass);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal), transform var(--transition-normal);
+}
+
+.glass-card:hover {
+  border-color: hsla(var(--primary), 0.35);
+  box-shadow: var(--shadow-glass), var(--shadow-glow);
+}
+
+/* Typography styles */
+.gradient-text {
+  background: linear-gradient(135deg, hsl(var(--text-primary)) 20%, hsla(var(--text-primary), 0.7) 50%, hsl(var(--primary)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.title-primary {
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle-secondary {
+  font-size: 1rem;
+  color: hsl(var(--text-secondary));
+  margin-bottom: 2rem;
+}
+
+/* Forms: Interactive Inputs */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.input-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--text-secondary));
+  transition: color var(--transition-fast);
+}
+
+.input-field {
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  background: hsla(var(--bg-secondary), 0.6);
+  border: 1px solid hsl(var(--border-glass));
+  border-radius: var(--radius-md);
+  color: hsl(var(--text-primary));
+  font-size: 1rem;
+  transition: all var(--transition-normal);
+  backdrop-filter: blur(4px);
+}
+
+.input-field:focus {
+  border-color: hsl(var(--primary));
+  background: hsla(var(--bg-secondary), 0.9);
+  box-shadow: 0 0 0 3px hsla(var(--primary), 0.15);
+}
+
+.input-field::placeholder {
+  color: hsl(var(--text-muted));
+}
+
+.input-group:focus-within .input-label {
+  color: hsl(var(--primary));
+}
+
+/* Interactive Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  user-select: none;
+  width: 100%;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsla(var(--primary), 0.8) 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px 0 hsla(var(--primary), 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, hsl(var(--primary-hover)) 0%, hsl(var(--primary)) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px 0 hsla(var(--primary), 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  background: hsl(var(--bg-secondary));
+  color: hsl(var(--text-muted));
+  border: 1px solid hsl(var(--border-glass));
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: hsla(var(--bg-secondary), 0.5);
+  color: hsl(var(--text-primary));
+  border: 1px solid hsl(var(--border-glass));
+}
+
+.btn-secondary:hover {
+  background: hsla(var(--bg-secondary), 0.8);
+  border-color: hsla(var(--primary), 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Loaders and Spinners */
+.spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Helper Animation classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

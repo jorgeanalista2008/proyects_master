@@ -10,6 +10,7 @@ import { ImagesModule } from './images/images.module';
 import { ClientsModule } from './clients/clients.module';
 import { ProjectsModule } from './projects/projects.module';
 import { QuotesModule } from './quotes/quotes.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { QuotesModule } from './quotes/quotes.module';
     ClientsModule,
     ProjectsModule,
     QuotesModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

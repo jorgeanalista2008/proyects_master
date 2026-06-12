@@ -17,7 +17,7 @@ export class ImagesService {
       data: {
         fileName: file.originalname,
         mimeType: file.mimetype,
-        fileData: file.buffer,
+        fileData: Buffer.from(file.buffer),
         type: ImageType.PRODUCT_THUMBNAIL,
         productId,
       },
@@ -43,7 +43,7 @@ export class ImagesService {
       data: {
         fileName: file.originalname,
         mimeType: file.mimetype,
-        fileData: file.buffer,
+        fileData: Buffer.from(file.buffer),
         type: ImageType.PROJECT_SURVEY,
         projectId,
       },

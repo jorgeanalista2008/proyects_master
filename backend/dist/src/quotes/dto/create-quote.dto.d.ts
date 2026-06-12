@@ -1,0 +1,13 @@
+import { CurrencyCode } from '@prisma/client';
+export declare class QuoteItemDto {
+    productId: string;
+    quantity: number;
+}
+export declare class CreateQuoteDto {
+    projectId: string;
+    currency?: CurrencyCode;
+    exchangeRate?: number;
+    taxRate?: number;
+    discount?: number;
+    items: QuoteItemDto[];
+}
