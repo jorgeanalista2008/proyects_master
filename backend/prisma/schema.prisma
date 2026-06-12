@@ -1,0 +1,219 @@
+datasource db {
+  provider = "mysql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ----------------------------------------------------
+// Módulo de Autenticación y Usuarios (RBAC)
+// ----------------------------------------------------
+
+enum RoleName {
+  ADMIN
+  SELLER      // Vendedor / Cotizador
+  TECHNICIAN  // Técnico
+  CLIENT      // Cliente visualizador
+}
+
+model Role {
+  id          String     @id @default(uuid())
+  name        RoleName   @unique
+  description String?
+  users       User[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  phone         String?
+  isActive      Boolean        @default(true)
+  roleId        String
+  role          Role           @relation(fields: [roleId], references: [id])
+  
+  // Relaciones del negocio
+  managedProjects Project[]    @relation("ProjectManager")
+  createdQuotes   Quote[]      @relation("QuoteCreator")
+  
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([email])
+}
+
+// ----------------------------------------------------
+// Módulo de Clientes e Inventario (Catálogo)
+// ----------------------------------------------------
+
+model Client {
+  id           String    @id @default(uuid())
+  name         String    // Nombre completo o Razón Social
+  rutOrId      String    @unique // Identificación fiscal (RUT, RFC, DNI)
+  email        String
+  phone        String
+  address      String?
+  city         String?
+  projects     Project[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+enum ItemCategory {
+  CAMERA
+  DVR_NVR
+  CABLE
+  TUBING
+  ACCESSORY
+  LABOR       // Mano de obra (costo/precio fijo)
+  SERVICE     // Viáticos, diseño de planos, etc.
+}
+
+model Product {
+  id           String        @id @default(uuid())
+  sku          String        @unique // Código de inventario
+  name         String
+  description  String?       @db.Text
+  category     ItemCategory
+  unitCost     Decimal       @db.Decimal(12, 4) // Costo de adquisición sin IVA
+  margin       Decimal       @db.Decimal(5, 2)  // Margen de ganancia en % (ej. 35.00)
+  salePrice    Decimal       @db.Decimal(12, 4) // Precio sugerido de venta sin IVA
+  isActive     Boolean       @default(true)
+  
+  images       Image[]       @relation("ProductImage")
+  quoteItems   QuoteItem[]
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+// ----------------------------------------------------
+// Módulo de Proyectos, Cotizaciones e Imágenes
+// ----------------------------------------------------
+
+enum ProjectStatus {
+  PENDING      // En levantamiento técnico o prospección
+  QUOTED       // Presupuestos enviados
+  APPROVED     // Aprobado por cliente (Listo para instalación)
+  IN_PROGRESS  // En desarrollo físico
+  COMPLETED    // Finalizado
+  CANCELLED    // Cancelado
+}
+
+model Project {
+  id           String        @id @default(uuid())
+  name         String
+  description  String?       @db.Text
+  status       ProjectStatus @default(PENDING)
+  
+  // Relaciones
+  clientId     String
+  client       Client        @relation(fields: [clientId], references: [id])
+  
+  managerId    String?       // Técnico o Ingeniero a cargo del levantamiento/instalación
+  manager      User?         @relation("ProjectManager", fields: [managerId], references: [id])
+  
+  quotes       Quote[]
+  surveyImages Image[]       @relation("ProjectSurveyImage")
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum CurrencyCode {
+  USD
+  MXN
+  CLP
+  COP
+  EUR
+}
+
+model Quote {
+  id            String        @id @default(uuid())
+  projectId     String
+  project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  version       Int           @default(1) // Versiones de cotización (1, 2, 3...)
+  status        QuoteStatus   @default(DRAFT)
+  isActive      Boolean       @default(true) // Permite marcar cuáles cotizaciones están activas/bajo consideración
+  
+  // Multimoneda
+  currency      CurrencyCode  @default(USD)
+  exchangeRate  Decimal       @db.Decimal(12, 4) @default(1.0000) // Tasa de cambio respecto a la moneda base del sistema (para dashboard)
+  
+  // Totales calculados en el backend en la moneda de la cotización
+  subtotal      Decimal       @db.Decimal(12, 4)
+  taxRate       Decimal       @db.Decimal(5, 2)  @default(19.00) // % de Impuesto
+  taxAmount     Decimal       @db.Decimal(12, 4)
+  discount      Decimal       @db.Decimal(12, 4) @default(0.0000)
+  total         Decimal       @db.Decimal(12, 4) // total final en moneda de la cotización
+  
+  // Rentabilidad (en la moneda de la cotización)
+  totalCost     Decimal       @db.Decimal(12, 4) // Costo total de adquisición de los items
+  marginAmount  Decimal       @db.Decimal(12, 4) // total - taxAmount - totalCost
+  
+  createdById   String
+  creator       User          @relation("QuoteCreator", fields: [createdById], references: [id])
+  
+  items         QuoteItem[]
+  
+  validUntil    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model QuoteItem {
+  id           String   @id @default(uuid())
+  quoteId      String
+  quote        Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+  
+  quantity     Decimal  @db.Decimal(10, 2)
+  
+  // Valores congelados para historial
+  unitCost     Decimal  @db.Decimal(12, 4)
+  unitPrice    Decimal  @db.Decimal(12, 4) // unitCost * (1 + margin)
+  margin       Decimal  @db.Decimal(5, 2)
+  subtotal     Decimal  @db.Decimal(12, 4) // quantity * unitPrice
+}
+
+// ----------------------------------------------------
+// Gestión de Archivos / Imágenes (Almacenamiento DB)
+// ----------------------------------------------------
+
+enum ImageType {
+  PRODUCT_THUMBNAIL
+  PROJECT_SURVEY
+}
+
+model Image {
+  id          String    @id @default(uuid())
+  fileName    String    // Nombre original del archivo (ej. camara-cctv.png)
+  mimeType    String    // Tipo de archivo (ej. image/jpeg, image/png)
+  fileData    Bytes     // Almacenamiento binario del archivo (LONGBLOB en MySQL)
+  type        ImageType
+  
+  // Relaciones opcionales para comportamiento polimórfico
+  productId   String?
+  product     Product?  @relation("ProductImage", fields: [productId], references: [id], onDelete: Cascade)
+  
+  projectId   String?
+  project     Project?  @relation("ProjectSurveyImage", fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+}
