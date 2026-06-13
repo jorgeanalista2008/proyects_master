@@ -889,3 +889,479 @@ body {
 .text-glow-accent {
   color: hsl(var(--accent)) !important;
 }
+
+/* ==========================================
+   VUEXY ADMIN TEMPLATE DASHBOARD LAYOUT & CARDS
+   ========================================== */
+
+/* Dashboard grid row */
+.vuexy-grid-row {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.vuexy-col-12 { grid-column: span 12; }
+.vuexy-col-8 { grid-column: span 8; }
+.vuexy-col-7 { grid-column: span 7; }
+.vuexy-col-6 { grid-column: span 6; }
+.vuexy-col-5 { grid-column: span 5; }
+.vuexy-col-4 { grid-column: span 4; }
+.vuexy-col-3 { grid-column: span 3; }
+
+@media (max-width: 1200px) {
+  .vuexy-grid-row {
+    grid-template-columns: 1fr;
+  }
+  .vuexy-col-12, .vuexy-col-8, .vuexy-col-7, .vuexy-col-6, .vuexy-col-5, .vuexy-col-4, .vuexy-col-3 {
+    grid-column: span 12 !important;
+  }
+}
+
+/* Card layout wrapper matching Vuexy */
+.vuexy-card {
+  background: hsl(var(--bg-secondary));
+  border: 1px solid hsl(var(--border-glass));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glass);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  transition: all var(--transition-normal);
+}
+
+.vuexy-card:hover {
+  box-shadow: 0px 8px 24px 0px rgba(15, 22, 33, 0.2);
+}
+
+/* 1. Congratulations Card Stylings */
+.card-congratulations {
+  background: linear-gradient(135deg, hsla(var(--primary), 0.15) 0%, hsla(var(--primary), 0.03) 100%);
+  border-color: hsla(var(--primary), 0.25);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 190px;
+}
+
+.card-congratulations-content {
+  flex: 1;
+  padding-right: 1.5rem;
+  z-index: 2;
+}
+
+.card-congratulations-illustration {
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Floating animation for trophy illustration */
+.floating-trophy {
+  animation: floatTrophy 4s ease-in-out infinite;
+}
+
+@keyframes floatTrophy {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+/* 2. Statistics/Transactions Card Stylings */
+.stats-header {
+  margin-bottom: 1.5rem;
+}
+
+.stats-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: hsl(var(--text-primary));
+}
+
+.stats-subtitle {
+  font-size: 0.825rem;
+  color: hsl(var(--text-secondary));
+}
+
+.stats-list-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .stats-list-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stats-item-flex {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.stats-avatar-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.avatar-primary {
+  background: rgba(115, 103, 240, 0.16) !important;
+  color: #7367F0 !important;
+}
+
+.avatar-warning {
+  background: rgba(255, 159, 67, 0.16) !important;
+  color: #FF9F43 !important;
+}
+
+.avatar-success {
+  background: rgba(40, 199, 111, 0.16) !important;
+  color: #28C76F !important;
+}
+
+.avatar-info {
+  background: rgba(0, 207, 221, 0.16) !important;
+  color: #00CFDD !important;
+}
+
+.stats-item-data {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-item-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: hsl(var(--text-primary));
+}
+
+.stats-item-label {
+  font-size: 0.775rem;
+  color: hsl(var(--text-muted));
+}
+
+/* 3. Earning Reports Card Stylings */
+.earning-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.earning-layout-container {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .earning-layout-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.earning-chart-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.earning-side-panel {
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .earning-side-panel {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+  }
+}
+
+.side-panel-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.side-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.825rem;
+  color: hsl(var(--text-secondary));
+}
+
+.side-panel-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.side-panel-progress-track {
+  width: 100%;
+  height: 4px;
+  background: hsla(var(--foreground), 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.side-panel-progress-bar {
+  height: 100%;
+  border-radius: 99px;
+  transition: width var(--transition-slow);
+}
+
+/* Double bar chart styling */
+.chart-bar-group {
+  cursor: pointer;
+}
+
+.chart-bar-group rect {
+  transition: opacity var(--transition-fast), fill var(--transition-fast);
+}
+
+.chart-bar-group:hover rect {
+  opacity: 0.85;
+}
+
+.chart-tooltip-box {
+  position: absolute;
+  background: hsl(var(--bg-secondary));
+  border: 1px solid hsl(var(--border-glass));
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  box-shadow: var(--shadow-glass);
+  font-size: 0.775rem;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transform: translate(-50%, -100%);
+  margin-top: -10px;
+  transition: opacity var(--transition-fast);
+}
+
+/* 4. Support Tracker / Circular Progress Stylings */
+.support-tracker-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 1.25rem;
+}
+
+.gauge-chart-container {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-text-overlay {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.gauge-percentage {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: hsl(var(--text-primary));
+  font-family: monospace;
+}
+
+.gauge-label {
+  font-size: 0.75rem;
+  color: hsl(var(--text-muted));
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.support-tracker-footer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  width: 100%;
+  border-top: 1px solid hsl(var(--border-glass));
+  padding-top: 1.25rem;
+}
+
+.support-footer-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.support-footer-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.support-footer-label {
+  font-size: 0.725rem;
+  color: hsl(var(--text-muted));
+}
+
+/* 5. Specialty / Category Distribution */
+.specialty-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+  margin-top: 0.5rem;
+}
+
+.specialty-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.specialty-icon-wrapper {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  border: 1px solid hsl(var(--border-glass));
+  background: hsla(var(--bg-secondary), 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.specialty-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.specialty-name-flex {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.specialty-progress-track {
+  width: 100%;
+  height: 6px;
+  background: hsla(var(--foreground), 0.06);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.specialty-progress-bar {
+  height: 100%;
+  border-radius: 99px;
+  transition: width var(--transition-slow);
+}
+
+/* ==========================================
+   VUEXY CRM DASHBOARD WIDGETS
+   ========================================== */
+
+/* Sparkline containers */
+.crm-sparkline-container {
+  display: flex;
+  align-items: flex-end;
+  height: 40px;
+  width: 90px;
+  margin-top: auto;
+}
+
+.crm-stars-container {
+  display: flex;
+  gap: 0.15rem;
+  color: #ff9f43; /* Vuexy gold */
+  font-size: 0.9rem;
+  margin: 0.35rem 0;
+}
+
+.crm-badge-grow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.725rem;
+  font-weight: 700;
+  width: max-content;
+}
+
+.crm-badge-grow.success {
+  background: rgba(40, 199, 111, 0.15);
+  color: #28C76F;
+}
+
+.crm-badge-grow.danger {
+  background: rgba(234, 84, 85, 0.15);
+  color: #ea5455;
+}
+
+/* CRM Client Initial Avatars */
+.crm-client-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: hsla(var(--primary), 0.15);
+  color: hsl(var(--primary));
+  font-weight: 700;
+  font-size: 0.775rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid hsla(var(--primary), 0.25);
+  text-transform: uppercase;
+}
+
+/* Specialty list styles */
+.crm-project-item-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid hsl(var(--border-glass));
+}
+
+.crm-project-item-flex:last-child {
+  border-bottom: none;
+}
+
+

@@ -1,98 +1,84 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# NestJS Backend: Sistema de Gestión de Proyectos y Presupuestos
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Este es el backend modular del sistema de presupuestos y gestión de proyectos para empresas de seguridad electrónica e instalación de infraestructura (CCTV, cercos eléctricos, redes). Está construido en **NestJS**, utiliza **Prisma ORM** para interactuar con la base de datos relacional **MySQL** e implementa seguridad mediante **JWT** y control de acceso dinámico basado en permisos (PBAC).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🛠️ Stack Tecnológico
+* **Framework:** NestJS (modular, TypeScript).
+* **ORM:** Prisma ORM v7+.
+* **Base de Datos:** MySQL / MariaDB (puerto por defecto `3306`).
+* **Seguridad:** Encriptación de contraseñas con `bcrypt` y firmas con tokens JWT.
+* **Documentación:** Swagger OpenAPI.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## 📂 Estructura de Módulos
+El backend está organizado de manera modular bajo el directorio `src/`:
 
-```bash
-$ npm install
+* **`database/`:** Provee `PrismaService` como un proveedor global inyectable para interactuar con MySQL.
+* **`auth/`:** Maneja el login, validación de credenciales con `bcrypt`, firmas de token JWT y expone:
+  * El decorador `@Permissions(...permissions: string[])` para endpoints.
+  * La guarda `PermissionsGuard` que verifica dinámicamente en base de datos si el perfil asignado al usuario cuenta con la autorización requerida.
+* **`users/`:** Registro, edición y listado de cuentas de usuario del sistema.
+* **`roles/`:** Core de administración del sistema RBAC/PBAC. Permite la creación y actualización dinámica de Perfiles (Roles), Permisos del sistema y estructura dinámica de la barra de navegación lateral. Expone el endpoint crucial `/roles/my-menu`.
+* **`clients/`:** Directorio de clientes con control de integridad referencial.
+* **`catalog/`:** CRUD de equipos y servicios. Calcula de forma automática tres tipos de precio de venta recomendados (Al Contado, A Crédito, Preferencial) en base al costo y márgenes independientes definidos.
+* **`projects/`:** Control de fichas técnicas de obras, planos y control de privacidad según el rol asignado.
+* **`quotes/`:** Motor transaccional de cotizaciones. Permite congelar los precios del inventario, soporta el versionado incremental de presupuestos por proyecto, multimoneda con tasas de cambio (`exchangeRate`), desglose por IVA e indicador de rentabilidad comercial.
+* **`images/`:** Gestor de almacenamiento binario nativo. Guarda las fotos de técnicos y planos de levantamiento directamente en base de datos en formato `LONGBLOB` (`Bytes`), sirviéndolas con tipo de cabecera MIME dinámico.
+* **`analytics/`:** Módulo de agregación de métricas de rentabilidad consolidada y cálculo de conversiones a moneda base USD para visualización en dashboards.
+
+---
+
+## ⚙️ Configuración e Inicialización
+
+### 1. Variables de Entorno (`.env`)
+Crea un archivo `.env` en la raíz de la carpeta `backend/` con los siguientes parámetros:
+
+```env
+DATABASE_URL="mysql://root:password@localhost:3306/projects_master_db"
+JWT_SECRET="super-secret-key-change-in-production"
+PORT=3000
 ```
 
-## Compile and run the project
-
+### 2. Instalación de Dependencias
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
-
+### 3. Sincronización de Base de Datos
+Ejecuta el siguiente comando para crear las tablas en tu servidor MySQL local y regenerar el Prisma Client de forma automática:
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npx prisma db push
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### 4. Poblamiento de Base de Datos (Seeding)
+Inserta los permisos del sistema, los elementos de navegación iniciales, perfiles por defecto (`ADMIN`, `SELLER`, `TECHNICIAN`, `CLIENT`), el usuario administrador principal y productos de muestra ejecutando:
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npx prisma db seed
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Resources
+## 🚀 Ejecución del Servidor
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+# Modo desarrollo (con hot-reload)
+npm run start:dev
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Compilación para producción
+npm run build
 
-## Support
+# Modo producción
+npm run start:prod
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
+## 📚 Documentación de API (Swagger)
+El backend cuenta con Swagger interactivo configurado de forma nativa. Una vez que el servidor esté en marcha, puedes acceder a la documentación interactiva y probar los endpoints en:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+👉 **[http://localhost:3000/api/docs](http://localhost:3000/api/docs)**
 
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+> **Nota:** Para consumir endpoints protegidos, realiza login en el endpoint `/api/auth/login`, copia el token `access_token` retornado e inyéctalo usando el botón **Authorize** en la interfaz de Swagger.
