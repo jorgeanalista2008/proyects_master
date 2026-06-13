@@ -7,6 +7,9 @@ export class QuoteItemDto {
 
   @ApiProperty({ example: 4, description: 'Cantidad cotizada' })
   quantity: number;
+
+  @ApiProperty({ example: 'CASH', description: 'Tipo de precio aplicado', enum: ['CASH', 'CREDIT', 'PREFERRED'], required: false, default: 'CASH' })
+  priceType?: string;
 }
 
 export class CreateQuoteDto {

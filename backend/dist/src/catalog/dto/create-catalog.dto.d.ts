@@ -5,6 +5,8 @@ export declare class CreateCatalogDto {
     description?: string;
     category: ItemCategory;
     unitCost: number;
-    margin: number;
+    marginCash: number;
+    marginCredit: number;
+    marginPreferred: number;
     isActive?: boolean;
 }

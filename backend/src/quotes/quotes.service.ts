@@ -47,8 +47,18 @@ export class QuotesService {
 
       const quantity = new Prisma.Decimal(item.quantity);
       const unitCost = product.unitCost;
-      const margin = product.margin;
-      const unitPrice = product.salePrice;
+      const priceType = item.priceType || 'CASH';
+
+      let margin = product.marginCash;
+      let unitPrice = product.priceCash;
+      if (priceType === 'CREDIT') {
+        margin = product.marginCredit;
+        unitPrice = product.priceCredit;
+      } else if (priceType === 'PREFERRED') {
+        margin = product.marginPreferred;
+        unitPrice = product.pricePreferred;
+      }
+
       const itemSubtotal = quantity.mul(unitPrice);
       const itemCost = quantity.mul(unitCost);
 
@@ -61,6 +71,7 @@ export class QuotesService {
         unitCost,
         unitPrice,
         margin,
+        priceType,
         subtotal: itemSubtotal,
       });
     }
@@ -102,6 +113,7 @@ export class QuotesService {
               unitPrice: i.unitPrice,
               margin: i.margin,
               subtotal: i.subtotal,
+              priceType: i.priceType,
             })),
           },
         },
@@ -225,8 +237,18 @@ export class QuotesService {
 
         const quantity = new Prisma.Decimal(item.quantity);
         const unitCost = product.unitCost;
-        const margin = product.margin;
-        const unitPrice = product.salePrice;
+        const priceType = item.priceType || 'CASH';
+
+        let margin = product.marginCash;
+        let unitPrice = product.priceCash;
+        if (priceType === 'CREDIT') {
+          margin = product.marginCredit;
+          unitPrice = product.priceCredit;
+        } else if (priceType === 'PREFERRED') {
+          margin = product.marginPreferred;
+          unitPrice = product.pricePreferred;
+        }
+
         const itemSubtotal = quantity.mul(unitPrice);
         const itemCost = quantity.mul(unitCost);
 
@@ -239,6 +261,7 @@ export class QuotesService {
           unitCost,
           unitPrice,
           margin,
+          priceType,
           subtotal: itemSubtotal,
         });
       }
@@ -277,6 +300,7 @@ export class QuotesService {
                 unitPrice: i.unitPrice,
                 margin: i.margin,
                 subtotal: i.subtotal,
+                priceType: i.priceType,
               })),
             },
           },

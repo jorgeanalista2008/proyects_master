@@ -65,32 +65,6 @@ export default function LoginPage() {
       position: "relative"
     }} className="fade-in">
       
-      {/* Ambient background decorative glow */}
-      <div style={{
-        position: "absolute",
-        width: "350px",
-        height: "350px",
-        borderRadius: "50%",
-        background: "radial-gradient(circle, hsla(var(--primary), 0.15) 0%, transparent 70%)",
-        top: "20%",
-        left: "30%",
-        filter: "blur(40px)",
-        pointerEvents: "none",
-        zIndex: 0
-      }} />
-      <div style={{
-        position: "absolute",
-        width: "350px",
-        height: "350px",
-        borderRadius: "50%",
-        background: "radial-gradient(circle, hsla(var(--accent), 0.1) 0%, transparent 70%)",
-        bottom: "20%",
-        right: "30%",
-        filter: "blur(40px)",
-        pointerEvents: "none",
-        zIndex: 0
-      }} />
-
       <div className="glass-card" style={{
         width: "100%",
         maxWidth: "450px",

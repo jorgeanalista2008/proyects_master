@@ -43,6 +43,12 @@ export declare class ProjectsController {
         managerId: string | null;
     })[]>;
     findOne(id: string): Promise<{
+        images: {
+            id: string;
+            createdAt: Date;
+            fileName: string;
+            mimeType: string;
+        }[];
         client: {
             id: string;
             name: string;
@@ -50,8 +56,8 @@ export declare class ProjectsController {
             updatedAt: Date;
             email: string;
             phone: string;
-            rutOrId: string;
             address: string | null;
+            rutOrId: string;
             city: string | null;
         };
         manager: {
@@ -75,7 +81,6 @@ export declare class ProjectsController {
             fileName: string;
             mimeType: string;
         }[];
-    } & {
         id: string;
         name: string;
         description: string | null;

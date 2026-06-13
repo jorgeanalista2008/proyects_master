@@ -11,8 +11,8 @@ export declare class ClientsService {
         updatedAt: Date;
         email: string;
         phone: string;
-        rutOrId: string;
         address: string | null;
+        rutOrId: string;
         city: string | null;
     }>;
     findAll(): Promise<({
@@ -26,8 +26,8 @@ export declare class ClientsService {
         updatedAt: Date;
         email: string;
         phone: string;
-        rutOrId: string;
         address: string | null;
+        rutOrId: string;
         city: string | null;
     })[]>;
     findOne(id: string): Promise<{
@@ -44,8 +44,8 @@ export declare class ClientsService {
         updatedAt: Date;
         email: string;
         phone: string;
-        rutOrId: string;
         address: string | null;
+        rutOrId: string;
         city: string | null;
     }>;
     update(id: string, updateClientDto: UpdateClientDto): Promise<{
@@ -55,8 +55,8 @@ export declare class ClientsService {
         updatedAt: Date;
         email: string;
         phone: string;
-        rutOrId: string;
         address: string | null;
+        rutOrId: string;
         city: string | null;
     }>;
     remove(id: string): Promise<{

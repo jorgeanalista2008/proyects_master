@@ -12,27 +12,25 @@ import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { Permissions } from '../auth/decorators/permissions.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
-import { RoleName } from '@prisma/client';
-
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiBearerAuth('JWT-auth')
 @Controller('projects')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Post()
-  @UseGuards(RolesGuard)
-  @Roles(RoleName.ADMIN, RoleName.SELLER)
+  @Permissions('projects:write')
   create(@Body() createProjectDto: CreateProjectDto) {
     return this.projectsService.create(createProjectDto);
   }
 
   @Get()
+  @Permissions('projects:read')
   findAll(
     @GetUser('role') role: string,
     @GetUser('sub') userId: string,
@@ -41,20 +39,19 @@ export class ProjectsController {
   }
 
   @Get(':id')
+  @Permissions('projects:read')
   findOne(@Param('id') id: string) {
     return this.projectsService.findOne(id);
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard)
-  @Roles(RoleName.ADMIN, RoleName.SELLER, RoleName.TECHNICIAN)
+  @Permissions('projects:write')
   update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
     return this.projectsService.update(id, updateProjectDto);
   }
 
   @Delete(':id')
-  @UseGuards(RolesGuard)
-  @Roles(RoleName.ADMIN, RoleName.SELLER)
+  @Permissions('projects:write')
   remove(@Param('id') id: string) {
     return this.projectsService.remove(id);
   }

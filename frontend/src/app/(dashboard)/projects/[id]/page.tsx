@@ -158,7 +158,7 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
     setError("");
     setSuccess("");
     try {
-      await api.put(`/projects/${project.id}`, { status: newStatus });
+      await api.patch(`/projects/${project.id}`, { status: newStatus });
       setProjectStatus(newStatus);
       setSuccess("Estado del proyecto actualizado.");
       // Reload project to sync

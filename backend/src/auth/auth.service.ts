@@ -37,12 +37,15 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas.');
     }
 
+    const permissions = user.role?.permissions?.map((rp: any) => rp.permission.name) || [];
+
     const payload = {
       sub: user.id,
       email: user.email,
       role: user.role.name,
       firstName: user.firstName,
       lastName: user.lastName,
+      permissions,
     };
 
     return {
@@ -53,6 +56,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role.name,
+        permissions,
       },
     };
   }

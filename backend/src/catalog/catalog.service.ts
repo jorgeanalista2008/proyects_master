@@ -8,7 +8,7 @@ export class CatalogService {
   constructor(private prisma: PrismaService) {}
 
   async create(createCatalogDto: CreateCatalogDto) {
-    const { sku, name, description, category, unitCost, margin, isActive } = createCatalogDto;
+    const { sku, name, description, category, unitCost, marginCash, marginCredit, marginPreferred, isActive } = createCatalogDto;
 
     // Verificar si el SKU ya existe
     const existingProduct = await this.prisma.product.findUnique({
@@ -19,8 +19,10 @@ export class CatalogService {
       throw new ConflictException(`El código SKU ${sku} ya está en uso en el catálogo.`);
     }
 
-    // Calcular precio de venta
-    const salePrice = unitCost * (1 + margin / 100);
+    // Calcular precios de venta
+    const priceCash = unitCost * (1 + marginCash / 100);
+    const priceCredit = unitCost * (1 + marginCredit / 100);
+    const pricePreferred = unitCost * (1 + marginPreferred / 100);
 
     return this.prisma.product.create({
       data: {
@@ -29,8 +31,12 @@ export class CatalogService {
         description,
         category,
         unitCost,
-        margin,
-        salePrice,
+        marginCash,
+        priceCash,
+        marginCredit,
+        priceCredit,
+        marginPreferred,
+        pricePreferred,
         isActive: isActive ?? true,
       },
       include: {
@@ -86,16 +92,27 @@ export class CatalogService {
       throw new NotFoundException('El producto del catálogo no fue encontrado.');
     }
 
-    const { unitCost, margin, ...rest } = updateCatalogDto;
+    const { unitCost, marginCash, marginCredit, marginPreferred, ...rest } = updateCatalogDto;
     const updateData: any = { ...rest };
 
     const finalUnitCost = unitCost !== undefined ? unitCost : Number(product.unitCost);
-    const finalMargin = margin !== undefined ? margin : Number(product.margin);
+    const finalMarginCash = marginCash !== undefined ? marginCash : Number(product.marginCash);
+    const finalMarginCredit = marginCredit !== undefined ? marginCredit : Number(product.marginCredit);
+    const finalMarginPreferred = marginPreferred !== undefined ? marginPreferred : Number(product.marginPreferred);
 
-    if (unitCost !== undefined || margin !== undefined) {
+    if (
+      unitCost !== undefined ||
+      marginCash !== undefined ||
+      marginCredit !== undefined ||
+      marginPreferred !== undefined
+    ) {
       updateData.unitCost = finalUnitCost;
-      updateData.margin = finalMargin;
-      updateData.salePrice = finalUnitCost * (1 + finalMargin / 100);
+      updateData.marginCash = finalMarginCash;
+      updateData.priceCash = finalUnitCost * (1 + finalMarginCash / 100);
+      updateData.marginCredit = finalMarginCredit;
+      updateData.priceCredit = finalUnitCost * (1 + finalMarginCredit / 100);
+      updateData.marginPreferred = finalMarginPreferred;
+      updateData.pricePreferred = finalUnitCost * (1 + finalMarginPreferred / 100);
     }
 
     return this.prisma.product.update({

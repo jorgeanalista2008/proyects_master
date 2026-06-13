@@ -4,5 +4,5 @@ export declare class CreateUserDto {
     firstName: string;
     lastName: string;
     phone?: string;
-    roleName: 'ADMIN' | 'SELLER' | 'TECHNICIAN' | 'CLIENT';
+    roleName: string;
 }

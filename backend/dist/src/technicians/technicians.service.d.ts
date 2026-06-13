@@ -27,13 +27,13 @@ export declare class TechniciansService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        roleId: string;
         email: string;
         passwordHash: string;
         firstName: string;
         lastName: string;
         phone: string | null;
         isActive: boolean;
-        roleId: string;
     }>;
     findAll(): Promise<{
         id: string;
@@ -114,13 +114,13 @@ export declare class TechniciansService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        roleId: string;
         email: string;
         passwordHash: string;
         firstName: string;
         lastName: string;
         phone: string | null;
         isActive: boolean;
-        roleId: string;
     }>;
     remove(id: string): Promise<{
         deleted: boolean;

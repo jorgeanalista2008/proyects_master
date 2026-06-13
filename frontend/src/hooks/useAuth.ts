@@ -4,7 +4,7 @@
 import { useAuthContext } from "../context/AuthContext";
 
 export function useAuth() {
-  const { user, token, login, logout, loading } = useAuthContext();
+  const { user, token, login, logout, loading, hasPermission } = useAuthContext();
   
   return {
     user,
@@ -12,5 +12,6 @@ export function useAuth() {
     login,
     logout,
     loading,
+    hasPermission,
   };
 }

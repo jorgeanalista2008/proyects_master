@@ -17,8 +17,14 @@ export class CreateCatalogDto {
   @ApiProperty({ example: 45.50, description: 'Costo unitario de adquisición sin IVA' })
   unitCost: number;
 
-  @ApiProperty({ example: 35.00, description: 'Margen de ganancia en porcentaje (%)' })
-  margin: number;
+  @ApiProperty({ example: 30.00, description: 'Margen de ganancia al contado (%)' })
+  marginCash: number;
+
+  @ApiProperty({ example: 40.00, description: 'Margen de ganancia a crédito (%)' })
+  marginCredit: number;
+
+  @ApiProperty({ example: 20.00, description: 'Margen de ganancia preferencial (%)' })
+  marginPreferred: number;
 
   @ApiProperty({ example: true, description: 'Estado del producto en catálogo', required: false, default: true })
   isActive?: boolean;

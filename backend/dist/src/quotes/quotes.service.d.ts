@@ -15,11 +15,12 @@ export declare class QuotesService {
         } & {
             id: string;
             unitCost: Prisma.Decimal;
-            margin: Prisma.Decimal;
             productId: string;
             subtotal: Prisma.Decimal;
             quantity: Prisma.Decimal;
+            priceType: string;
             unitPrice: Prisma.Decimal;
+            margin: Prisma.Decimal;
             quoteId: string;
         })[];
         creator: {
@@ -80,8 +81,8 @@ export declare class QuotesService {
                 updatedAt: Date;
                 email: string;
                 phone: string;
-                rutOrId: string;
                 address: string | null;
+                rutOrId: string;
                 city: string | null;
             };
             surveyImages: {
@@ -116,17 +117,22 @@ export declare class QuotesService {
                 sku: string;
                 category: import("@prisma/client").$Enums.ItemCategory;
                 unitCost: Prisma.Decimal;
-                margin: Prisma.Decimal;
-                salePrice: Prisma.Decimal;
+                marginCash: Prisma.Decimal;
+                priceCash: Prisma.Decimal;
+                marginCredit: Prisma.Decimal;
+                priceCredit: Prisma.Decimal;
+                marginPreferred: Prisma.Decimal;
+                pricePreferred: Prisma.Decimal;
             };
         } & {
             id: string;
             unitCost: Prisma.Decimal;
-            margin: Prisma.Decimal;
             productId: string;
             subtotal: Prisma.Decimal;
             quantity: Prisma.Decimal;
+            priceType: string;
             unitPrice: Prisma.Decimal;
+            margin: Prisma.Decimal;
             quoteId: string;
         })[];
         creator: {
@@ -159,11 +165,12 @@ export declare class QuotesService {
         items: {
             id: string;
             unitCost: Prisma.Decimal;
-            margin: Prisma.Decimal;
             productId: string;
             subtotal: Prisma.Decimal;
             quantity: Prisma.Decimal;
+            priceType: string;
             unitPrice: Prisma.Decimal;
+            margin: Prisma.Decimal;
             quoteId: string;
         }[];
     } & {

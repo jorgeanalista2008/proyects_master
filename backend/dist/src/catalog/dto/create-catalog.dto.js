@@ -18,7 +18,9 @@ class CreateCatalogDto {
     description;
     category;
     unitCost;
-    margin;
+    marginCash;
+    marginCredit;
+    marginPreferred;
     isActive;
 }
 exports.CreateCatalogDto = CreateCatalogDto;
@@ -43,9 +45,17 @@ __decorate([
     __metadata("design:type", Number)
 ], CreateCatalogDto.prototype, "unitCost", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 35.00, description: 'Margen de ganancia en porcentaje (%)' }),
+    (0, swagger_1.ApiProperty)({ example: 30.00, description: 'Margen de ganancia al contado (%)' }),
     __metadata("design:type", Number)
-], CreateCatalogDto.prototype, "margin", void 0);
+], CreateCatalogDto.prototype, "marginCash", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 40.00, description: 'Margen de ganancia a crédito (%)' }),
+    __metadata("design:type", Number)
+], CreateCatalogDto.prototype, "marginCredit", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 20.00, description: 'Margen de ganancia preferencial (%)' }),
+    __metadata("design:type", Number)
+], CreateCatalogDto.prototype, "marginPreferred", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ example: true, description: 'Estado del producto en catálogo', required: false, default: true }),
     __metadata("design:type", Boolean)

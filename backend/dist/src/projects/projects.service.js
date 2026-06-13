@@ -125,7 +125,10 @@ let ProjectsService = class ProjectsService {
         if (!project) {
             throw new common_1.NotFoundException('Proyecto no encontrado.');
         }
-        return project;
+        return {
+            ...project,
+            images: project.surveyImages,
+        };
     }
     async update(id, updateProjectDto) {
         const project = await this.prisma.project.findUnique({ where: { id } });

@@ -15,6 +15,7 @@ const client_1 = require("@prisma/client");
 class QuoteItemDto {
     productId;
     quantity;
+    priceType;
 }
 exports.QuoteItemDto = QuoteItemDto;
 __decorate([
@@ -25,6 +26,10 @@ __decorate([
     (0, swagger_1.ApiProperty)({ example: 4, description: 'Cantidad cotizada' }),
     __metadata("design:type", Number)
 ], QuoteItemDto.prototype, "quantity", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'CASH', description: 'Tipo de precio aplicado', enum: ['CASH', 'CREDIT', 'PREFERRED'], required: false, default: 'CASH' }),
+    __metadata("design:type", String)
+], QuoteItemDto.prototype, "priceType", void 0);
 class CreateQuoteDto {
     projectId;
     currency;

@@ -13,10 +13,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { ImagesService } from './images.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RoleName } from '@prisma/client';
-
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { Permissions } from '../auth/decorators/permissions.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiBearerAuth('JWT-auth')
@@ -24,7 +22,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 export class ImagesController {
   constructor(private readonly imagesService: ImagesService) {}
 
-  // Servir la imagen binaria directamente
+  // Servir la imagen binaria directamente (público para renderizado de HTML)
   @Get(':id')
   async serveImage(@Param('id') id: string, @Res() res: Response) {
     const image = await this.imagesService.findOne(id);
@@ -33,10 +31,10 @@ export class ImagesController {
     res.send(image.fileData);
   }
 
-  // Subir imagen para un producto (Solo ADMIN o SELLER)
+  // Subir imagen para un producto (Requiere catalog:write)
   @Post('product/:productId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(RoleName.ADMIN, RoleName.SELLER)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('catalog:write')
   @UseInterceptors(FileInterceptor('file'))
   uploadProductImage(
     @Param('productId') productId: string,
@@ -45,10 +43,10 @@ export class ImagesController {
     return this.imagesService.uploadProductImage(productId, file);
   }
 
-  // Subir imagen para levantamiento de proyecto (ADMIN, SELLER o TECHNICIAN)
+  // Subir imagen para levantamiento de proyecto (Requiere projects:write)
   @Post('project/:projectId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(RoleName.ADMIN, RoleName.SELLER, RoleName.TECHNICIAN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('projects:write')
   @UseInterceptors(FileInterceptor('file'))
   uploadProjectSurveyImage(
     @Param('projectId') projectId: string,
@@ -57,10 +55,10 @@ export class ImagesController {
     return this.imagesService.uploadProjectSurveyImage(projectId, file);
   }
 
-  // Eliminar una imagen
+  // Eliminar una imagen (Requiere projects:write)
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(RoleName.ADMIN, RoleName.SELLER, RoleName.TECHNICIAN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('projects:write')
   remove(@Param('id') id: string) {
     return this.imagesService.remove(id);
   }

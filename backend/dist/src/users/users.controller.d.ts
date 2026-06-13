@@ -8,7 +8,7 @@ export declare class UsersController {
         id: string;
         createdAt: Date;
         role: {
-            name: import("@prisma/client").$Enums.RoleName;
+            name: string;
             description: string | null;
         };
         email: string;
@@ -21,7 +21,8 @@ export declare class UsersController {
         id: string;
         createdAt: Date;
         role: {
-            name: import("@prisma/client").$Enums.RoleName;
+            id: string;
+            name: string;
         };
         email: string;
         firstName: string;
@@ -33,7 +34,8 @@ export declare class UsersController {
         id: string;
         createdAt: Date;
         role: {
-            name: import("@prisma/client").$Enums.RoleName;
+            id: string;
+            name: string;
             description: string | null;
         };
         email: string;
@@ -45,7 +47,8 @@ export declare class UsersController {
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
         id: string;
         role: {
-            name: import("@prisma/client").$Enums.RoleName;
+            id: string;
+            name: string;
         };
         email: string;
         firstName: string;

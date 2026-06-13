@@ -20,8 +20,12 @@ export declare class CatalogController {
         sku: string;
         category: import("@prisma/client").$Enums.ItemCategory;
         unitCost: import("@prisma/client-runtime-utils").Decimal;
-        margin: import("@prisma/client-runtime-utils").Decimal;
-        salePrice: import("@prisma/client-runtime-utils").Decimal;
+        marginCash: import("@prisma/client-runtime-utils").Decimal;
+        priceCash: import("@prisma/client-runtime-utils").Decimal;
+        marginCredit: import("@prisma/client-runtime-utils").Decimal;
+        priceCredit: import("@prisma/client-runtime-utils").Decimal;
+        marginPreferred: import("@prisma/client-runtime-utils").Decimal;
+        pricePreferred: import("@prisma/client-runtime-utils").Decimal;
     }>;
     findAll(): Promise<({
         images: {
@@ -39,8 +43,12 @@ export declare class CatalogController {
         sku: string;
         category: import("@prisma/client").$Enums.ItemCategory;
         unitCost: import("@prisma/client-runtime-utils").Decimal;
-        margin: import("@prisma/client-runtime-utils").Decimal;
-        salePrice: import("@prisma/client-runtime-utils").Decimal;
+        marginCash: import("@prisma/client-runtime-utils").Decimal;
+        priceCash: import("@prisma/client-runtime-utils").Decimal;
+        marginCredit: import("@prisma/client-runtime-utils").Decimal;
+        priceCredit: import("@prisma/client-runtime-utils").Decimal;
+        marginPreferred: import("@prisma/client-runtime-utils").Decimal;
+        pricePreferred: import("@prisma/client-runtime-utils").Decimal;
     })[]>;
     findOne(id: string): Promise<{
         images: {
@@ -58,8 +66,12 @@ export declare class CatalogController {
         sku: string;
         category: import("@prisma/client").$Enums.ItemCategory;
         unitCost: import("@prisma/client-runtime-utils").Decimal;
-        margin: import("@prisma/client-runtime-utils").Decimal;
-        salePrice: import("@prisma/client-runtime-utils").Decimal;
+        marginCash: import("@prisma/client-runtime-utils").Decimal;
+        priceCash: import("@prisma/client-runtime-utils").Decimal;
+        marginCredit: import("@prisma/client-runtime-utils").Decimal;
+        priceCredit: import("@prisma/client-runtime-utils").Decimal;
+        marginPreferred: import("@prisma/client-runtime-utils").Decimal;
+        pricePreferred: import("@prisma/client-runtime-utils").Decimal;
     }>;
     update(id: string, updateCatalogDto: UpdateCatalogDto): Promise<{
         images: {
@@ -77,8 +89,12 @@ export declare class CatalogController {
         sku: string;
         category: import("@prisma/client").$Enums.ItemCategory;
         unitCost: import("@prisma/client-runtime-utils").Decimal;
-        margin: import("@prisma/client-runtime-utils").Decimal;
-        salePrice: import("@prisma/client-runtime-utils").Decimal;
+        marginCash: import("@prisma/client-runtime-utils").Decimal;
+        priceCash: import("@prisma/client-runtime-utils").Decimal;
+        marginCredit: import("@prisma/client-runtime-utils").Decimal;
+        priceCredit: import("@prisma/client-runtime-utils").Decimal;
+        marginPreferred: import("@prisma/client-runtime-utils").Decimal;
+        pricePreferred: import("@prisma/client-runtime-utils").Decimal;
     }>;
     remove(id: string): Promise<{
         id: string;

@@ -130,7 +130,10 @@ export class ProjectsService {
       throw new NotFoundException('Proyecto no encontrado.');
     }
 
-    return project;
+    return {
+      ...project,
+      images: project.surveyImages,
+    };
   }
 
   async update(id: string, updateProjectDto: UpdateProjectDto) {

@@ -2,6 +2,7 @@ import { CurrencyCode } from '@prisma/client';
 export declare class QuoteItemDto {
     productId: string;
     quantity: number;
+    priceType?: string;
 }
 export declare class CreateQuoteDto {
     projectId: string;

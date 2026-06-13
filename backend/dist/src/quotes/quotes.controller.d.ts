@@ -14,11 +14,12 @@ export declare class QuotesController {
         } & {
             id: string;
             unitCost: import("@prisma/client-runtime-utils").Decimal;
-            margin: import("@prisma/client-runtime-utils").Decimal;
             productId: string;
             subtotal: import("@prisma/client-runtime-utils").Decimal;
             quantity: import("@prisma/client-runtime-utils").Decimal;
+            priceType: string;
             unitPrice: import("@prisma/client-runtime-utils").Decimal;
+            margin: import("@prisma/client-runtime-utils").Decimal;
             quoteId: string;
         })[];
         creator: {
@@ -79,8 +80,8 @@ export declare class QuotesController {
                 updatedAt: Date;
                 email: string;
                 phone: string;
-                rutOrId: string;
                 address: string | null;
+                rutOrId: string;
                 city: string | null;
             };
             surveyImages: {
@@ -115,17 +116,22 @@ export declare class QuotesController {
                 sku: string;
                 category: import("@prisma/client").$Enums.ItemCategory;
                 unitCost: import("@prisma/client-runtime-utils").Decimal;
-                margin: import("@prisma/client-runtime-utils").Decimal;
-                salePrice: import("@prisma/client-runtime-utils").Decimal;
+                marginCash: import("@prisma/client-runtime-utils").Decimal;
+                priceCash: import("@prisma/client-runtime-utils").Decimal;
+                marginCredit: import("@prisma/client-runtime-utils").Decimal;
+                priceCredit: import("@prisma/client-runtime-utils").Decimal;
+                marginPreferred: import("@prisma/client-runtime-utils").Decimal;
+                pricePreferred: import("@prisma/client-runtime-utils").Decimal;
             };
         } & {
             id: string;
             unitCost: import("@prisma/client-runtime-utils").Decimal;
-            margin: import("@prisma/client-runtime-utils").Decimal;
             productId: string;
             subtotal: import("@prisma/client-runtime-utils").Decimal;
             quantity: import("@prisma/client-runtime-utils").Decimal;
+            priceType: string;
             unitPrice: import("@prisma/client-runtime-utils").Decimal;
+            margin: import("@prisma/client-runtime-utils").Decimal;
             quoteId: string;
         })[];
         creator: {
@@ -158,11 +164,12 @@ export declare class QuotesController {
         items: {
             id: string;
             unitCost: import("@prisma/client-runtime-utils").Decimal;
-            margin: import("@prisma/client-runtime-utils").Decimal;
             productId: string;
             subtotal: import("@prisma/client-runtime-utils").Decimal;
             quantity: import("@prisma/client-runtime-utils").Decimal;
+            priceType: string;
             unitPrice: import("@prisma/client-runtime-utils").Decimal;
+            margin: import("@prisma/client-runtime-utils").Decimal;
             quoteId: string;
         }[];
     } & {

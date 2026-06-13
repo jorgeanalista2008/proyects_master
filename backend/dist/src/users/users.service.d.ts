@@ -8,7 +8,7 @@ export declare class UsersService {
         id: string;
         createdAt: Date;
         role: {
-            name: import("@prisma/client").$Enums.RoleName;
+            name: string;
             description: string | null;
         };
         email: string;
@@ -21,7 +21,8 @@ export declare class UsersService {
         id: string;
         createdAt: Date;
         role: {
-            name: import("@prisma/client").$Enums.RoleName;
+            id: string;
+            name: string;
         };
         email: string;
         firstName: string;
@@ -33,7 +34,8 @@ export declare class UsersService {
         id: string;
         createdAt: Date;
         role: {
-            name: import("@prisma/client").$Enums.RoleName;
+            id: string;
+            name: string;
             description: string | null;
         };
         email: string;
@@ -44,8 +46,21 @@ export declare class UsersService {
     }>;
     findOneByEmail(email: string): Promise<({
         role: {
+            permissions: ({
+                permission: {
+                    id: string;
+                    name: string;
+                    description: string | null;
+                    createdAt: Date;
+                    updatedAt: Date;
+                };
+            } & {
+                roleId: string;
+                permissionId: string;
+            })[];
+        } & {
             id: string;
-            name: import("@prisma/client").$Enums.RoleName;
+            name: string;
             description: string | null;
             createdAt: Date;
             updatedAt: Date;
@@ -54,18 +69,19 @@ export declare class UsersService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        roleId: string;
         email: string;
         passwordHash: string;
         firstName: string;
         lastName: string;
         phone: string | null;
         isActive: boolean;
-        roleId: string;
     }) | null>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
         id: string;
         role: {
-            name: import("@prisma/client").$Enums.RoleName;
+            id: string;
+            name: string;
         };
         email: string;
         firstName: string;

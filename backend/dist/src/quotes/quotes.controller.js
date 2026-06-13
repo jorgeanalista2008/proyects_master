@@ -18,10 +18,9 @@ const quotes_service_1 = require("./quotes.service");
 const create_quote_dto_1 = require("./dto/create-quote.dto");
 const update_quote_dto_1 = require("./dto/update-quote.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
-const roles_guard_1 = require("../auth/guards/roles.guard");
-const roles_decorator_1 = require("../auth/decorators/roles.decorator");
+const permissions_guard_1 = require("../auth/guards/permissions.guard");
+const permissions_decorator_1 = require("../auth/decorators/permissions.decorator");
 const get_user_decorator_1 = require("../auth/decorators/get-user.decorator");
-const client_1 = require("@prisma/client");
 const swagger_1 = require("@nestjs/swagger");
 let QuotesController = class QuotesController {
     quotesService;
@@ -47,8 +46,7 @@ let QuotesController = class QuotesController {
 exports.QuotesController = QuotesController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.SELLER),
+    (0, permissions_decorator_1.Permissions)('quotes:write'),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, get_user_decorator_1.GetUser)('sub')),
     __metadata("design:type", Function),
@@ -57,6 +55,7 @@ __decorate([
 ], QuotesController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
+    (0, permissions_decorator_1.Permissions)('quotes:read'),
     __param(0, (0, common_1.Query)('projectId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -64,6 +63,7 @@ __decorate([
 ], QuotesController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
+    (0, permissions_decorator_1.Permissions)('quotes:read'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -71,8 +71,7 @@ __decorate([
 ], QuotesController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.SELLER),
+    (0, permissions_decorator_1.Permissions)('quotes:write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -81,8 +80,7 @@ __decorate([
 ], QuotesController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.SELLER),
+    (0, permissions_decorator_1.Permissions)('quotes:write'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -91,7 +89,7 @@ __decorate([
 exports.QuotesController = QuotesController = __decorate([
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, common_1.Controller)('quotes'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [quotes_service_1.QuotesService])
 ], QuotesController);
 //# sourceMappingURL=quotes.controller.js.map

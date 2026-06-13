@@ -11,6 +11,7 @@ export interface User {
   firstName: string;
   lastName: string;
   role: string;
+  permissions: string[];
 }
 
 interface LoginResponse {
@@ -26,6 +27,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -107,8 +109,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/login");
   };
 
+  const hasPermission = (permission: string): boolean => {
+    if (!user) return false;
+    if (user.role === "ADMIN") return true; // Bypass para el administrador
+    return user.permissions?.includes(permission) || false;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );

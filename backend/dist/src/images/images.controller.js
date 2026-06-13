@@ -17,9 +17,8 @@ const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const images_service_1 = require("./images.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
-const roles_guard_1 = require("../auth/guards/roles.guard");
-const roles_decorator_1 = require("../auth/decorators/roles.decorator");
-const client_1 = require("@prisma/client");
+const permissions_guard_1 = require("../auth/guards/permissions.guard");
+const permissions_decorator_1 = require("../auth/decorators/permissions.decorator");
 const swagger_1 = require("@nestjs/swagger");
 let ImagesController = class ImagesController {
     imagesService;
@@ -53,8 +52,8 @@ __decorate([
 ], ImagesController.prototype, "serveImage", null);
 __decorate([
     (0, common_1.Post)('product/:productId'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.SELLER),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
+    (0, permissions_decorator_1.Permissions)('catalog:write'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
     __param(0, (0, common_1.Param)('productId')),
     __param(1, (0, common_1.UploadedFile)()),
@@ -64,8 +63,8 @@ __decorate([
 ], ImagesController.prototype, "uploadProductImage", null);
 __decorate([
     (0, common_1.Post)('project/:projectId'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.SELLER, client_1.RoleName.TECHNICIAN),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
+    (0, permissions_decorator_1.Permissions)('projects:write'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
     __param(0, (0, common_1.Param)('projectId')),
     __param(1, (0, common_1.UploadedFile)()),
@@ -75,8 +74,8 @@ __decorate([
 ], ImagesController.prototype, "uploadProjectSurveyImage", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.SELLER, client_1.RoleName.TECHNICIAN),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
+    (0, permissions_decorator_1.Permissions)('projects:write'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

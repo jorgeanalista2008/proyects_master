@@ -11,8 +11,12 @@ interface CatalogItem {
   sku: string;
   category: string;
   unitCost: number;
-  margin: number; // e.g. 30 for 30%
-  salePrice: number;
+  marginCash: number;
+  priceCash: number;
+  marginCredit: number;
+  priceCredit: number;
+  marginPreferred: number;
+  pricePreferred: number;
   imageId?: string;
   description?: string;
 }
@@ -58,16 +62,23 @@ export default function CatalogPage() {
   // Extract unique categories for filter dropdown
   const categories = Array.from(new Set(items.map((item) => item.category.toUpperCase())));
 
+  const formatUSD = (val: number) => {
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "USD"
+    }).format(val);
+  };
+
   return (
     <div className="fade-in">
       <div className="card-header-flex" style={{ marginBottom: "2rem" }}>
         <div>
           <h1 className="title-primary" style={{ marginBottom: "0.25rem" }}>Catálogo de Equipos y Servicios</h1>
           <p className="subtitle-secondary" style={{ marginBottom: 0 }}>
-            Administra los componentes de seguridad, sensores y tarifas de mano de obra
+            Administra los componentes de seguridad, sensores y las tres tarifas de precios sugeridas.
           </p>
         </div>
-        <Link href="/catalog/new" className="btn btn-primary">
+        <Link href="/catalog/new" className="btn btn-primary border-glow">
           ➕ Crear Producto/Servicio
         </Link>
       </div>
@@ -129,7 +140,7 @@ export default function CatalogPage() {
           <p style={{ color: "hsl(var(--text-secondary))" }}>Cargando catálogo...</p>
         </div>
       ) : filteredItems.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: "center", padding: "4rem" }}>
+        <div className="glass-card border-glow" style={{ textAlign: "center", padding: "4rem" }}>
           <span style={{ fontSize: "3rem" }}>📦</span>
           <h3 style={{ marginTop: "1rem", marginBottom: "0.5rem" }}>Catálogo Vacío</h3>
           <p style={{ color: "hsl(var(--text-secondary))", marginBottom: "1.5rem" }}>
@@ -142,18 +153,8 @@ export default function CatalogPage() {
       ) : (
         <div className="items-grid">
           {filteredItems.map((item) => {
-            const formattedSalePrice = new Intl.NumberFormat("es-ES", {
-              style: "currency",
-              currency: "USD"
-            }).format(item.salePrice);
-
-            const formattedCost = new Intl.NumberFormat("es-ES", {
-              style: "currency",
-              currency: "USD"
-            }).format(item.unitCost);
-
             return (
-              <div key={item.id} className="glass-card" style={{
+              <div key={item.id} className="glass-card border-glow" style={{
                 padding: "1.5rem",
                 display: "flex",
                 flexDirection: "column",
@@ -247,9 +248,10 @@ export default function CatalogPage() {
                 </div>
 
                 <div>
+                  {/* Prices structure */}
                   <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
+                    display: "flex",
+                    flexDirection: "column",
                     gap: "0.5rem",
                     background: "hsla(var(--bg-secondary), 0.4)",
                     padding: "0.75rem",
@@ -258,26 +260,30 @@ export default function CatalogPage() {
                     fontSize: "0.8rem",
                     border: "1px solid hsl(var(--border-glass))"
                   }}>
-                    <div>
-                      <span style={{ color: "hsl(var(--text-muted))", display: "block" }}>Costo Base:</span>
-                      <strong>{formattedCost}</strong>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "hsl(var(--text-muted))" }}>Costo Adquisición:</span>
+                      <strong style={{ fontFamily: "monospace" }}>{formatUSD(item.unitCost)}</strong>
                     </div>
-                    <div>
-                      <span style={{ color: "hsl(var(--text-muted))", display: "block" }}>Margen:</span>
-                      <strong style={{ color: "hsl(var(--success))" }}>+{item.margin}%</strong>
+                    <div style={{ borderTop: "1px solid hsl(var(--border-glass))", paddingTop: "0.5rem", marginTop: "0.25rem", display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "hsl(var(--text-muted))" }}>Contado (+{item.marginCash}%):</span>
+                        <strong className="text-glow-primary" style={{ color: "hsl(var(--primary))", fontFamily: "monospace" }}>
+                          {formatUSD(item.priceCash)}
+                        </strong>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "hsl(var(--text-muted))" }}>Crédito (+{item.marginCredit}%):</span>
+                        <strong style={{ color: "#fbbf24", fontFamily: "monospace" }}>
+                          {formatUSD(item.priceCredit)}
+                        </strong>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: "hsl(var(--text-muted))" }}>Preferente (+{item.marginPreferred}%):</span>
+                        <strong className="text-glow-accent" style={{ color: "hsl(var(--accent))", fontFamily: "monospace" }}>
+                          {formatUSD(item.pricePreferred)}
+                        </strong>
+                      </div>
                     </div>
-                  </div>
-
-                  <div style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "1rem"
-                  }}>
-                    <span style={{ color: "hsl(var(--text-secondary))", fontSize: "0.85rem" }}>Precio de Venta:</span>
-                    <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "hsl(var(--primary-hover))" }}>
-                      {formattedSalePrice}
-                    </span>
                   </div>
 
                   <Link href={`/catalog/${item.id}`} className="btn btn-secondary btn-block btn-sm">

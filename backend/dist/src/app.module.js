@@ -21,6 +21,8 @@ const projects_module_1 = require("./projects/projects.module");
 const quotes_module_1 = require("./quotes/quotes.module");
 const analytics_module_1 = require("./analytics/analytics.module");
 const technicians_module_1 = require("./technicians/technicians.module");
+const settings_module_1 = require("./settings/settings.module");
+const roles_module_1 = require("./roles/roles.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -40,6 +42,8 @@ exports.AppModule = AppModule = __decorate([
             quotes_module_1.QuotesModule,
             analytics_module_1.AnalyticsModule,
             technicians_module_1.TechniciansModule,
+            settings_module_1.SettingsModule,
+            roles_module_1.RolesModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

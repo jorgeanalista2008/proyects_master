@@ -16,6 +16,6 @@ export class CreateUserDto {
   @ApiProperty({ example: '+56912345678', description: 'Teléfono de contacto', required: false })
   phone?: string;
 
-  @ApiProperty({ example: 'SELLER', description: 'Nombre del rol', enum: ['ADMIN', 'SELLER', 'TECHNICIAN', 'CLIENT'] })
-  roleName: 'ADMIN' | 'SELLER' | 'TECHNICIAN' | 'CLIENT';
+  @ApiProperty({ example: 'SELLER', description: 'Nombre del rol' })
+  roleName: string;
 }

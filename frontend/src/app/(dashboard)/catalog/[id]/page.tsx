@@ -20,9 +20,18 @@ export default function CatalogItemForm({ params }: PageProps) {
   const [sku, setSku] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
+  
+  // Cost and margins
   const [unitCost, setUnitCost] = useState<number>(0);
-  const [margin, setMargin] = useState<number>(30); // 30% default margin
-  const [salePrice, setSalePrice] = useState<number>(0);
+  const [marginCash, setMarginCash] = useState<number>(30); // 30% default margin cash
+  const [marginCredit, setMarginCredit] = useState<number>(40); // 40% default margin credit
+  const [marginPreferred, setMarginPreferred] = useState<number>(20); // 20% default margin preferred
+  
+  // Suggested prices
+  const [priceCash, setPriceCash] = useState<number>(0);
+  const [priceCredit, setPriceCredit] = useState<number>(0);
+  const [pricePreferred, setPricePreferred] = useState<number>(0);
+  
   const [imageId, setImageId] = useState<string | null>(null);
 
   // Image Upload State
@@ -46,9 +55,13 @@ export default function CatalogItemForm({ params }: PageProps) {
         setSku(data.sku || "");
         setCategory(data.category || "");
         setDescription(data.description || "");
-        setUnitCost(data.unitCost ?? 0);
-        setMargin(data.margin ?? 0);
-        setSalePrice(data.salePrice ?? 0);
+        setUnitCost(Number(data.unitCost) || 0);
+        setMarginCash(Number(data.marginCash) ?? 30);
+        setMarginCredit(Number(data.marginCredit) ?? 40);
+        setMarginPreferred(Number(data.marginPreferred) ?? 20);
+        setPriceCash(Number(data.priceCash) || 0);
+        setPriceCredit(Number(data.priceCredit) || 0);
+        setPricePreferred(Number(data.pricePreferred) || 0);
         setImageId(data.imageId || null);
       } catch (err: any) {
         console.error("Error loading catalog item:", err);
@@ -60,12 +73,16 @@ export default function CatalogItemForm({ params }: PageProps) {
     loadItem();
   }, [id, isNew]);
 
-  // Recalculate suggested sale price in real-time when unitCost or margin changes
+  // Recalculate suggested sale prices in real-time when unitCost or margins change
   useEffect(() => {
-    const calculated = unitCost * (1 + margin / 100);
-    // Round to 2 decimal places
-    setSalePrice(Math.round(calculated * 100) / 100);
-  }, [unitCost, margin]);
+    const calcCash = unitCost * (1 + marginCash / 100);
+    const calcCredit = unitCost * (1 + marginCredit / 100);
+    const calcPref = unitCost * (1 + marginPreferred / 100);
+    
+    setPriceCash(Math.round(calcCash * 100) / 100);
+    setPriceCredit(Math.round(calcCredit * 100) / 100);
+    setPricePreferred(Math.round(calcPref * 100) / 100);
+  }, [unitCost, marginCash, marginCredit, marginPreferred]);
 
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,8 +134,12 @@ export default function CatalogItemForm({ params }: PageProps) {
         category,
         description,
         unitCost,
-        margin,
-        salePrice
+        marginCash,
+        priceCash,
+        marginCredit,
+        priceCredit,
+        marginPreferred,
+        pricePreferred
       };
 
       let savedItem: any;
@@ -126,10 +147,9 @@ export default function CatalogItemForm({ params }: PageProps) {
       if (isNew) {
         savedItem = await api.post("/catalog", payload);
       } else {
-        savedItem = await api.put(`/catalog/${id}`, payload);
+        savedItem = await api.patch(`/catalog/${id}`, payload);
       }
 
-      // If an image is selected, upload it
       if (imageFile) {
         const productId = isNew ? savedItem.id : id;
         await uploadImage(productId);
@@ -137,7 +157,6 @@ export default function CatalogItemForm({ params }: PageProps) {
 
       setSuccess(`¡Producto ${isNew ? "creado" : "actualizado"} con éxito!`);
       
-      // Redirect back after a short delay
       setTimeout(() => {
         router.push("/catalog");
       }, 1500);
@@ -160,7 +179,7 @@ export default function CatalogItemForm({ params }: PageProps) {
   }
 
   return (
-    <div className="fade-in" style={{ maxWidth: "800px", margin: "0 auto" }}>
+    <div className="fade-in" style={{ maxWidth: "850px", margin: "0 auto" }}>
       <div style={{ marginBottom: "2rem" }}>
         <Link href="/catalog" style={{
           color: "hsl(var(--text-secondary))",
@@ -174,11 +193,11 @@ export default function CatalogItemForm({ params }: PageProps) {
         </Link>
         <h1 className="title-primary">{isNew ? "Crear Nuevo Producto" : `Editar Producto: ${sku}`}</h1>
         <p className="subtitle-secondary">
-          {isNew ? "Ingresa la ficha técnica y calcula los costos de venta del nuevo producto" : "Actualiza la información técnica y costos de este elemento."}
+          {isNew ? "Ingresa la ficha técnica y configura los márgenes de venta sugeridos" : "Actualiza la información técnica y costos de este elemento."}
         </p>
       </div>
 
-      <div className="glass-card">
+      <div className="glass-card border-glow">
         {error && (
           <div style={{
             background: "hsla(0, 84.2%, 60.2%, 0.15)",
@@ -224,16 +243,23 @@ export default function CatalogItemForm({ params }: PageProps) {
             
             <div className="input-group" style={{ marginBottom: 0 }}>
               <label className="input-label" htmlFor="category">Categoría</label>
-              <input
+              <select
                 id="category"
-                type="text"
-                placeholder="Cámara, Sensor, Accesorios, Mano de Obra..."
                 className="input-field"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 disabled={loading}
                 required
-              />
+              >
+                <option value="">-- Selecciona Categoría --</option>
+                <option value="CAMERA">Cámara de Seguridad</option>
+                <option value="DVR_NVR">Grabador DVR / NVR</option>
+                <option value="CABLE">Cableado Estructurado</option>
+                <option value="TUBING">Tuberías y Canalización</option>
+                <option value="ACCESSORY">Accesorios / Anclajes</option>
+                <option value="LABOR">Mano de Obra</option>
+                <option value="SERVICE">Servicios / Viáticos</option>
+              </select>
             </div>
           </div>
 
@@ -257,7 +283,7 @@ export default function CatalogItemForm({ params }: PageProps) {
               id="description"
               placeholder="Ficha técnica detallada o alcance del servicio..."
               className="input-field"
-              rows={4}
+              rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={loading}
@@ -265,17 +291,21 @@ export default function CatalogItemForm({ params }: PageProps) {
             />
           </div>
 
-          {/* Pricing Math Section */}
+          {/* Pricing Structure - 3 Tiers */}
           <div style={{
             background: "hsla(var(--bg-secondary), 0.5)",
             border: "1px solid hsl(var(--border-glass))",
             padding: "1.5rem",
             borderRadius: "var(--radius-md)"
           }}>
-            <h3 style={{ fontSize: "1.1rem", marginBottom: "1rem", color: "hsl(var(--primary-hover))" }}>Estructura de Precios (USD)</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
+            <h3 style={{ fontSize: "1.1rem", marginBottom: "1.25rem", color: "hsl(var(--primary))", fontWeight: 700 }}>
+              Estructura de Precios Multi-Tarifa (USD)
+            </h3>
+
+            {/* Cost Base Row */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1.5rem", marginBottom: "1.25rem", borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "1rem" }}>
               <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="unitCost">Costo Base ($)</label>
+                <label className="input-label" htmlFor="unitCost" style={{ fontWeight: "bold" }}>Costo Adquisición ($)</label>
                 <input
                   id="unitCost"
                   type="number"
@@ -285,41 +315,104 @@ export default function CatalogItemForm({ params }: PageProps) {
                   value={unitCost}
                   onChange={(e) => setUnitCost(parseFloat(e.target.value) || 0)}
                   disabled={loading}
+                  style={{ borderLeft: "3px solid hsl(var(--accent))" }}
                   required
                 />
               </div>
-
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="margin">Margen de Venta (%)</label>
-                <input
-                  id="margin"
-                  type="number"
-                  min="0"
-                  className="input-field"
-                  value={margin}
-                  onChange={(e) => setMargin(parseFloat(e.target.value) || 0)}
-                  disabled={loading}
-                  required
-                />
-              </div>
-
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="salePrice">Precio Venta Sugerido ($)</label>
-                <input
-                  id="salePrice"
-                  type="number"
-                  step="0.01"
-                  className="input-field"
-                  value={salePrice}
-                  onChange={(e) => setSalePrice(parseFloat(e.target.value) || 0)}
-                  disabled={loading}
-                  style={{ fontWeight: "bold", borderLeft: "3px solid hsl(var(--success))" }}
-                />
+              <div style={{ display: "flex", alignItems: "center", fontSize: "0.8rem", color: "hsl(var(--text-muted))" }}>
+                <span>Ingresa el costo neto de importación o compra del equipo. Los tres precios de venta sugeridos se autocalcularán en base a este costo y el respectivo margen.</span>
               </div>
             </div>
-            <span style={{ fontSize: "0.75rem", color: "hsl(var(--text-muted))", marginTop: "0.75rem", display: "block" }}>
-              * Precio sugerido calculado automáticamente como: <code>Costo Base * (1 + Margen / 100)</code>
-            </span>
+
+            {/* Pricing Tiers Inputs */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {/* Contado */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr 1.2fr", gap: "1rem", alignItems: "center" }}>
+                <strong style={{ fontSize: "0.85rem", color: "hsl(var(--primary))" }}>💵 Precio al Contado:</strong>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label" style={{ fontSize: "0.7rem" }}>Margen Contado (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="input-field"
+                    value={marginCash}
+                    onChange={(e) => setMarginCash(parseFloat(e.target.value) || 0)}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label" style={{ fontSize: "0.7rem" }}>Precio Contado ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input-field"
+                    value={priceCash}
+                    onChange={(e) => setPriceCash(parseFloat(e.target.value) || 0)}
+                    disabled={loading}
+                    style={{ fontWeight: 700, borderColor: "hsla(var(--primary), 0.5)" }}
+                  />
+                </div>
+              </div>
+
+              {/* Crédito */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr 1.2fr", gap: "1rem", alignItems: "center" }}>
+                <strong style={{ fontSize: "0.85rem", color: "#fbbf24" }}>💳 Precio a Crédito:</strong>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label" style={{ fontSize: "0.7rem" }}>Margen Crédito (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="input-field"
+                    value={marginCredit}
+                    onChange={(e) => setMarginCredit(parseFloat(e.target.value) || 0)}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label" style={{ fontSize: "0.7rem" }}>Precio Crédito ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input-field"
+                    value={priceCredit}
+                    onChange={(e) => setPriceCredit(parseFloat(e.target.value) || 0)}
+                    disabled={loading}
+                    style={{ fontWeight: 700, borderColor: "rgba(251, 191, 36, 0.5)" }}
+                  />
+                </div>
+              </div>
+
+              {/* Preferencial */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr 1.2fr", gap: "1rem", alignItems: "center" }}>
+                <strong style={{ fontSize: "0.85rem", color: "hsl(var(--accent))" }}>⭐ Precio Preferencial:</strong>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label" style={{ fontSize: "0.7rem" }}>Margen Preferente (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="input-field"
+                    value={marginPreferred}
+                    onChange={(e) => setMarginPreferred(parseFloat(e.target.value) || 0)}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label" style={{ fontSize: "0.7rem" }}>Precio Preferente ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input-field"
+                    value={pricePreferred}
+                    onChange={(e) => setPricePreferred(parseFloat(e.target.value) || 0)}
+                    disabled={loading}
+                    style={{ fontWeight: 700, borderColor: "hsla(var(--accent), 0.5)" }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Image Upload Area */}
@@ -335,7 +428,6 @@ export default function CatalogItemForm({ params }: PageProps) {
           }}>
             <h4 style={{ fontSize: "0.95rem" }}>Imagen del Producto</h4>
             
-            {/* Show preview or existing image */}
             {(imagePreview || imageId) && (
               <div style={{
                 width: "200px",
@@ -380,7 +472,7 @@ export default function CatalogItemForm({ params }: PageProps) {
             <Link href="/catalog" className="btn btn-secondary" style={{ pointerEvents: loading ? "none" : "auto" }}>
               Cancelar
             </Link>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
+            <button type="submit" className="btn btn-primary border-glow" disabled={loading}>
               {loading ? <span className="spinner" /> : null}
               <span>{isNew ? "Guardar Producto" : "Guardar Cambios"}</span>
             </button>

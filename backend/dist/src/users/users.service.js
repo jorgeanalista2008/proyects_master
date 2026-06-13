@@ -104,6 +104,7 @@ let UsersService = class UsersService {
                 isActive: true,
                 role: {
                     select: {
+                        id: true,
                         name: true,
                     },
                 },
@@ -123,6 +124,7 @@ let UsersService = class UsersService {
                 isActive: true,
                 role: {
                     select: {
+                        id: true,
                         name: true,
                         description: true,
                     },
@@ -139,7 +141,15 @@ let UsersService = class UsersService {
         return this.prisma.user.findUnique({
             where: { email },
             include: {
-                role: true,
+                role: {
+                    include: {
+                        permissions: {
+                            include: {
+                                permission: true,
+                            },
+                        },
+                    },
+                },
             },
         });
     }
@@ -172,6 +182,7 @@ let UsersService = class UsersService {
                 isActive: true,
                 role: {
                     select: {
+                        id: true,
                         name: true,
                     },
                 },

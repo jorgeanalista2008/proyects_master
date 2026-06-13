@@ -12,6 +12,8 @@ import { ProjectsModule } from './projects/projects.module';
 import { QuotesModule } from './quotes/quotes.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { TechniciansModule } from './technicians/technicians.module';
+import { SettingsModule } from './settings/settings.module';
+import { RolesModule } from './roles/roles.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { TechniciansModule } from './technicians/technicians.module';
     QuotesModule,
     AnalyticsModule,
     TechniciansModule,
+    SettingsModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

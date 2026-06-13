@@ -12,45 +12,42 @@ import { CatalogService } from './catalog.service';
 import { CreateCatalogDto } from './dto/create-catalog.dto';
 import { UpdateCatalogDto } from './dto/update-catalog.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RoleName } from '@prisma/client';
-
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { Permissions } from '../auth/decorators/permissions.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiBearerAuth('JWT-auth')
 @Controller('catalog')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class CatalogController {
   constructor(private readonly catalogService: CatalogService) {}
 
   @Post()
-  @UseGuards(RolesGuard)
-  @Roles(RoleName.ADMIN, RoleName.SELLER)
+  @Permissions('catalog:write')
   create(@Body() createCatalogDto: CreateCatalogDto) {
     return this.catalogService.create(createCatalogDto);
   }
 
   @Get()
+  @Permissions('catalog:read')
   findAll() {
     return this.catalogService.findAll();
   }
 
   @Get(':id')
+  @Permissions('catalog:read')
   findOne(@Param('id') id: string) {
     return this.catalogService.findOne(id);
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard)
-  @Roles(RoleName.ADMIN, RoleName.SELLER)
+  @Permissions('catalog:write')
   update(@Param('id') id: string, @Body() updateCatalogDto: UpdateCatalogDto) {
     return this.catalogService.update(id, updateCatalogDto);
   }
 
   @Delete(':id')
-  @UseGuards(RolesGuard)
-  @Roles(RoleName.ADMIN, RoleName.SELLER)
+  @Permissions('catalog:write')
   remove(@Param('id') id: string) {
     return this.catalogService.remove(id);
   }

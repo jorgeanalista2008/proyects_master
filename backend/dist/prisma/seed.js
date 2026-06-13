@@ -51,54 +51,124 @@ const adapter = new adapter_mariadb_1.PrismaMariaDb({
 const prisma = new client_1.PrismaClient({ adapter });
 async function main() {
     console.log('Iniciando Seeding...');
-    const adminRole = await prisma.role.upsert({
-        where: { name: 'ADMIN' },
-        update: {},
-        create: {
-            name: 'ADMIN',
-            description: 'Administrador del sistema con acceso total',
-        },
-    });
-    const sellerRole = await prisma.role.upsert({
-        where: { name: 'SELLER' },
-        update: {},
-        create: {
-            name: 'SELLER',
-            description: 'Vendedor / Cotizador de proyectos',
-        },
-    });
-    const technicianRole = await prisma.role.upsert({
-        where: { name: 'TECHNICIAN' },
-        update: {},
-        create: {
-            name: 'TECHNICIAN',
-            description: 'Técnico de levantamiento e instalación',
-        },
-    });
-    const clientRole = await prisma.role.upsert({
-        where: { name: 'CLIENT' },
-        update: {},
-        create: {
-            name: 'CLIENT',
-            description: 'Cliente visualizador de presupuestos y proyectos',
-        },
-    });
+    const permissionsList = [
+        { name: 'projects:read', description: 'Ver proyectos asignados o del cliente' },
+        { name: 'projects:write', description: 'Crear, editar y eliminar proyectos' },
+        { name: 'quotes:read', description: 'Ver cotizaciones' },
+        { name: 'quotes:write', description: 'Crear, editar y eliminar cotizaciones' },
+        { name: 'catalog:read', description: 'Ver catálogo e inventario' },
+        { name: 'catalog:write', description: 'Administrar catálogo (crear/editar/borrar)' },
+        { name: 'clients:read', description: 'Ver directorio de clientes' },
+        { name: 'clients:write', description: 'Administrar clientes' },
+        { name: 'technicians:read', description: 'Ver perfiles de técnicos' },
+        { name: 'technicians:write', description: 'Administrar técnicos' },
+        { name: 'analytics:read', description: 'Ver analíticas de rentabilidad y margen' },
+        { name: 'settings:write', description: 'Modificar personalización del software' },
+        { name: 'users:write', description: 'Administrar usuarios, perfiles, permisos y menús' },
+    ];
+    const menuItemsList = [
+        { label: 'Inicio', route: '/', icon: '📊', order: 1 },
+        { label: 'Proyectos', route: '/projects', icon: '📁', order: 2 },
+        { label: 'Catálogo e Inventario', route: '/catalog', icon: '📦', order: 3 },
+        { label: 'Clientes', route: '/clients', icon: '👥', order: 4 },
+        { label: 'Técnicos', route: '/technicians', icon: '🛠️', order: 5 },
+        { label: 'Analíticas y Margen', route: '/analytics', icon: '📈', order: 6 },
+        { label: 'Personalización', route: '/settings', icon: '⚙️', order: 7 },
+        { label: 'Documentación', route: '/documentation', icon: '📚', order: 8 },
+        { label: 'Administración', route: '/roles', icon: '🔑', order: 9 },
+    ];
+    const seededPermissions = {};
+    for (const perm of permissionsList) {
+        const p = await prisma.permission.upsert({
+            where: { name: perm.name },
+            update: { description: perm.description },
+            create: perm,
+        });
+        seededPermissions[perm.name] = p;
+    }
+    console.log('Permisos sembrados.');
+    const seededMenus = {};
+    for (const menu of menuItemsList) {
+        let m = await prisma.menuItem.findFirst({ where: { route: menu.route } });
+        if (!m) {
+            m = await prisma.menuItem.create({ data: menu });
+        }
+        else {
+            m = await prisma.menuItem.update({
+                where: { id: m.id },
+                data: { label: menu.label, icon: menu.icon, order: menu.order },
+            });
+        }
+        seededMenus[menu.route] = m;
+    }
+    console.log('Menús sembrados.');
+    const rolesList = [
+        { name: 'ADMIN', description: 'Administrador del sistema con acceso total' },
+        { name: 'SELLER', description: 'Vendedor / Cotizador de proyectos' },
+        { name: 'TECHNICIAN', description: 'Técnico de levantamiento e instalación' },
+        { name: 'CLIENT', description: 'Cliente visualizador de presupuestos y proyectos' },
+    ];
+    const seededRoles = {};
+    for (const role of rolesList) {
+        const r = await prisma.role.upsert({
+            where: { name: role.name },
+            update: { description: role.description },
+            create: role,
+        });
+        seededRoles[role.name] = r;
+    }
     console.log('Roles creados o actualizados.');
+    async function syncRoleRelations(roleName, permissions, menuRoutes) {
+        const role = seededRoles[roleName];
+        if (!role)
+            return;
+        await prisma.rolePermission.deleteMany({ where: { roleId: role.id } });
+        await prisma.roleMenu.deleteMany({ where: { roleId: role.id } });
+        for (const permName of permissions) {
+            const perm = seededPermissions[permName];
+            if (perm) {
+                await prisma.rolePermission.create({
+                    data: { roleId: role.id, permissionId: perm.id },
+                });
+            }
+        }
+        for (const route of menuRoutes) {
+            const menu = seededMenus[route];
+            if (menu) {
+                await prisma.roleMenu.create({
+                    data: { roleId: role.id, menuItemId: menu.id },
+                });
+            }
+        }
+    }
+    await syncRoleRelations('ADMIN', permissionsList.map(p => p.name), menuItemsList.map(m => m.route));
+    await syncRoleRelations('SELLER', [
+        'projects:read', 'projects:write',
+        'quotes:read', 'quotes:write',
+        'catalog:read', 'catalog:write',
+        'clients:read', 'clients:write',
+        'technicians:read', 'analytics:read'
+    ], ['/', '/projects', '/catalog', '/clients', '/technicians', '/analytics', '/documentation']);
+    await syncRoleRelations('TECHNICIAN', ['projects:read', 'quotes:read', 'catalog:read'], ['/', '/projects', '/catalog', '/documentation']);
+    await syncRoleRelations('CLIENT', ['projects:read', 'quotes:read'], ['/', '/projects', '/documentation']);
+    console.log('Relaciones de roles y permisos sincronizadas.');
     const adminPasswordHash = bcrypt.hashSync('AdminPassword123', 10);
     const defaultAdmin = await prisma.user.upsert({
         where: { email: 'admin@securitysystem.com' },
-        update: {},
+        update: {
+            roleId: seededRoles['ADMIN'].id,
+        },
         create: {
             email: 'admin@securitysystem.com',
             passwordHash: adminPasswordHash,
             firstName: 'Admin',
             lastName: 'Security',
             phone: '+56912345678',
-            roleId: adminRole.id,
+            roleId: seededRoles['ADMIN'].id,
             isActive: true,
         },
     });
-    console.log('Administrador por defecto creado:', defaultAdmin.email);
+    console.log('Administrador por defecto creado o actualizado:', defaultAdmin.email);
     const products = [
         {
             sku: 'CAM-DOM-001',
@@ -106,8 +176,12 @@ async function main() {
             description: 'Cámara domo de seguridad IP con resolución de 4MP, visión nocturna infrarroja y resistencia a la intemperie (IP67).',
             category: 'CAMERA',
             unitCost: 25.5000,
-            margin: 40.00,
-            salePrice: 35.7000,
+            marginCash: 30.00,
+            priceCash: 33.1500,
+            marginCredit: 40.00,
+            priceCredit: 35.7000,
+            marginPreferred: 20.00,
+            pricePreferred: 30.6000,
         },
         {
             sku: 'NVR-08C-002',
@@ -115,8 +189,12 @@ async function main() {
             description: 'Grabador de video en red (NVR) de 8 canales con soporte de resolución hasta 4K y compresión H.265+.',
             category: 'DVR_NVR',
             unitCost: 110.0000,
-            margin: 45.00,
-            salePrice: 159.5000,
+            marginCash: 30.00,
+            priceCash: 143.0000,
+            marginCredit: 45.00,
+            priceCredit: 159.5000,
+            marginPreferred: 20.00,
+            pricePreferred: 132.0000,
         },
         {
             sku: 'CAB-UTP-003',
@@ -124,8 +202,12 @@ async function main() {
             description: 'Bobina de cable de red UTP Categoría 6, 100% cobre, ideal para transmisiones Gigabit y tendidos de CCTV.',
             category: 'CABLE',
             unitCost: 65.0000,
-            margin: 35.00,
-            salePrice: 87.7500,
+            marginCash: 30.00,
+            priceCash: 84.5000,
+            marginCredit: 35.00,
+            priceCredit: 87.7500,
+            marginPreferred: 20.00,
+            pricePreferred: 78.0000,
         },
         {
             sku: 'LAB-TEC-004',
@@ -133,8 +215,12 @@ async function main() {
             description: 'Hora de servicio de instalación, montaje y conexionado de cámaras o sistemas de seguridad por técnico calificado.',
             category: 'LABOR',
             unitCost: 15.0000,
-            margin: 66.67,
-            salePrice: 25.0000,
+            marginCash: 50.00,
+            priceCash: 22.5000,
+            marginCredit: 66.67,
+            priceCredit: 25.0000,
+            marginPreferred: 30.00,
+            pricePreferred: 19.5000,
         },
         {
             sku: 'SRV-LEV-005',
@@ -142,8 +228,12 @@ async function main() {
             description: 'Visita técnica al sitio del cliente para tomar medidas, evaluar la topografía, definir puntos de cámaras y diseñar planos de canalización.',
             category: 'SERVICE',
             unitCost: 0.0000,
-            margin: 0.00,
-            salePrice: 35.0000,
+            marginCash: 0.00,
+            priceCash: 30.0000,
+            marginCredit: 0.00,
+            priceCredit: 35.0000,
+            marginPreferred: 0.00,
+            pricePreferred: 25.0000,
         },
     ];
     for (const prod of products) {
@@ -153,13 +243,36 @@ async function main() {
                 name: prod.name,
                 description: prod.description,
                 unitCost: prod.unitCost,
-                margin: prod.margin,
-                salePrice: prod.salePrice,
+                marginCash: prod.marginCash,
+                priceCash: prod.priceCash,
+                marginCredit: prod.marginCredit,
+                priceCredit: prod.priceCredit,
+                marginPreferred: prod.marginPreferred,
+                pricePreferred: prod.pricePreferred,
             },
             create: prod,
         });
     }
     console.log('Productos de catálogo creados.');
+    await prisma.systemConfig.upsert({
+        where: { id: 'global' },
+        update: {
+            primaryColor: '#7367F0',
+            accentColor: '#82868B',
+        },
+        create: {
+            id: 'global',
+            appName: 'SecurityNet S.A.',
+            phone: '+56912345678',
+            email: 'contacto@securitynet.cl',
+            address: 'Av. Providencia 1254, Oficina 402, Santiago, Chile',
+            website: 'www.securitynet.cl',
+            primaryColor: '#7367F0',
+            accentColor: '#82868B',
+            defaultTheme: 'dark',
+        },
+    });
+    console.log('Configuración global de sistema creada.');
     console.log('Seeding Completado con Éxito!');
 }
 main()

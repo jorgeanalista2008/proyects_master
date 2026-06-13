@@ -18,10 +18,9 @@ const technicians_service_1 = require("./technicians.service");
 const create_technician_dto_1 = require("./dto/create-technician.dto");
 const update_technician_dto_1 = require("./dto/update-technician.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
-const roles_guard_1 = require("../auth/guards/roles.guard");
-const roles_decorator_1 = require("../auth/decorators/roles.decorator");
+const permissions_guard_1 = require("../auth/guards/permissions.guard");
+const permissions_decorator_1 = require("../auth/decorators/permissions.decorator");
 const get_user_decorator_1 = require("../auth/decorators/get-user.decorator");
-const client_1 = require("@prisma/client");
 const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 let TechniciansController = class TechniciansController {
@@ -36,13 +35,13 @@ let TechniciansController = class TechniciansController {
         return this.techniciansService.findAll();
     }
     findOne(id, reqUserId, reqUserRole) {
-        if (reqUserRole !== client_1.RoleName.ADMIN && reqUserRole !== client_1.RoleName.SELLER && reqUserId !== id) {
+        if (reqUserRole !== 'ADMIN' && reqUserRole !== 'SELLER' && reqUserId !== id) {
             throw new common_1.ForbiddenException('No tiene permisos para ver este perfil.');
         }
         return this.techniciansService.findOne(id);
     }
     update(id, updateTechnicianDto, reqUserId, reqUserRole) {
-        if (reqUserRole !== client_1.RoleName.ADMIN && reqUserRole !== client_1.RoleName.SELLER && reqUserId !== id) {
+        if (reqUserRole !== 'ADMIN' && reqUserRole !== 'SELLER' && reqUserId !== id) {
             throw new common_1.ForbiddenException('No tiene permisos para modificar este perfil.');
         }
         return this.techniciansService.update(id, updateTechnicianDto);
@@ -51,7 +50,7 @@ let TechniciansController = class TechniciansController {
         return this.techniciansService.remove(id);
     }
     uploadPhoto(id, file, reqUserId, reqUserRole) {
-        if (reqUserRole !== client_1.RoleName.ADMIN && reqUserRole !== client_1.RoleName.SELLER && reqUserId !== id) {
+        if (reqUserRole !== 'ADMIN' && reqUserRole !== 'SELLER' && reqUserId !== id) {
             throw new common_1.ForbiddenException('No tiene permisos para cambiar la foto de este perfil.');
         }
         return this.techniciansService.uploadPhoto(id, file);
@@ -60,8 +59,7 @@ let TechniciansController = class TechniciansController {
 exports.TechniciansController = TechniciansController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.SELLER),
+    (0, permissions_decorator_1.Permissions)('technicians:write'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_technician_dto_1.CreateTechnicianDto]),
@@ -69,14 +67,14 @@ __decorate([
 ], TechniciansController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.SELLER),
+    (0, permissions_decorator_1.Permissions)('technicians:read'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], TechniciansController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
+    (0, permissions_decorator_1.Permissions)('technicians:read'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, get_user_decorator_1.GetUser)('sub')),
     __param(2, (0, get_user_decorator_1.GetUser)('role')),
@@ -86,6 +84,7 @@ __decorate([
 ], TechniciansController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
+    (0, permissions_decorator_1.Permissions)('technicians:write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, get_user_decorator_1.GetUser)('sub')),
@@ -96,8 +95,7 @@ __decorate([
 ], TechniciansController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.SELLER),
+    (0, permissions_decorator_1.Permissions)('technicians:write'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -105,6 +103,7 @@ __decorate([
 ], TechniciansController.prototype, "remove", null);
 __decorate([
     (0, common_1.Post)(':id/photo'),
+    (0, permissions_decorator_1.Permissions)('technicians:write'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.UploadedFile)()),
@@ -117,7 +116,7 @@ __decorate([
 exports.TechniciansController = TechniciansController = __decorate([
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, common_1.Controller)('technicians'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [technicians_service_1.TechniciansService])
 ], TechniciansController);
 //# sourceMappingURL=technicians.controller.js.map

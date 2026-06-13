@@ -46,8 +46,17 @@ let QuotesService = class QuotesService {
             }
             const quantity = new client_1.Prisma.Decimal(item.quantity);
             const unitCost = product.unitCost;
-            const margin = product.margin;
-            const unitPrice = product.salePrice;
+            const priceType = item.priceType || 'CASH';
+            let margin = product.marginCash;
+            let unitPrice = product.priceCash;
+            if (priceType === 'CREDIT') {
+                margin = product.marginCredit;
+                unitPrice = product.priceCredit;
+            }
+            else if (priceType === 'PREFERRED') {
+                margin = product.marginPreferred;
+                unitPrice = product.pricePreferred;
+            }
             const itemSubtotal = quantity.mul(unitPrice);
             const itemCost = quantity.mul(unitCost);
             subtotal = subtotal.add(itemSubtotal);
@@ -58,6 +67,7 @@ let QuotesService = class QuotesService {
                 unitCost,
                 unitPrice,
                 margin,
+                priceType,
                 subtotal: itemSubtotal,
             });
         }
@@ -93,6 +103,7 @@ let QuotesService = class QuotesService {
                             unitPrice: i.unitPrice,
                             margin: i.margin,
                             subtotal: i.subtotal,
+                            priceType: i.priceType,
                         })),
                     },
                 },
@@ -203,8 +214,17 @@ let QuotesService = class QuotesService {
                 }
                 const quantity = new client_1.Prisma.Decimal(item.quantity);
                 const unitCost = product.unitCost;
-                const margin = product.margin;
-                const unitPrice = product.salePrice;
+                const priceType = item.priceType || 'CASH';
+                let margin = product.marginCash;
+                let unitPrice = product.priceCash;
+                if (priceType === 'CREDIT') {
+                    margin = product.marginCredit;
+                    unitPrice = product.priceCredit;
+                }
+                else if (priceType === 'PREFERRED') {
+                    margin = product.marginPreferred;
+                    unitPrice = product.pricePreferred;
+                }
                 const itemSubtotal = quantity.mul(unitPrice);
                 const itemCost = quantity.mul(unitCost);
                 subtotal = subtotal.add(itemSubtotal);
@@ -215,6 +235,7 @@ let QuotesService = class QuotesService {
                     unitCost,
                     unitPrice,
                     margin,
+                    priceType,
                     subtotal: itemSubtotal,
                 });
             }
@@ -248,6 +269,7 @@ let QuotesService = class QuotesService {
                                 unitPrice: i.unitPrice,
                                 margin: i.margin,
                                 subtotal: i.subtotal,
+                                priceType: i.priceType,
                             })),
                         },
                     },

@@ -11,6 +11,7 @@ export declare class AuthController {
             firstName: any;
             lastName: any;
             role: any;
+            permissions: any;
         };
     }>;
 }

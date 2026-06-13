@@ -71,6 +71,7 @@ export class UsersService {
         isActive: true,
         role: {
           select: {
+            id: true,
             name: true,
           },
         },
@@ -91,6 +92,7 @@ export class UsersService {
         isActive: true,
         role: {
           select: {
+            id: true,
             name: true,
             description: true,
           },
@@ -110,7 +112,15 @@ export class UsersService {
     return this.prisma.user.findUnique({
       where: { email },
       include: {
-        role: true,
+        role: {
+          include: {
+            permissions: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -148,6 +158,7 @@ export class UsersService {
         isActive: true,
         role: {
           select: {
+            id: true,
             name: true,
           },
         },

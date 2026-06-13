@@ -41,7 +41,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "phone", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'SELLER', description: 'Nombre del rol', enum: ['ADMIN', 'SELLER', 'TECHNICIAN', 'CLIENT'] }),
+    (0, swagger_1.ApiProperty)({ example: 'SELLER', description: 'Nombre del rol' }),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "roleName", void 0);
 //# sourceMappingURL=create-user.dto.js.map

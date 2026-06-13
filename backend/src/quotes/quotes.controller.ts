@@ -13,22 +13,19 @@ import { QuotesService } from './quotes.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { Permissions } from '../auth/decorators/permissions.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
-import { RoleName } from '@prisma/client';
-
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiBearerAuth('JWT-auth')
 @Controller('quotes')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class QuotesController {
   constructor(private readonly quotesService: QuotesService) {}
 
   @Post()
-  @UseGuards(RolesGuard)
-  @Roles(RoleName.ADMIN, RoleName.SELLER)
+  @Permissions('quotes:write')
   create(
     @Body() createQuoteDto: CreateQuoteDto,
     @GetUser('sub') creatorId: string,
@@ -37,18 +34,19 @@ export class QuotesController {
   }
 
   @Get()
+  @Permissions('quotes:read')
   findAll(@Query('projectId') projectId?: string) {
     return this.quotesService.findAll(projectId);
   }
 
   @Get(':id')
+  @Permissions('quotes:read')
   findOne(@Param('id') id: string) {
     return this.quotesService.findOne(id);
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard)
-  @Roles(RoleName.ADMIN, RoleName.SELLER)
+  @Permissions('quotes:write')
   update(
     @Param('id') id: string,
     @Body() updateQuoteDto: UpdateQuoteDto,
@@ -57,8 +55,7 @@ export class QuotesController {
   }
 
   @Delete(':id')
-  @UseGuards(RolesGuard)
-  @Roles(RoleName.ADMIN, RoleName.SELLER)
+  @Permissions('quotes:write')
   remove(@Param('id') id: string) {
     return this.quotesService.remove(id);
   }

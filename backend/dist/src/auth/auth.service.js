@@ -75,12 +75,14 @@ let AuthService = class AuthService {
         if (!user) {
             throw new common_1.UnauthorizedException('Credenciales inválidas.');
         }
+        const permissions = user.role?.permissions?.map((rp) => rp.permission.name) || [];
         const payload = {
             sub: user.id,
             email: user.email,
             role: user.role.name,
             firstName: user.firstName,
             lastName: user.lastName,
+            permissions,
         };
         return {
             access_token: this.jwtService.sign(payload),
@@ -90,6 +92,7 @@ let AuthService = class AuthService {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 role: user.role.name,
+                permissions,
             },
         };
     }

@@ -1,16 +1,14 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RoleName } from '@prisma/client';
-
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { Permissions } from '../auth/decorators/permissions.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiBearerAuth('JWT-auth')
 @Controller('analytics')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(RoleName.ADMIN, RoleName.SELLER)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Permissions('analytics:read')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
