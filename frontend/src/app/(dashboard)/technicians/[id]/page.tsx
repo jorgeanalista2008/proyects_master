@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, getApiUrl } from "@/lib/api";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -108,7 +108,7 @@ export default function TechnicianForm({ params }: PageProps) {
 
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-    const res = await fetch(`http://localhost:3000/api/technicians/${techId}/photo`, {
+    const res = await fetch(getApiUrl(`/technicians/${techId}/photo`), {
       method: "POST",
       headers: {
         ...(token ? { "Authorization": `Bearer ${token}` } : {})
@@ -267,7 +267,7 @@ export default function TechnicianForm({ params }: PageProps) {
                 <img src={previewUrl} alt="Previsualización" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : photoId ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={`http://localhost:3000/api/images/${photoId}`} alt="Técnico" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={getApiUrl(`/images/${photoId}`)} alt="Técnico" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
                 "👨‍🔧"
               )}

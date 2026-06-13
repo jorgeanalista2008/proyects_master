@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { api } from "@/lib/api";
+import { api, getApiUrl } from "@/lib/api";
 
 interface SystemConfig {
   id: string;
@@ -124,7 +124,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
     formData.append("file", file);
     const token = localStorage.getItem("token");
     
-    const response = await fetch("http://localhost:3000/api/settings/logo", {
+    const response = await fetch(getApiUrl("/settings/logo"), {
       method: "POST",
       headers: {
         ...(token ? { "Authorization": `Bearer ${token}` } : {})

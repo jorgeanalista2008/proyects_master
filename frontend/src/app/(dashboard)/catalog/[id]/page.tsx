@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, getApiUrl } from "@/lib/api";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -102,7 +102,7 @@ export default function CatalogItemForm({ params }: PageProps) {
 
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-    const response = await fetch(`http://localhost:3000/api/images/product/${productId}`, {
+    const response = await fetch(getApiUrl(`/images/product/${productId}`), {
       method: "POST",
       headers: {
         ...(token ? { "Authorization": `Bearer ${token}` } : {})
@@ -442,7 +442,7 @@ export default function CatalogItemForm({ params }: PageProps) {
               }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={imagePreview || `http://localhost:3000/api/images/${imageId}`}
+                  src={imagePreview || getApiUrl(`/images/${imageId}`)}
                   alt="Vista Previa"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />

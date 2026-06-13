@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, getApiUrl } from "@/lib/api";
 import { 
   ArrowLeft, 
   Package, 
@@ -224,7 +224,7 @@ export default function NewQuoteBuilder({ params }: PageProps) {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
       try {
-        const response = await fetch(`http://localhost:3000/api/images/project/${projectId}`, {
+        const response = await fetch(getApiUrl(`/images/project/${projectId}`), {
           method: "POST",
           headers: {
             ...(token ? { "Authorization": `Bearer ${token}` } : {})
@@ -290,8 +290,7 @@ export default function NewQuoteBuilder({ params }: PageProps) {
   };
 
   const getImageUrl = (imageId: string) => {
-    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-    return `${base}/images/${imageId}`;
+    return getApiUrl(`/images/${imageId}`);
   };
 
   const formattedValue = (val: number) => {

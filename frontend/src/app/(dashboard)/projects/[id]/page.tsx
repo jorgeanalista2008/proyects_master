@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, getApiUrl } from "@/lib/api";
 
 interface Client {
   id: string;
@@ -188,7 +188,7 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/images/project/${project.id}`, {
+      const response = await fetch(getApiUrl(`/images/project/${project.id}`), {
         method: "POST",
         headers: {
           ...(token ? { "Authorization": `Bearer ${token}` } : {})
@@ -505,7 +505,7 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
                   }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={`http://localhost:3000/api/images/${img.id}`}
+                      src={getApiUrl(`/images/${img.id}`)}
                       alt="Levantamiento"
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />

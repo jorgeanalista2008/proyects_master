@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useConfig } from "@/context/ConfigContext";
 import { useAuth } from "@/hooks/useAuth";
+import { getApiUrl } from "@/lib/api";
 
 const PRESET_PALETTES = [
   { name: "Vuexy Corporate (Recomendado)", primary: "#7367F0", accent: "#82868B" },
@@ -48,8 +49,7 @@ export default function SettingsPage() {
       setDefaultTheme(config.defaultTheme || "dark");
 
       if (config.logoId) {
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-        setLogoPreviewUrl(`${base}/images/${config.logoId}`);
+        setLogoPreviewUrl(getApiUrl(`/images/${config.logoId}`));
       }
     }
   }, [config]);
@@ -88,8 +88,7 @@ export default function SettingsPage() {
       const newLogoId = await uploadLogo(logoFile);
       setLogoFile(null);
       
-      const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-      setLogoPreviewUrl(`${base}/images/${newLogoId}`);
+      setLogoPreviewUrl(getApiUrl(`/images/${newLogoId}`));
       
       setSuccess("Logo corporativo actualizado con éxito.");
     } catch (err: any) {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, getApiUrl } from "@/lib/api";
 import { useConfig } from "@/context/ConfigContext";
 import { 
   ArrowLeft, 
@@ -269,8 +269,7 @@ export default function QuoteDetailView({ params }: PageProps) {
   const serviceSubtotal = serviceItems.reduce((acc, item) => acc + Number(item.unitPrice) * Number(item.quantity), 0);
 
   const getImageUrl = (imgId: string) => {
-    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-    return `${base}/images/${imgId}`;
+    return getApiUrl(`/images/${imgId}`);
   };
 
   const projectImagesList = project.surveyImages || project.images || [];
@@ -541,7 +540,7 @@ export default function QuoteDetailView({ params }: PageProps) {
                       const token = localStorage.getItem("token");
                       try {
                         setUpdating(true);
-                        const res = await fetch(`http://localhost:3000/api/images/project/${project.id}`, {
+                        const res = await fetch(getApiUrl(`/images/project/${project.id}`), {
                           method: "POST",
                           headers: {
                             ...(token ? { "Authorization": `Bearer ${token}` } : {})

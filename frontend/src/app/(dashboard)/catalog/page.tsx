@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, getApiUrl } from "@/lib/api";
 
 interface CatalogItem {
   id: string;
@@ -180,7 +180,7 @@ export default function CatalogPage() {
                     {item.images && item.images.length > 0 ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
-                        src={`http://localhost:3000/api/images/${item.images[0].id}`}
+                        src={getApiUrl(`/images/${item.images[0].id}`)}
                         alt={item.name}
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />
