@@ -1,9 +1,9 @@
-// d:\github\proyects_master\frontend\src\app\(auth)\login\page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { Shield, Key, AlertCircle, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const { login, user, loading } = useAuth();
@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // If already logged in, redirect to dashboard
   useEffect(() => {
     if (!loading && user) {
       router.push("/");
@@ -40,75 +39,47 @@ export default function LoginPage() {
     }
   };
 
-  // Render a full-page loading skeleton if initializing the auth state
   if (loading) {
     return (
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        background: "hsl(var(--bg-primary))"
-      }}>
-        <div className="spinner" style={{ width: "3rem", height: "3rem", borderWidth: "3px" }} />
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
       </div>
     );
   }
 
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: "100vh",
-      padding: "1.5rem",
-      position: "relative"
-    }} className="fade-in">
+    <div className="flex items-center justify-center min-h-screen bg-slate-950 relative overflow-hidden px-4">
+      {/* Sutil gradiente de fondo */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
       
-      <div className="glass-card" style={{
-        width: "100%",
-        maxWidth: "450px",
-        zIndex: 1,
-        position: "relative"
-      }}>
-        <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-          <h1 className="title-primary gradient-text">Iniciar Sesión</h1>
-          <p className="subtitle-secondary" style={{ marginBottom: 0 }}>
-            Ingresa tus credenciales para acceder al panel
+      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-2xl relative z-10">
+        <div className="flex flex-col items-center mb-8 text-center">
+          <div className="w-12 h-12 bg-amber-500/10 rounded-lg flex items-center justify-center mb-4 border border-amber-500/20">
+            <Shield className="w-6 h-6 text-amber-500" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Acceso al Panel</h1>
+          <p className="text-sm text-slate-400 mt-2">
+            Ingresa tus credenciales para administrar proyectos
           </p>
         </div>
 
         {errorMsg && (
-          <div style={{
-            background: "hsla(0, 84.2%, 60.2%, 0.15)",
-            border: "1px solid hsl(var(--danger))",
-            color: "#ff8888",
-            padding: "0.875rem 1.25rem",
-            borderRadius: "var(--radius-md)",
-            fontSize: "0.875rem",
-            marginBottom: "1.5rem",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem"
-          }}>
-            <svg style={{ flexShrink: 0 }} width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-              <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
-            </svg>
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3.5 rounded-lg text-sm mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <label className="input-label" htmlFor="email">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2" htmlFor="email">
               Correo Electrónico
             </label>
             <input
               id="email"
               type="email"
               placeholder="nombre@ejemplo.com"
-              className="input-field"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2.5 px-4 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-colors text-sm"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isSubmitting}
@@ -117,17 +88,12 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="input-group" style={{ marginBottom: "2rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <label className="input-label" htmlFor="password">
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400" htmlFor="password">
                 Contraseña
               </label>
-              <a href="#" style={{
-                fontSize: "0.75rem",
-                color: "hsl(var(--primary))",
-                transition: "color var(--transition-fast)"
-              }} onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--primary-hover))"}
-                 onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--primary))"}>
+              <a href="#" className="text-xs text-amber-500 hover:text-amber-400 transition-colors">
                 ¿Olvidaste tu contraseña?
               </a>
             </div>
@@ -135,7 +101,7 @@ export default function LoginPage() {
               id="password"
               type="password"
               placeholder="••••••••"
-              className="input-field"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2.5 px-4 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-colors text-sm"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isSubmitting}
@@ -146,36 +112,25 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="btn btn-primary"
+            className="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 text-slate-950 font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
             disabled={isSubmitting}
-            style={{ width: "100%" }}
           >
             {isSubmitting ? (
               <>
-                <span className="spinner" />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Autenticando...</span>
               </>
             ) : (
-              <span>Ingresar</span>
+              <>
+                <Key className="w-4 h-4" />
+                <span>Ingresar</span>
+              </>
             )}
           </button>
         </form>
 
-        <div style={{
-          marginTop: "2rem",
-          textAlign: "center",
-          fontSize: "0.875rem",
-          color: "hsl(var(--text-secondary))"
-        }}>
-          ¿No tienes una cuenta?{" "}
-          <a href="#" style={{
-            color: "hsl(var(--primary))",
-            fontWeight: "500",
-            transition: "color var(--transition-fast)"
-          }} onMouseEnter={(e) => e.currentTarget.style.color = "hsl(var(--primary-hover))"}
-             onMouseLeave={(e) => e.currentTarget.style.color = "hsl(var(--primary))"}>
-            Regístrate
-          </a>
+        <div className="mt-8 pt-6 border-t border-slate-800/60 text-center text-xs text-slate-500">
+          ¿Problemas para acceder? Contacta al administrador del sistema.
         </div>
       </div>
     </div>

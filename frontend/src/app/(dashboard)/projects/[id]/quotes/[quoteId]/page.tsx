@@ -1,10 +1,19 @@
-// d:\github\proyects_master\frontend\src\app\(dashboard)\projects\[id]\quotes\[quoteId]\page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useConfig } from "@/context/ConfigContext";
+import { 
+  ArrowLeft, 
+  Printer, 
+  CheckCircle2, 
+  XCircle, 
+  Loader2, 
+  FileText,
+  UploadCloud,
+  Check
+} from "lucide-react";
 
 interface Client {
   name: string;
@@ -176,9 +185,6 @@ export default function QuoteDetailView({ params }: PageProps) {
           setContactWhatsApp(sysConfig.phone);
           setContactPhones(sysConfig.phone);
         }
-        if (sysConfig.appName) {
-          // Can be customized
-        }
       }
     }
   }, [quote, project, sysConfig]);
@@ -218,18 +224,21 @@ export default function QuoteDetailView({ params }: PageProps) {
 
   if (fetching) {
     return (
-      <div className="loader-container">
-        <div className="spinner" style={{ width: "2.5rem", height: "2.5rem" }} />
-        <p>Cargando presupuesto...</p>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-2" />
+        <p className="text-sm font-medium">Cargando presupuesto...</p>
       </div>
     );
   }
 
   if (!quote || !project) {
     return (
-      <div className="glass-card" style={{ textAlign: "center", padding: "4rem" }}>
-        <h3>Presupuesto no encontrado</h3>
-        <Link href={`/projects/${projectId}`} className="btn btn-primary" style={{ margin: "1.5rem auto 0" }}>
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center max-w-md mx-auto space-y-4 mt-6">
+        <h3 className="text-slate-100 font-bold text-lg">Presupuesto no encontrado</h3>
+        <Link 
+          href={`/projects/${projectId}`} 
+          className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm inline-block transition-colors"
+        >
           Volver al Proyecto
         </Link>
       </div>
@@ -267,7 +276,7 @@ export default function QuoteDetailView({ params }: PageProps) {
   const projectImagesList = project.surveyImages || project.images || [];
 
   return (
-    <div className="fade-in">
+    <div className="space-y-6">
       <style dangerouslySetInnerHTML={{ __html: `
         .print-invoice-wrapper {
           background: white;
@@ -371,12 +380,9 @@ export default function QuoteDetailView({ params }: PageProps) {
           padding-bottom: 2px;
         }
 
-        .control-panel {
-          background: hsla(var(--bg-secondary), 0.3);
-          border: 1px solid hsl(var(--border-glass));
-          border-radius: var(--radius-lg);
-          padding: 1.5rem;
-          margin-bottom: 2rem;
+        .double-line-bottom {
+          border-bottom: 3.5px double #000;
+          padding-bottom: 2px;
         }
 
         @media print {
@@ -418,27 +424,23 @@ export default function QuoteDetailView({ params }: PageProps) {
       ` }} />
 
       {/* Control panel & print options (Hidden on Print) */}
-      <div className="no-print control-panel">
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "1rem"
-        }}>
-          <Link href={`/projects/${projectId}`} style={{
-            color: "hsl(var(--text-secondary))",
-            fontSize: "0.9rem",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem"
-          }}>
-            ⬅️ Volver al Proyecto
+      <div className="no-print bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <Link 
+            href={`/projects/${projectId}`} 
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-100 transition-colors uppercase tracking-wider"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Volver al Proyecto</span>
           </Link>
 
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <button onClick={handlePrint} className="btn btn-secondary btn-sm" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
-              🖨️ Imprimir / Guardar PDF
+          <div className="flex gap-3 flex-wrap w-full sm:w-auto">
+            <button 
+              onClick={handlePrint} 
+              className="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 font-semibold px-4 py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Imprimir / Guardar PDF</span>
             </button>
 
             {quote.status === "PENDING" && (
@@ -446,16 +448,18 @@ export default function QuoteDetailView({ params }: PageProps) {
                 <button
                   onClick={() => handleUpdateStatus("APPROVED")}
                   disabled={updating}
-                  className="btn btn-success btn-sm"
+                  className="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5"
                 >
-                  ✓ Aprobar Presupuesto
+                  <Check className="w-4 h-4" />
+                  <span>Aprobar Presupuesto</span>
                 </button>
                 <button
                   onClick={() => handleUpdateStatus("REJECTED")}
                   disabled={updating}
-                  className="btn btn-danger btn-sm"
+                  className="flex-1 sm:flex-none bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold px-4 py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5"
                 >
-                  ✕ Rechazar
+                  <XCircle className="w-4 h-4" />
+                  <span>Rechazar</span>
                 </button>
               </>
             )}
@@ -463,57 +467,52 @@ export default function QuoteDetailView({ params }: PageProps) {
         </div>
 
         {/* Configuration checks for layout adjustments */}
-        <div style={{
-          marginTop: "1.5rem",
-          paddingTop: "1.25rem",
-          borderTop: "1px solid hsl(var(--border-glass))",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "1.5rem"
-        }}>
-          <div>
-            <h4 style={{ fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.75rem" }}>
+        <div className="pt-4 border-t border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wide">
               Ajustes de Impresión / Salto de Página
             </h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.85rem" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+            <div className="flex flex-col gap-2.5 text-xs text-slate-400 font-medium">
+              <label className="flex items-center gap-2 cursor-pointer hover:text-slate-200 transition-colors">
                 <input
                   type="checkbox"
                   checked={breakBeforeFitting}
                   onChange={(e) => setBreakBeforeFitting(e.target.checked)}
+                  className="rounded bg-slate-950 border-slate-850 text-amber-500 focus:ring-0 w-4 h-4"
                 />
-                Forzar salto de página antes de &quot;Empotramiento&quot;
+                <span>Forzar salto de página antes de &quot;Empotramiento&quot;</span>
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+              <label className="flex items-center gap-2 cursor-pointer hover:text-slate-200 transition-colors">
                 <input
                   type="checkbox"
                   checked={breakBeforeService}
                   onChange={(e) => setBreakBeforeService(e.target.checked)}
+                  className="rounded bg-slate-950 border-slate-850 text-amber-500 focus:ring-0 w-4 h-4"
                 />
-                Forzar salto de página antes de &quot;Servicio Técnico&quot;
+                <span>Forzar salto de página antes de &quot;Servicio Técnico&quot;</span>
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+              <label className="flex items-center gap-2 cursor-pointer hover:text-slate-200 transition-colors">
                 <input
                   type="checkbox"
                   checked={breakBeforeTotals}
                   onChange={(e) => setBreakBeforeTotals(e.target.checked)}
+                  className="rounded bg-slate-950 border-slate-850 text-amber-500 focus:ring-0 w-4 h-4"
                 />
-                Forzar salto de página antes del plano y totales
+                <span>Forzar salto de página antes del plano y totales</span>
               </label>
             </div>
           </div>
 
-          <div>
-            <h4 style={{ fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.75rem" }}>
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wide">
               Selección de Croquis o Plano
             </h4>
             {projectImagesList.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div className="flex flex-col gap-2">
                 <select
                   value={selectedSurveyImageId || ""}
                   onChange={(e) => setSelectedSurveyImageId(e.target.value)}
-                  className="input-field"
-                  style={{ fontSize: "0.85rem", padding: "0.4rem" }}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-300 focus:outline-none focus:border-amber-500 text-xs"
                 >
                   {projectImagesList.map((img) => (
                     <option key={img.id} value={img.id}>
@@ -521,18 +520,19 @@ export default function QuoteDetailView({ params }: PageProps) {
                     </option>
                   ))}
                 </select>
-                <p style={{ fontSize: "0.75rem", color: "hsl(var(--text-muted))", margin: 0 }}>
+                <p className="text-[10px] text-slate-500 font-medium">
                   Esta foto se imprimirá en el área de croquis del presupuesto.
                 </p>
               </div>
             ) : (
-              <div style={{ fontSize: "0.85rem" }}>
-                <p style={{ color: "hsl(var(--text-muted))", margin: "0 0 0.5rem 0" }}>
+              <div className="space-y-2 text-xs">
+                <p className="text-slate-400 font-medium">
                   No hay croquis subidos para este proyecto. Puedes subir uno directamente:
                 </p>
                 <input
                   type="file"
                   accept="image/*"
+                  className="text-xs text-slate-400 file:bg-slate-850 file:border-0 file:text-slate-200 file:px-3 file:py-1 file:rounded-md file:mr-3 cursor-pointer"
                   onChange={async (e) => {
                     if (e.target.files && e.target.files[0]) {
                       const file = e.target.files[0];
@@ -570,27 +570,13 @@ export default function QuoteDetailView({ params }: PageProps) {
       </div>
 
       {error && (
-        <div className="no-print" style={{
-          background: "hsla(0, 84.2%, 60.2%, 0.15)",
-          border: "1px solid hsl(var(--danger))",
-          color: "#ff8888",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
+        <div className="no-print bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-lg text-sm">
           ⚠️ {error}
         </div>
       )}
 
       {success && (
-        <div className="no-print" style={{
-          background: "hsla(142.1, 70.6%, 45.3%, 0.15)",
-          border: "1px solid hsl(var(--success))",
-          color: "#a3e635",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
+        <div className="no-print bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-lg text-sm">
           ✓ {success}
         </div>
       )}

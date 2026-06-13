@@ -1,10 +1,24 @@
-// d:\github\proyects_master\frontend\src\app\(dashboard)\projects\[id]\quotes\new\page.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { 
+  ArrowLeft, 
+  Package, 
+  Image as ImageIcon, 
+  UploadCloud, 
+  Trash2, 
+  DollarSign, 
+  Loader2, 
+  Plus, 
+  Search,
+  AlertTriangle,
+  CheckCircle,
+  Calendar,
+  FileText
+} from "lucide-react";
 
 interface CatalogItem {
   id: string;
@@ -57,14 +71,14 @@ interface PageProps {
 }
 
 const CATEGORIES = [
-  { key: "ALL", label: "📋 Todo" },
-  { key: "CAMERA", label: "📹 Cámaras" },
-  { key: "DVR_NVR", label: "💾 DVR / NVR" },
-  { key: "CABLE", label: "🔌 Cableado" },
-  { key: "TUBING", label: "⚙️ Canalización" },
-  { key: "ACCESSORY", label: "🛠️ Accesorios" },
-  { key: "LABOR", label: "👨‍🔧 Mano de Obra" },
-  { key: "SERVICE", label: "🚗 Servicios" }
+  { key: "ALL", label: "Todo" },
+  { key: "CAMERA", label: "Cámaras" },
+  { key: "DVR_NVR", label: "Grabadores" },
+  { key: "CABLE", label: "Cableado" },
+  { key: "TUBING", label: "Canalización" },
+  { key: "ACCESSORY", label: "Accesorios" },
+  { key: "LABOR", label: "Mano de Obra" },
+  { key: "SERVICE", label: "Servicios" }
 ];
 
 export default function NewQuoteBuilder({ params }: PageProps) {
@@ -175,7 +189,7 @@ export default function NewQuoteBuilder({ params }: PageProps) {
       ]);
     }
     setSuccess(`Agregado: ${item.name}`);
-    setTimeout(() => setSuccess(""), 2000);
+    setTimeout(() => setSuccess(""), 1500);
   };
 
   const removeItemFromQuote = (index: number) => {
@@ -249,12 +263,6 @@ export default function NewQuoteBuilder({ params }: PageProps) {
     return Number(item.priceCash) || 0;
   };
 
-  const getActiveMargin = (item: QuoteItem) => {
-    if (item.priceType === "CREDIT") return Number(item.marginCredit) || 0;
-    if (item.priceType === "PREFERRED") return Number(item.marginPreferred) || 0;
-    return Number(item.marginCash) || 0;
-  };
-
   const subtotalUSD = selectedItems.reduce((acc, item) => acc + getActiveUnitPrice(item) * item.quantity, 0);
   const costUSD = selectedItems.reduce((acc, item) => acc + Number(item.unitCost) * item.quantity, 0);
 
@@ -268,11 +276,11 @@ export default function NewQuoteBuilder({ params }: PageProps) {
   const profit = taxableAmount - costTotal;
   const profitMarginPercent = taxableAmount > 0 ? (profit / taxableAmount) * 100 : 0;
 
-  // Margin categorization for gauge color
-  const getMarginClass = () => {
-    if (profitMarginPercent < 20) return "margin-danger";
-    if (profitMarginPercent < 35) return "margin-warning";
-    return "margin-success";
+  // Margin categorization for UI color
+  const getMarginBgClass = () => {
+    if (profitMarginPercent < 20) return "bg-red-500/10 border-red-500/30 text-red-400 shadow-md shadow-red-500/5";
+    if (profitMarginPercent < 35) return "bg-amber-500/10 border-amber-500/30 text-amber-500 shadow-md shadow-amber-500/5";
+    return "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-md shadow-emerald-500/5";
   };
 
   const getMarginText = () => {
@@ -340,143 +348,96 @@ export default function NewQuoteBuilder({ params }: PageProps) {
 
   if (fetching) {
     return (
-      <div className="loader-container">
-        <div className="spinner" style={{ width: "2.5rem", height: "2.5rem" }} />
-        <p>Cargando catálogo y levantamiento del proyecto...</p>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-2" />
+        <p className="text-sm font-medium">Cargando catálogo y levantamiento del proyecto...</p>
       </div>
     );
   }
 
   return (
-    <div className="fade-in">
+    <div className="space-y-6">
       {/* Header breadcrumb */}
-      <div style={{ marginBottom: "2rem" }}>
-        <Link href={`/projects/${projectId}`} style={{
-          color: "hsl(var(--text-secondary))",
-          fontSize: "0.9rem",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          marginBottom: "1rem"
-        }}>
-          ⬅️ Volver al Proyecto
+      <div>
+        <Link 
+          href={`/projects/${projectId}`} 
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-100 transition-colors uppercase tracking-wider mb-3"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Volver al Proyecto</span>
         </Link>
-        <h1 className="title-primary">Constructor de Cotizaciones</h1>
-        <p className="subtitle-secondary">
-          Proyecto: <strong style={{ color: "hsl(var(--primary))" }}>{project?.name}</strong> | Cliente: <strong>{project?.client?.name}</strong>
+        <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Constructor de Cotizaciones</h1>
+        <p className="text-xs text-slate-400 mt-1">
+          Proyecto: <span className="text-amber-500 font-bold">{project?.name}</span> | Cliente: <span className="font-semibold text-slate-300">{project?.client?.name}</span>
         </p>
       </div>
 
       {/* Status Toasts */}
       {error && (
-        <div style={{
-          background: "hsla(0, 84.2%, 60.2%, 0.15)",
-          border: "1px solid hsl(var(--danger))",
-          color: "#ff8888",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
-          ⚠️ {error}
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-lg text-sm flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div style={{
-          background: "hsla(142.1, 70.6%, 45.3%, 0.15)",
-          border: "1px solid hsl(var(--success))",
-          color: "#a3e635",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
-          ✓ {success}
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-lg text-sm flex items-start gap-3">
+          <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <span>{success}</span>
         </div>
       )}
 
       {/* Main Split-Panel Workspace */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1.25fr",
-        gap: "2rem",
-        alignItems: "start"
-      }}>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* ========================================== */}
         {/* LEFT PANEL: CATALOG & PHOTOS WORKSPACE      */}
         {/* ========================================== */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+        <div className="lg:col-span-6 space-y-6">
           {/* Tab Selector */}
-          <div style={{
-            display: "flex",
-            background: "hsla(var(--bg-secondary), 0.5)",
-            border: "1px solid hsl(var(--border-glass))",
-            borderRadius: "var(--radius-md)",
-            padding: "4px"
-          }}>
+          <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1">
             <button
               onClick={() => setLeftTab("catalog")}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                borderRadius: "var(--radius-sm)",
-                background: leftTab === "catalog" ? "hsl(var(--primary))" : "transparent",
-                color: leftTab === "catalog" ? "hsl(var(--bg-primary))" : "hsl(var(--text-secondary))",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all var(--transition-fast)"
-              }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${
+                leftTab === "catalog" 
+                  ? "bg-amber-500 text-slate-950 shadow" 
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
             >
-              📦 Catálogo de Equipos
+              <Package className="w-4 h-4" />
+              <span>Catálogo de Equipos</span>
             </button>
             <button
               onClick={() => setLeftTab("photos")}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                borderRadius: "var(--radius-sm)",
-                background: leftTab === "photos" ? "hsl(var(--primary))" : "transparent",
-                color: leftTab === "photos" ? "hsl(var(--bg-primary))" : "hsl(var(--text-secondary))",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all var(--transition-fast)"
-              }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${
+                leftTab === "photos" 
+                  ? "bg-amber-500 text-slate-950 shadow" 
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
             >
-              📷 Fotos de Levantamiento
+              <ImageIcon className="w-4 h-4" />
+              <span>Fotos de Levantamiento</span>
             </button>
           </div>
 
           {/* TAB CONTENT: CATALOG */}
           {leftTab === "catalog" && (
-            <div className="glass-card border-glow" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h2 style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0 }}>Catálogo de Equipos / Servicios</h2>
-                <span style={{ fontSize: "0.75rem", color: "hsl(var(--text-muted))" }}>{filteredCatalog.length} ítems</span>
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-sm font-bold text-slate-200">Catálogo de Equipos y Servicios</h2>
+                <span className="text-xs text-slate-500 font-medium">{filteredCatalog.length} ítems</span>
               </div>
 
               {/* Category selector row */}
-              <div style={{
-                display: "flex",
-                gap: "0.4rem",
-                overflowX: "auto",
-                paddingBottom: "0.5rem",
-                margin: "0.25rem 0",
-                scrollbarWidth: "thin"
-              }}>
+              <div className="flex gap-2 overflow-x-auto pb-2 border-b border-slate-800/60 scrollbar-thin">
                 {CATEGORIES.map((cat) => (
                   <button
                     key={cat.key}
                     onClick={() => setSelectedCategory(cat.key)}
-                    style={{
-                      padding: "0.4rem 0.8rem",
-                      borderRadius: "20px",
-                      fontSize: "0.75rem",
-                      whiteSpace: "nowrap",
-                      cursor: "pointer",
-                      background: selectedCategory === cat.key ? "hsla(var(--primary), 0.2)" : "hsla(0, 0%, 100%, 0.04)",
-                      border: `1px solid ${selectedCategory === cat.key ? "hsl(var(--primary))" : "hsl(var(--border-glass))"}`,
-                      color: selectedCategory === cat.key ? "hsl(var(--primary))" : "hsl(var(--text-secondary))",
-                      transition: "all var(--transition-fast)"
-                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors border ${
+                      selectedCategory === cat.key 
+                        ? "bg-amber-500/10 border-amber-500 text-amber-500" 
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
+                    }`}
                   >
                     {cat.label}
                   </button>
@@ -484,67 +445,46 @@ export default function NewQuoteBuilder({ params }: PageProps) {
               </div>
 
               {/* Search Bar */}
-              <input
-                type="text"
-                placeholder="Buscar SKU o nombre de artículo..."
-                className="input-field"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ marginBottom: "0.5rem" }}
-              />
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  placeholder="Buscar SKU o nombre de artículo..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 pl-9 pr-4 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 text-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
 
               {/* Catalog Scrollable Cards */}
-              <div style={{
-                maxHeight: "450px",
-                overflowY: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.75rem",
-                paddingRight: "0.25rem"
-              }}>
+              <div className="max-h-[420px] overflow-y-auto space-y-3 pr-1">
                 {filteredCatalog.length === 0 ? (
-                  <p style={{ color: "hsl(var(--text-muted))", textAlign: "center", padding: "3rem 0", fontSize: "0.85rem" }}>
+                  <p className="text-slate-500 text-center py-12 text-xs font-medium">
                     No se encontraron artículos que coincidan con la búsqueda.
                   </p>
                 ) : (
                   filteredCatalog.map((item) => (
                     <div
                       key={item.id}
-                      style={{
-                        background: "hsla(0, 0%, 100%, 0.02)",
-                        border: "1px solid hsl(var(--border-glass))",
-                        borderRadius: "var(--radius-sm)",
-                        padding: "0.75rem 1rem",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        transition: "all var(--transition-fast)"
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = "hsla(var(--primary), 0.4)";
-                        e.currentTarget.style.background = "hsla(var(--primary), 0.03)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = "hsl(var(--border-glass))";
-                        e.currentTarget.style.background = "hsla(0, 0%, 100%, 0.02)";
-                      }}
+                      className="bg-slate-950 border border-slate-800/80 hover:border-amber-500/40 rounded-lg p-3 flex justify-between items-center transition-all group"
                     >
-                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                        <span style={{ fontWeight: 600, fontSize: "0.9rem" }}>{item.name}</span>
-                        <span style={{ fontSize: "0.75rem", color: "hsl(var(--text-muted))" }}>
-                          SKU: <code style={{ color: "hsl(var(--accent))" }}>{item.sku}</code> | {item.category}
+                      <div className="space-y-1">
+                        <span className="block font-bold text-slate-200 text-xs group-hover:text-slate-100 transition-colors">
+                          {item.name}
+                        </span>
+                        <span className="block text-[10px] text-slate-500 font-medium">
+                          SKU: <code className="text-amber-500/80 font-mono">{item.sku}</code> | {item.category}
                         </span>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                        <span style={{ fontWeight: 700, color: "hsl(var(--primary))", fontSize: "0.95rem", fontFamily: "monospace" }}>
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono font-bold text-amber-500 text-xs">
                           {new Intl.NumberFormat("es-ES", { style: "currency", currency: "USD" }).format(item.priceCash)}
                         </span>
                         <button
                           onClick={() => addItemToQuote(item)}
-                          className="btn btn-primary btn-sm"
-                          style={{ padding: "0.3rem 0.75rem", fontSize: "0.75rem" }}
+                          className="bg-slate-900 border border-slate-800 hover:border-amber-500 hover:text-slate-950 hover:bg-amber-500 text-slate-300 font-bold px-3 py-1 rounded text-[10px] uppercase tracking-wider transition-all"
                         >
-                          ➕ Añadir
+                          Añadir
                         </button>
                       </div>
                     </div>
@@ -556,92 +496,62 @@ export default function NewQuoteBuilder({ params }: PageProps) {
 
           {/* TAB CONTENT: PHOTOS */}
           {leftTab === "photos" && (
-            <div className="glass-card border-glow" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h2 style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0 }}>Fotos de Levantamiento</h2>
-                <span style={{ fontSize: "0.75rem", color: "hsl(var(--text-muted))" }}>
-                  {(project?.images || []).length} fotos
-                </span>
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-sm font-bold text-slate-200">Fotos de Levantamiento Técnico</h2>
+                <span className="text-xs text-slate-500 font-medium">{(project?.images || []).length} fotos</span>
               </div>
 
               {/* Upload Dropzone */}
               <div
                 onClick={triggerFileInput}
-                style={{
-                  border: "2px dashed hsl(var(--border-glass))",
-                  borderRadius: "var(--radius-md)",
-                  padding: "1.75rem",
-                  textAlign: "center",
-                  cursor: "pointer",
-                  background: "hsla(0, 0%, 100%, 0.02)",
-                  transition: "all var(--transition-fast)"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "hsl(var(--primary))";
-                  e.currentTarget.style.background = "hsla(var(--primary), 0.03)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "hsl(var(--border-glass))";
-                  e.currentTarget.style.background = "hsla(0, 0%, 100%, 0.02)";
-                }}
+                className="border-2 border-dashed border-slate-800 hover:border-amber-500/50 bg-slate-950/40 hover:bg-amber-500/[0.02] rounded-lg p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center group"
               >
                 <input
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileChange}
                   accept="image/*"
-                  style={{ display: "none" }}
+                  className="hidden"
                 />
-                <span style={{ fontSize: "1.5rem", display: "block", marginBottom: "0.5rem" }}>
-                  {uploadingImage ? "⏳" : "📁"}
+                {uploadingImage ? (
+                  <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-2" />
+                ) : (
+                  <UploadCloud className="w-8 h-8 text-slate-500 group-hover:text-amber-500 transition-colors mb-2" />
+                )}
+                <span className="block text-xs font-bold text-slate-400 group-hover:text-slate-300 transition-colors">
+                  {uploadingImage ? "Subiendo archivo..." : "Haz clic para subir foto del levantamiento"}
                 </span>
-                <span style={{ fontSize: "0.8rem", fontWeight: 600, display: "block", color: "hsl(var(--text-secondary))" }}>
-                  {uploadingImage ? "Subiendo archivo..." : "Haz clic para subir foto del espacio"}
-                </span>
-                <span style={{ fontSize: "0.7rem", color: "hsl(var(--text-muted))" }}>
+                <span className="block text-[10px] text-slate-600 mt-1">
                   JPG, PNG o WEBP (Máx 5MB)
                 </span>
               </div>
 
               {/* Images Grid */}
-              <div style={{
-                maxHeight: "350px",
-                overflowY: "auto",
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "1rem",
-                paddingRight: "0.25rem"
-              }}>
+              <div className="max-h-[350px] overflow-y-auto grid grid-cols-2 gap-4 pr-1">
                 {(project?.images || []).length === 0 ? (
-                  <div style={{ gridColumn: "span 2", textAlign: "center", padding: "2rem", color: "hsl(var(--text-muted))" }}>
-                    No hay imágenes de levantamiento técnico cargadas en este proyecto.
+                  <div className="col-span-2 text-center py-12 text-xs text-slate-500 font-medium">
+                    No hay imágenes cargadas en este proyecto.
                   </div>
                 ) : (
                   (project?.images || []).map((img) => (
                     <div
                       key={img.id}
-                      style={{
-                        border: "1px solid hsl(var(--border-glass))",
-                        borderRadius: "var(--radius-sm)",
-                        overflow: "hidden",
-                        background: "hsla(var(--bg-secondary), 0.5)"
-                      }}
+                      className="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden flex flex-col"
                     >
-                      <div style={{ height: "110px", width: "100%", overflow: "hidden", position: "relative", background: "#000" }}>
+                      <div className="h-28 w-full overflow-hidden bg-slate-950 relative flex items-center justify-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={getImageUrl(img.id)}
                           alt={img.fileName}
-                          style={{ width: "100%", height: "100%", objectFit: "contain", transition: "transform var(--transition-normal)" }}
-                          onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.08)"}
-                          onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1.0)"}
+                          className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
                         />
                       </div>
-                      <div style={{ padding: "0.5rem", fontSize: "0.7rem", display: "flex", flexDirection: "column", gap: "2px" }}>
-                        <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "hsl(var(--text-primary))" }}>
+                      <div className="p-2 text-[10px] flex flex-col gap-0.5 border-t border-slate-800/60 bg-slate-900/60">
+                        <span className="font-bold text-slate-300 truncate" title={img.fileName}>
                           {img.fileName}
                         </span>
-                        <span style={{ color: "hsl(var(--text-muted))" }}>
+                        <span className="text-slate-500">
                           {new Date(img.createdAt).toLocaleDateString()}
                         </span>
                       </div>
@@ -656,140 +566,93 @@ export default function NewQuoteBuilder({ params }: PageProps) {
         {/* ========================================== */}
         {/* RIGHT PANEL: LIVE QUOTE SHEET               */}
         {/* ========================================== */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          {/* Main workspace sheet card */}
-          <div className="glass-card border-glow" style={{ padding: "2rem", background: "hsla(var(--bg-secondary), 0.35)" }}>
-            <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "1.25rem", borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "0.5rem" }}>
-              📄 Hoja de Cotización
+        <div className="lg:col-span-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6">
+            <h2 className="text-sm font-bold text-slate-200 border-b border-slate-800 pb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-amber-500" />
+              <span>Hoja de Presupuesto</span>
             </h2>
 
             {selectedItems.length === 0 ? (
-              <div style={{
-                textAlign: "center",
-                padding: "4rem 0",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "1rem"
-              }}>
-                <span style={{ fontSize: "2.5rem" }}>🛒</span>
-                <p style={{ color: "hsl(var(--text-muted))", maxWidth: "250px", fontSize: "0.85rem", lineHeight: 1.5 }}>
-                  Tu cotización está vacía. Selecciona la pestaña <strong>Catálogo</strong> y añade artículos.
+              <div className="text-center py-24 flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-600">
+                  <Package className="w-6 h-6" />
+                </div>
+                <p className="text-slate-500 text-xs max-w-xs leading-relaxed font-medium">
+                  Tu cotización está vacía. Añade elementos del catálogo para estructurar la cotización.
                 </p>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <div className="space-y-6">
                 {/* Table items list */}
-                <div style={{ maxHeight: "350px", overflowY: "auto", borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "1rem" }}>
-                  <table className="custom-table" style={{ fontSize: "0.85rem" }}>
+                <div className="max-h-[350px] overflow-y-auto border border-slate-800 rounded-lg overflow-hidden bg-slate-950">
+                  <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr>
-                        <th>Artículo</th>
-                        <th style={{ width: "115px" }}>Tarifa</th>
-                        <th style={{ width: "95px" }}>Cant.</th>
-                        <th>Subtotal ({currency})</th>
-                        <th style={{ textAlign: "right", width: "30px" }}>Quitar</th>
+                      <tr className="bg-slate-900 text-slate-400 font-bold border-b border-slate-800">
+                        <th className="p-3">Artículo</th>
+                        <th className="p-3 w-28">Tarifa</th>
+                        <th className="p-3 w-28">Cant.</th>
+                        <th className="p-3 text-right">Subtotal</th>
+                        <th className="p-3 text-center w-12">Quitar</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-slate-800/40">
                       {selectedItems.map((item, index) => {
                         const activePrice = getActiveUnitPrice(item);
                         const itemSubtotal = activePrice * item.quantity * exchangeRate;
                         return (
-                          <tr key={item.catalogItemId}>
-                            <td>
-                              <div style={{ display: "flex", flexDirection: "column" }}>
-                                <span style={{ fontWeight: 600 }}>{item.name}</span>
-                                <span style={{ fontSize: "0.7rem", color: "hsl(var(--text-muted))" }}>SKU: {item.sku}</span>
-                              </div>
+                          <tr key={item.catalogItemId} className="hover:bg-slate-900/20">
+                            <td className="p-3">
+                              <span className="block font-bold text-slate-200">{item.name}</span>
+                              <span className="block text-[9px] text-slate-500 mt-0.5">SKU: {item.sku}</span>
                             </td>
-                            <td>
+                            <td className="p-3">
                               <select
-                                className="input-field"
+                                className="w-full bg-slate-900 border border-slate-800 rounded py-1 px-1.5 text-slate-300 focus:outline-none focus:border-amber-500 text-[11px] cursor-pointer"
                                 value={item.priceType}
                                 onChange={(e) => updatePriceType(index, e.target.value as any)}
-                                style={{
-                                  padding: "2px 4px",
-                                  fontSize: "0.75rem",
-                                  marginBottom: 0,
-                                  cursor: "pointer",
-                                  height: "26px",
-                                  background: "hsla(0,0%,100%,0.04)"
-                                }}
                               >
                                 <option value="CASH">Contado</option>
                                 <option value="CREDIT">Crédito</option>
                                 <option value="PREFERRED">Preferente</option>
                               </select>
                             </td>
-                            <td>
-                              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                            <td className="p-3">
+                              <div className="flex items-center gap-1.5">
                                 <button
                                   type="button"
                                   onClick={() => updateQuantity(index, item.quantity - 1)}
-                                  style={{
-                                    width: "24px",
-                                    height: "24px",
-                                    borderRadius: "4px",
-                                    background: "hsla(0,0%,100%,0.05)",
-                                    border: "1px solid hsl(var(--border-glass))",
-                                    cursor: "pointer",
-                                    color: "hsl(var(--text-primary))"
-                                  }}
+                                  className="w-5 h-5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 font-bold transition-all"
                                 >
                                   -
                                 </button>
                                 <input
                                   type="number"
                                   min="1"
-                                  className="input-field"
+                                  className="w-8 bg-slate-900 border border-slate-800 rounded py-0.5 text-center text-slate-200 focus:outline-none text-[11px]"
                                   value={item.quantity}
                                   onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 1)}
-                                  style={{
-                                    width: "35px",
-                                    padding: "2px 4px",
-                                    textAlign: "center",
-                                    fontSize: "0.8rem",
-                                    marginBottom: 0
-                                  }}
                                 />
                                 <button
                                   type="button"
                                   onClick={() => updateQuantity(index, item.quantity + 1)}
-                                  style={{
-                                    width: "24px",
-                                    height: "24px",
-                                    borderRadius: "4px",
-                                    background: "hsla(0,0%,100%,0.05)",
-                                    border: "1px solid hsl(var(--border-glass))",
-                                    cursor: "pointer",
-                                    color: "hsl(var(--text-primary))"
-                                  }}
+                                  className="w-5 h-5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 font-bold transition-all"
                                 >
                                   +
                                 </button>
                               </div>
                             </td>
-                            <td>
-                              <span style={{ fontWeight: 600, fontFamily: "monospace" }}>
-                                {formattedValue(itemSubtotal)}
-                              </span>
+                            <td className="p-3 text-right font-mono font-bold text-slate-300">
+                              {formattedValue(itemSubtotal)}
                             </td>
-                            <td style={{ textAlign: "right" }}>
+                            <td className="p-3 text-center">
                               <button
                                 type="button"
                                 onClick={() => removeItemFromQuote(index)}
-                                style={{
-                                  background: "transparent",
-                                  color: "hsl(var(--danger))",
-                                  cursor: "pointer",
-                                  fontSize: "1.05rem",
-                                  padding: "4px"
-                                }}
-                                title="Eliminar ítem"
+                                className="text-red-400 hover:text-red-300 transition-colors p-1"
+                                title="Eliminar"
                               >
-                                🗑️
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </td>
                           </tr>
@@ -800,14 +663,13 @@ export default function NewQuoteBuilder({ params }: PageProps) {
                 </div>
 
                 {/* Currency & Tax Config Row */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                  <div className="input-group">
-                    <label className="input-label" style={{ fontSize: "0.75rem" }}>Moneda Base</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Moneda Base</label>
                     <select
-                      className="input-field"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-300 focus:outline-none focus:border-amber-500 text-xs"
                       value={currency}
                       onChange={(e) => setCurrency(e.target.value)}
-                      style={{ fontSize: "0.8rem", padding: "0.4rem 0.6rem" }}
                     >
                       <option value="USD">USD ($)</option>
                       <option value="CLP">CLP (Ch$)</option>
@@ -816,117 +678,99 @@ export default function NewQuoteBuilder({ params }: PageProps) {
                       <option value="EUR">EUR (€)</option>
                     </select>
                   </div>
-                  <div className="input-group">
-                    <label className="input-label" style={{ fontSize: "0.75rem" }}>IVA / Impuestos (%)</label>
+                  <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">IVA / Impuestos (%)</label>
                     <input
                       type="number"
-                      className="input-field"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-100 focus:outline-none focus:border-amber-500 text-xs"
                       value={taxRate}
                       onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
-                      style={{ fontSize: "0.8rem", padding: "0.4rem 0.6rem" }}
                     />
                   </div>
                 </div>
 
                 {currency !== "USD" && (
-                  <div className="input-group" style={{ marginTop: "-0.5rem" }}>
-                    <label className="input-label" style={{ fontSize: "0.75rem" }}>Tasa de Cambio (1 USD = )</label>
+                  <div className="mt-1">
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tasa de Cambio (1 USD = )</label>
                     <input
                       type="number"
                       step="0.01"
-                      className="input-field"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-100 focus:outline-none focus:border-amber-500 text-xs"
                       value={exchangeRate}
                       onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 1)}
-                      style={{ fontSize: "0.8rem", padding: "0.4rem 0.6rem" }}
                     />
                   </div>
                 )}
 
                 {/* Financial Summary */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", fontSize: "0.85rem" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "hsl(var(--text-secondary))" }}>Subtotal:</span>
-                    <span style={{ fontFamily: "monospace" }}>{formattedValue(subtotal)}</span>
+                <div className="bg-slate-950/60 border border-slate-800/40 rounded-xl p-4 space-y-3 text-xs">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Subtotal Neto:</span>
+                    <span className="font-mono font-bold text-slate-300">{formattedValue(subtotal)}</span>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", alignItems: "center", gap: "1rem" }}>
-                    <span style={{ color: "hsl(var(--text-secondary))" }}>Descuento Directo ({currency}):</span>
+                  <div className="flex justify-between items-center text-slate-400">
+                    <span>Descuento Directo ({currency}):</span>
                     <input
                       type="number"
-                      className="input-field"
+                      className="w-24 bg-slate-950 border border-slate-800 rounded py-1 px-2 text-right text-slate-200 focus:outline-none focus:border-amber-500 font-mono text-xs"
                       value={discount}
                       onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                      style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", marginBottom: 0, textAlign: "right" }}
                     />
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ color: "hsl(var(--text-secondary))" }}>IVA ({taxRate}%):</span>
-                    <span style={{ fontFamily: "monospace" }}>{formattedValue(tax)}</span>
+                  <div className="flex justify-between text-slate-400">
+                    <span>IVA ({taxRate}%):</span>
+                    <span className="font-mono font-bold text-slate-300">{formattedValue(tax)}</span>
                   </div>
 
-                  <div style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    borderTop: "1px solid hsl(var(--border-glass))",
-                    paddingTop: "0.75rem",
-                    fontSize: "1.1rem",
-                    fontWeight: 800
-                  }}>
-                    <span>Total Final:</span>
-                    <span className="text-glow-primary" style={{ color: "hsl(var(--primary))", fontFamily: "monospace" }}>
-                      {formattedValue(total)}
-                    </span>
+                  <div className="flex justify-between border-t border-slate-800 pt-3 text-sm font-bold">
+                    <span className="text-slate-100">Total Final:</span>
+                    <span className="font-mono text-amber-500">{formattedValue(total)}</span>
                   </div>
                 </div>
 
-                {/* Margen Consolidado Estimado Gauge */}
-                <div className={`margin-gauge-card ${getMarginClass()}`} style={{
-                  padding: "1rem",
-                  borderRadius: "var(--radius-md)",
-                  borderWidth: "1px",
-                  borderStyle: "solid",
-                  transition: "all var(--transition-normal)"
-                }}>
-                  <span style={{ fontSize: "0.75rem", display: "block", textTransform: "uppercase", fontWeight: 600, opacity: 0.8 }}>
-                    Rentabilidad Proyectada
+                {/* Margen Consolidado Estimado */}
+                <div className={`border rounded-lg p-4 transition-all ${getMarginBgClass()}`}>
+                  <span className="block text-[10px] uppercase font-bold tracking-wide opacity-80">
+                    Rentabilidad de Cotización
                   </span>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: "0.4rem" }}>
-                    <span style={{ fontSize: "1.65rem", fontWeight: 800, fontFamily: "monospace" }}>
+                  <div className="flex justify-between items-baseline mt-1.5">
+                    <span className="text-xl font-black font-mono">
                       {Math.round(profitMarginPercent * 10) / 10}%
                     </span>
-                    <span style={{ fontSize: "0.8rem" }}>
-                      Ganancia: {formattedValue(profit)}
+                    <span className="text-xs font-semibold">
+                      Utilidad: {formattedValue(profit)}
                     </span>
                   </div>
-                  <span style={{ fontSize: "0.75rem", display: "block", marginTop: "0.4rem", fontWeight: 500 }}>
+                  <span className="block text-[10px] mt-2 font-medium">
                     {getMarginText()}
                   </span>
                 </div>
 
                 {/* Terms and date config */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                  <div className="input-group">
-                    <label className="input-label" htmlFor="expire" style={{ fontSize: "0.75rem" }}>Vence el</label>
-                    <input
-                      id="expire"
-                      type="date"
-                      className="input-field"
-                      value={validUntil}
-                      onChange={(e) => setValidUntil(e.target.value)}
-                      style={{ fontSize: "0.8rem", padding: "0.4rem 0.6rem" }}
-                      required
-                    />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5" htmlFor="expire">Vencimiento</label>
+                    <div className="relative">
+                      <input
+                        id="expire"
+                        type="date"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-300 focus:outline-none focus:border-amber-500 text-xs"
+                        value={validUntil}
+                        onChange={(e) => setValidUntil(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
-                  <div className="input-group">
-                    <label className="input-label" htmlFor="terms" style={{ fontSize: "0.75rem" }}>Términos y Notas</label>
+                  <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5" htmlFor="terms">Términos y Notas</label>
                     <textarea
                       id="terms"
-                      className="input-field"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-3 text-slate-300 focus:outline-none focus:border-amber-500 text-xs"
                       rows={2}
                       value={terms}
                       onChange={(e) => setTerms(e.target.value)}
-                      style={{ resize: "vertical", fontSize: "0.75rem", fontFamily: "inherit", padding: "0.4rem 0.6rem" }}
                     />
                   </div>
                 </div>
@@ -935,39 +779,22 @@ export default function NewQuoteBuilder({ params }: PageProps) {
                 <button
                   onClick={handleSaveQuote}
                   disabled={loading}
-                  className="btn btn-primary btn-block text-glow-primary border-glow"
-                  style={{ padding: "0.85rem", fontSize: "0.95rem" }}
+                  className="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 text-slate-950 font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-lg shadow-amber-500/10"
                 >
-                  {loading ? <span className="spinner" /> : null}
-                  <span>💾 Guardar Presupuesto</span>
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <span>💾</span>
+                      <span>Guardar Presupuesto</span>
+                    </>
+                  )}
                 </button>
               </div>
             )}
           </div>
         </div>
       </div>
-
-      {/* Styled margin cards rules */}
-      <style jsx global>{`
-        .margin-success {
-          background: hsla(142.1, 70.6%, 45.3%, 0.1);
-          border-color: hsla(142.1, 70.6%, 45.3%, 0.3);
-          color: #a3e635;
-          box-shadow: 0 0 15px hsla(142.1, 70.6%, 45.3%, 0.1);
-        }
-        .margin-warning {
-          background: hsla(38, 92%, 50%, 0.1);
-          border-color: hsla(38, 92%, 50%, 0.3);
-          color: #fbbf24;
-          box-shadow: 0 0 15px hsla(38, 92%, 50%, 0.1);
-        }
-        .margin-danger {
-          background: hsla(0, 84.2%, 60.2%, 0.1);
-          border-color: hsla(0, 84.2%, 60.2%, 0.3);
-          color: #ff8888;
-          box-shadow: 0 0 15px hsla(0, 84.2%, 60.2%, 0.1);
-        }
-      `}</style>
     </div>
   );
 }

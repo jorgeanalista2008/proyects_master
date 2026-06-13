@@ -17,7 +17,7 @@ interface CatalogItem {
   priceCredit: number;
   marginPreferred: number;
   pricePreferred: number;
-  imageId?: string;
+  images?: { id: string; fileName: string; mimeType: string }[];
   description?: string;
 }
 
@@ -177,10 +177,10 @@ export default function CatalogPage() {
                     border: "1px solid hsl(var(--border-glass))",
                     position: "relative"
                   }}>
-                    {item.imageId ? (
+                    {item.images && item.images.length > 0 ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
-                        src={`http://localhost:3000/api/images/${item.imageId}`}
+                        src={`http://localhost:3000/api/images/${item.images[0].id}`}
                         alt={item.name}
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />

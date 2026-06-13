@@ -1,10 +1,23 @@
-// d:\github\proyects_master\frontend\src\app\(dashboard)\page.tsx
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
+import { 
+  Truck, 
+  AlertTriangle, 
+  XOctagon, 
+  Clock, 
+  TrendingUp, 
+  DollarSign, 
+  Activity, 
+  CheckCircle2, 
+  FolderKanban, 
+  Loader2, 
+  Plus, 
+  Calendar 
+} from "lucide-react";
 
 interface DashboardStats {
   projects: {
@@ -40,7 +53,7 @@ interface ProjectSummary {
   name: string;
   status: string;
   createdAt: string;
-  client: { name: string };
+  client: { name: string; rutOrId?: string };
   manager?: { firstName: string; lastName: string };
 }
 
@@ -48,13 +61,15 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [history, setHistory] = useState<MonthlyHistory[]>([]);
-  const [recentProjects, setRecentProjects] = useState<ProjectSummary[]>([]);
+  const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // States for interactive SVG bar chart tooltip
-  const [hoveredBar, setHoveredBar] = useState<{
-    idx: number;
+  // Tabs state for Row 3 Client list
+  const [activeTab, setActiveTab] = useState<"PENDING" | "IN_PROGRESS" | "COMPLETED">("IN_PROGRESS");
+
+  // Hover states for the shipment combo chart
+  const [hoveredData, setHoveredData] = useState<{
     month: string;
     revenue: number;
     cost: number;
@@ -68,33 +83,27 @@ export default function DashboardPage() {
     async function loadDashboardData() {
       try {
         setLoading(true);
-        // Load summary stats
-        const statsRes = await api.get<DashboardStats>("/analytics/summary").catch((err) => {
-          console.error("Failed to load stats, using simulated default stats", err);
-          return null;
-        });
-
-        // Load monthly history
-        const historyRes = await api.get<MonthlyHistory[]>("/analytics/history").catch(() => {
-          return [
-            { month: "2026-01", revenue: 15000, cost: 9000 },
-            { month: "2026-02", revenue: 22000, cost: 13000 },
-            { month: "2026-03", revenue: 18000, cost: 11000 },
-            { month: "2026-04", revenue: 29000, cost: 17500 },
-            { month: "2026-05", revenue: 35000, cost: 20000 },
-            { month: "2026-06", revenue: 42000, cost: 23000 },
-          ];
-        });
-
-        // Load projects
-        const projectsRes = await api.get<ProjectSummary[]>("/projects").catch(() => []);
-        const sorted = (projectsRes || [])
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 5);
+        const [statsRes, historyRes, projectsRes] = await Promise.all([
+          api.get<DashboardStats>("/analytics/summary").catch((err) => {
+            console.error("Failed to load stats, using simulated default stats", err);
+            return null;
+          }),
+          api.get<MonthlyHistory[]>("/analytics/history").catch(() => {
+            return [
+              { month: "2026-01", revenue: 15000, cost: 9000 },
+              { month: "2026-02", revenue: 22000, cost: 13000 },
+              { month: "2026-03", revenue: 18000, cost: 11000 },
+              { month: "2026-04", revenue: 29000, cost: 17500 },
+              { month: "2026-05", revenue: 35000, cost: 20000 },
+              { month: "2026-06", revenue: 42000, cost: 23000 },
+            ];
+          }),
+          api.get<ProjectSummary[]>("/projects").catch(() => [])
+        ]);
 
         setStats(statsRes);
         setHistory(historyRes);
-        setRecentProjects(sorted);
+        setProjects(projectsRes || []);
       } catch (err: any) {
         console.error("Error loading dashboard data:", err);
         setError("Ocurrió un error al cargar la información del panel principal.");
@@ -110,14 +119,14 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="loader-container">
-        <div className="spinner" style={{ width: "2.5rem", height: "2.5rem" }} />
-        <p>Cargando panel de inicio (CRM)...</p>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-2" />
+        <p className="text-sm font-medium">Cargando panel de operaciones...</p>
       </div>
     );
   }
 
-  // --- Fallbacks for statistics in case of empty DB ---
+  // Fallback defaults
   const defaultStats: DashboardStats = stats || {
     projects: { total: 0, PENDING: 0, QUOTED: 0, APPROVED: 0, IN_PROGRESS: 0, COMPLETED: 0, CANCELLED: 0 },
     quotes: { total: 0, APPROVED: 0, REJECTED: 0 },
@@ -140,30 +149,31 @@ export default function DashboardPage() {
     }).format(val);
   };
 
-  // Calculations
-  const activeProjectsCount = defaultStats.projects.APPROVED + defaultStats.projects.IN_PROGRESS;
-  const quotesTotal = defaultStats.quotes.total || 0;
-  const quotesApproved = defaultStats.quotes.APPROVED || 0;
-  const approvalRate = quotesTotal > 0 ? Math.round((quotesApproved / quotesTotal) * 100) : 0;
-  const marginPercent = defaultStats.financialsUSD.marginPercent || 0;
+  // Stacked progress computations
+  const totalProj = defaultStats.projects.total || 1;
+  const inProgressPct = Math.round((defaultStats.projects.IN_PROGRESS / totalProj) * 100);
+  const approvedPct = Math.round((defaultStats.projects.APPROVED / totalProj) * 100);
+  const pendingPct = Math.round((defaultStats.projects.PENDING / totalProj) * 100);
+  const completedPct = Math.round((defaultStats.projects.COMPLETED / totalProj) * 100);
+
+  // Exceptions progress gauge
   const completedRate = defaultStats.projects.total > 0
     ? Math.round((defaultStats.projects.COMPLETED / defaultStats.projects.total) * 100)
     : 0;
 
-  // Star ratings representation (0 to 5 stars) based on approval rate
-  const starsCount = Math.round((approvalRate / 100) * 5);
+  const marginPercent = defaultStats.financialsUSD.marginPercent || 0;
 
-  // SVG configurations for Double Bar Chart
+  // SVG configurations for Combined Chart (Shipment Statistics style)
   const maxVal = Math.max(...history.map((h) => Math.max(h.revenue, h.cost)), 1000);
-  const chartHeight = 180;
-  const chartWidth = 500;
+  const chartHeight = 220;
+  const chartWidth = 520;
   const paddingLeft = 35;
   const paddingRight = 15;
-  const paddingTop = 20;
+  const paddingTop = 25;
   const paddingBottom = 30;
 
-  const handleBarMouseMove = (
-    e: React.MouseEvent<SVGRectElement, MouseEvent>,
+  const handleChartMouseMove = (
+    e: React.MouseEvent<any, MouseEvent>,
     idx: number,
     item: MonthlyHistory
   ) => {
@@ -171,8 +181,7 @@ export default function DashboardPage() {
     const rect = chartContainerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    setHoveredBar({
-      idx,
+    setHoveredData({
       month: getMonthName(item.month),
       revenue: item.revenue,
       cost: item.cost,
@@ -181,514 +190,424 @@ export default function DashboardPage() {
     });
   };
 
-  const handleBarMouseLeave = () => {
-    setHoveredBar(null);
+  const handleChartMouseLeave = () => {
+    setHoveredData(null);
   };
 
-  // Helper for generating custom client initials avatar
-  const getInitials = (name: string) => {
-    const parts = name.trim().split(" ");
-    if (parts.length === 0) return "?";
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  };
+  // Filter projects based on the selected tab in Row 3
+  const filteredProjects = projects.filter((p) => p.status === activeTab).slice(0, 3);
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      
-      {/* Welcome & Dashboard header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+    <div className="space-y-6">
+      {/* Welcome Bar Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="title-primary" style={{ margin: 0, fontSize: "1.75rem" }}>Panel CRM</h1>
-          <p className="subtitle-secondary" style={{ margin: 0, fontSize: "0.875rem" }}>
-            Gestión de relaciones con clientes, cotizaciones y rendimiento operativo.
+          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Monitoreo Operativo</h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Estatus de instalaciones de infraestructura de seguridad electrónica y facturación.
           </p>
         </div>
-        <div style={{ display: "flex", gap: "0.75rem" }}>
-          <Link href="/projects" className="btn btn-primary btn-sm">
-            + Nuevo Presupuesto
+        
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Link 
+            href="/projects" 
+            className="flex-1 sm:flex-none bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold px-4 py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nuevo Proyecto</span>
           </Link>
-          <div className="date-badge" style={{ display: "flex", alignItems: "center" }}>
-            📅 {new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" })}
+          <div className="bg-slate-900 border border-slate-800 text-slate-400 px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-amber-500" />
+            <span>
+              {new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" })}
+            </span>
           </div>
         </div>
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
 
-      {/* Row 1: CRM Header Cards Grid (Ratings/Sessions/Transactions) */}
-      <div className="vuexy-grid-row">
-        
-        {/* Widget 1: Presupuestos (Ratings style) */}
-        <div className="vuexy-col-3">
-          <div className="vuexy-card" style={{ padding: "1.25rem", justifyContent: "space-between", minHeight: "155px" }}>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span className="stats-title" style={{ fontSize: "0.95rem" }}>Presupuestos</span>
-              <span className="stats-subtitle" style={{ fontSize: "0.75rem" }}>Tasa de Aprobación</span>
-              <h2 style={{ fontSize: "1.75rem", fontWeight: 800, margin: "0.35rem 0" }}>
-                {quotesTotal} <span style={{ fontSize: "0.75rem", color: "hsl(var(--success))", fontWeight: 700 }}>+{approvalRate}%</span>
-              </h2>
-              <div className="crm-stars-container">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <span key={s} style={{ opacity: s <= starsCount ? 1 : 0.2 }}>★</span>
-                ))}
-                <span style={{ fontSize: "0.725rem", color: "hsl(var(--text-muted))", marginLeft: "0.25rem" }}>({quotesApproved} Aprobados)</span>
-              </div>
+      {/* Row 1: 4 Logistics Header Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Card 1: In Progress */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+            <Truck className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="block text-2xl font-bold text-slate-100">{defaultStats.projects.IN_PROGRESS}</span>
+            <span className="block text-xs text-slate-400 mt-0.5 font-medium">Obras en Instalación</span>
+            <span className="block text-[10px] text-emerald-500 mt-1 font-semibold">+18.2% vs semana ant.</span>
+          </div>
+        </div>
+
+        {/* Card 2: Pending */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/20">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="block text-2xl font-bold text-slate-100">{defaultStats.projects.PENDING}</span>
+            <span className="block text-xs text-slate-400 mt-0.5 font-medium">Levantamientos Campo</span>
+            <span className="block text-[10px] text-emerald-500 mt-1 font-semibold">-8.7% vs semana ant.</span>
+          </div>
+        </div>
+
+        {/* Card 3: Rejected */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 border border-red-500/20">
+            <XOctagon className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="block text-2xl font-bold text-slate-100">{defaultStats.quotes.REJECTED}</span>
+            <span className="block text-xs text-slate-400 mt-0.5 font-medium">Presupuestos Rechazados</span>
+            <span className="block text-[10px] text-red-500 mt-1 font-semibold">+4.3% vs semana ant.</span>
+          </div>
+        </div>
+
+        {/* Card 4: Approved */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 border border-cyan-500/20">
+            <Clock className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="block text-2xl font-bold text-slate-100">{defaultStats.projects.APPROVED}</span>
+            <span className="block text-xs text-slate-400 mt-0.5 font-medium">Obras por Iniciar</span>
+            <span className="block text-[10px] text-emerald-500 mt-1 font-semibold">+2.5% vs semana ant.</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 2: Vehicle Overview & Shipment Statistics (Combo Chart) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Widget: Resumen de Obras */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
+          <div>
+            <h2 className="text-base font-bold text-slate-100">Resumen de Instalaciones</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Distribución porcentual de proyectos activos</p>
+          </div>
+
+          {/* Stacked progress bar */}
+          <div className="w-full h-8 bg-slate-950 rounded-lg overflow-hidden flex mt-6">
+            <div 
+              style={{ width: `${inProgressPct}%` }} 
+              className="bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white transition-all"
+              title={`Instalación: ${inProgressPct}%`}
+            >
+              {inProgressPct > 10 && `${inProgressPct}%`}
             </div>
-            
-            {/* Sparkline line chart */}
-            <div className="crm-sparkline-container">
-              <svg width="100%" height="100%" viewBox="0 0 90 35">
-                <path
-                  d="M0,30 Q15,10 30,22 T60,5 T90,15"
-                  fill="none"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-                <circle cx="90" cy="15" r="3" fill="hsl(var(--primary))" />
-              </svg>
+            <div 
+              style={{ width: `${approvedPct}%` }} 
+              className="bg-cyan-500 flex items-center justify-center text-[10px] font-bold text-slate-950 transition-all"
+              title={`Aprobado: ${approvedPct}%`}
+            >
+              {approvedPct > 10 && `${approvedPct}%`}
+            </div>
+            <div 
+              style={{ width: `${pendingPct}%` }} 
+              className="bg-amber-500 flex items-center justify-center text-[10px] font-bold text-slate-950 transition-all"
+              title={`Levantamiento: ${pendingPct}%`}
+            >
+              {pendingPct > 10 && `${pendingPct}%`}
+            </div>
+            <div 
+              style={{ width: `${completedPct}%` }} 
+              className="bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-slate-950 transition-all"
+              title={`Finalizados: ${completedPct}%`}
+            >
+              {completedPct > 10 && `${completedPct}%`}
+            </div>
+          </div>
+
+          {/* List breakdown */}
+          <div className="space-y-3 mt-6">
+            <div className="flex items-center justify-between text-xs border-b border-slate-800/60 pb-2.5">
+              <span className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded bg-indigo-500 block" />
+                <span className="text-slate-300">En Instalación</span>
+              </span>
+              <span className="text-slate-400">{defaultStats.projects.IN_PROGRESS} Proyectos</span>
+              <strong className="text-slate-200">{inProgressPct}%</strong>
+            </div>
+
+            <div className="flex items-center justify-between text-xs border-b border-slate-800/60 pb-2.5">
+              <span className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded bg-cyan-500 block" />
+                <span className="text-slate-300">Aprobado (Por Iniciar)</span>
+              </span>
+              <span className="text-slate-400">{defaultStats.projects.APPROVED} Obras</span>
+              <strong className="text-slate-200">{approvedPct}%</strong>
+            </div>
+
+            <div className="flex items-center justify-between text-xs border-b border-slate-800/60 pb-2.5">
+              <span className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded bg-amber-500 block" />
+                <span className="text-slate-300">Levantamiento Campo</span>
+              </span>
+              <span className="text-slate-400">{defaultStats.projects.PENDING} Visitas</span>
+              <strong className="text-slate-200">{pendingPct}%</strong>
+            </div>
+
+            <div className="flex items-center justify-between text-xs pb-1">
+              <span className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded bg-emerald-500 block" />
+                <span className="text-slate-300">Finalizados (Entregados)</span>
+              </span>
+              <span className="text-slate-400">{defaultStats.projects.COMPLETED} Entregas</span>
+              <strong className="text-slate-200">{completedPct}%</strong>
             </div>
           </div>
         </div>
 
-        {/* Widget 2: Levantamientos (Sessions style) */}
-        <div className="vuexy-col-3">
-          <div className="vuexy-card" style={{ padding: "1.25rem", justifyContent: "space-between", minHeight: "155px" }}>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span className="stats-title" style={{ fontSize: "0.95rem" }}>Levantamientos</span>
-              <span className="stats-subtitle" style={{ fontSize: "0.75rem" }}>Pendientes por cotizar</span>
-              <h2 style={{ fontSize: "1.75rem", fontWeight: 800, margin: "0.35rem 0" }}>
-                {defaultStats.projects.PENDING} <span style={{ fontSize: "0.725rem", color: "hsl(var(--text-muted))", fontWeight: 500 }}>obras activas</span>
-              </h2>
-              <span className="crm-badge-grow success" style={{ marginTop: "0.15rem" }}>
-                En Campo
+        {/* Widget: Combined Chart */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between relative" ref={chartContainerRef}>
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-base font-bold text-slate-100">Estadísticas de Presupuestos</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Historial de cotizaciones versus costos operativos</p>
+            </div>
+            <div className="flex gap-3 text-[10px] font-semibold">
+              <span className="flex items-center gap-1 text-slate-400">
+                <span className="w-2 h-2 bg-amber-500 rounded-sm" />
+                <span>Ventas</span>
+              </span>
+              <span className="flex items-center gap-1 text-slate-400">
+                <span className="w-2 h-2 bg-indigo-500 rounded-full" />
+                <span>Costos</span>
               </span>
             </div>
-
-            {/* Sparkline bar chart */}
-            <div className="crm-sparkline-container" style={{ gap: "3px" }}>
-              {[15, 25, 10, 30, 20, 35, 25].map((h, i) => (
-                <div
-                  key={i}
-                  style={{
-                    flex: 1,
-                    height: `${h}%`,
-                    background: "rgba(0, 207, 221, 0.8)",
-                    borderRadius: "2px"
-                  }}
-                />
-              ))}
-            </div>
           </div>
-        </div>
 
-        {/* Widget 3: General Statistics (Transactions style) */}
-        <div className="vuexy-col-6">
-          <div className="vuexy-card" style={{ padding: "1.25rem 1.5rem", justifyContent: "center" }}>
-            <div className="stats-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <div>
-                <span className="stats-title">Estadísticas Comerciales</span>
-                <p className="stats-subtitle" style={{ margin: 0 }}>Ventas netas y conversión del mes</p>
-              </div>
-            </div>
+          {/* SVG Chart */}
+          <div className="w-full aspect-[21/9] min-h-[200px] mt-6">
+            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} width="100%" height="100%" className="overflow-visible">
+              {/* Horizontal Grid lines */}
+              {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+                const y = paddingTop + (chartHeight - paddingTop - paddingBottom) * ratio;
+                const gridVal = maxVal * (1 - ratio);
+                return (
+                  <g key={idx}>
+                    <line x1={paddingLeft} y1={y} x2={chartWidth - paddingRight} y2={y} className="stroke-slate-800" strokeWidth="1" strokeDasharray="3 3" />
+                    <text x={paddingLeft - 8} y={y + 3} fill="#64748b" className="text-[9px] font-mono" textAnchor="end">
+                      {gridVal >= 1000 ? `${Math.round(gridVal / 1000)}k` : Math.round(gridVal)}
+                    </text>
+                  </g>
+                );
+              })}
 
-            <div className="stats-list-grid" style={{ gap: "1rem" }}>
-              {/* Stat 1: Revenue */}
-              <div className="stats-item-flex">
-                <div className="stats-avatar-circle avatar-primary" style={{ width: "38px", height: "38px" }}>
-                  💰
-                </div>
-                <div className="stats-item-data">
-                  <span className="stats-item-value" style={{ fontSize: "1rem" }}>{formattedUSD(defaultStats.financialsUSD.revenue)}</span>
-                  <span className="stats-item-label" style={{ fontSize: "0.725rem" }}>Ingresos Netos</span>
-                </div>
-              </div>
+              {/* Bars Rendering (Ventas - Orange) */}
+              {history.map((item, idx) => {
+                const usableWidth = chartWidth - paddingLeft - paddingRight;
+                const barSpacing = usableWidth / history.length;
+                const barWidth = barSpacing * 0.35;
+                const xBase = paddingLeft + idx * barSpacing + (barSpacing - barWidth) / 2;
 
-              {/* Stat 2: Projects */}
-              <div className="stats-item-flex">
-                <div className="stats-avatar-circle avatar-warning" style={{ width: "38px", height: "38px" }}>
-                  📁
-                </div>
-                <div className="stats-item-data">
-                  <span className="stats-item-value" style={{ fontSize: "1rem" }}>{defaultStats.projects.total}</span>
-                  <span className="stats-item-label" style={{ fontSize: "0.725rem" }}>Instalaciones</span>
-                </div>
-              </div>
+                const heightRatio = chartHeight - paddingTop - paddingBottom;
+                const salesHeight = (item.revenue / maxVal) * heightRatio;
+                const salesY = chartHeight - paddingBottom - salesHeight;
 
-              {/* Stat 3: Conversion */}
-              <div className="stats-item-flex">
-                <div className="stats-avatar-circle avatar-success" style={{ width: "38px", height: "38px" }}>
-                  📈
-                </div>
-                <div className="stats-item-data">
-                  <span className="stats-item-value" style={{ fontSize: "1rem" }}>{approvalRate}%</span>
-                  <span className="stats-item-label" style={{ fontSize: "0.725rem" }}>Aprobación</span>
-                </div>
-              </div>
+                return (
+                  <g key={idx} className="cursor-pointer group" onMouseMove={(e) => handleChartMouseMove(e, idx, item)} onMouseLeave={handleChartMouseLeave}>
+                    {/* Invisible hover capsule */}
+                    <rect x={xBase - 6} y={paddingTop} width={barWidth + 12} height={heightRatio} fill="transparent" />
+                    {/* Orange Bar */}
+                    <rect x={xBase} y={salesY} width={barWidth} height={Math.max(salesHeight, 3)} rx="2" className="fill-amber-500 opacity-80 group-hover:opacity-100 transition-opacity" />
+                    {/* Month label */}
+                    <text x={paddingLeft + idx * barSpacing + barSpacing / 2} y={chartHeight - 10} fill="#94a3b8" className="text-[9px] font-semibold" textAnchor="middle">
+                      {getMonthName(item.month)}
+                    </text>
+                  </g>
+                );
+              })}
 
-              {/* Stat 4: Margin */}
-              <div className="stats-item-flex">
-                <div className="stats-avatar-circle avatar-info" style={{ width: "38px", height: "38px" }}>
-                  📊
-                </div>
-                <div className="stats-item-data">
-                  <span className="stats-item-value" style={{ fontSize: "1rem" }}>{marginPercent}%</span>
-                  <span className="stats-item-label" style={{ fontSize: "0.725rem" }}>Margen Bruto</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+              {/* Line Path Rendering (Costos - Indigo) */}
+              {(() => {
+                const usableWidth = chartWidth - paddingLeft - paddingRight;
+                const barSpacing = usableWidth / history.length;
+                const points = history.map((item, idx) => {
+                  const x = paddingLeft + idx * barSpacing + barSpacing / 2;
+                  const heightRatio = chartHeight - paddingTop - paddingBottom;
+                  const costHeight = (item.cost / maxVal) * heightRatio;
+                  const y = chartHeight - paddingBottom - costHeight;
+                  return { x, y };
+                });
 
-      </div>
+                const pathD = points.reduce((acc, p, idx) => {
+                  return idx === 0 ? `M${p.x},${p.y}` : `${acc} L${p.x},${p.y}`;
+                }, "");
 
-      {/* Row 2: Revenue Growth & Earning Reports */}
-      <div className="vuexy-grid-row">
-        
-        {/* Widget 4: Crecimiento de Margen (Revenue Growth style) */}
-        <div className="vuexy-col-4">
-          <div className="vuexy-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-            <div style={{ width: "100%", textAlign: "left" }}>
-              <span className="stats-title">Crecimiento de Margen</span>
-              <p className="stats-subtitle">Porcentaje de utilidad consolidada</p>
-            </div>
-            
-            <div style={{ position: "relative", width: "120px", height: "120px", display: "flex", alignItems: "center", justifyContent: "center", margin: "1rem 0" }}>
-              <svg width="120" height="120" viewBox="0 0 100 100" style={{ transform: "rotate(-90deg)" }}>
-                {/* Background Ring */}
-                <circle cx="50" cy="50" r="38" fill="transparent" stroke="hsla(var(--foreground), 0.05)" strokeWidth="6" />
-                {/* Active Progress */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="38"
-                  fill="transparent"
-                  stroke="url(#crmMarginGrad)"
-                  strokeWidth="6"
-                  strokeDasharray={2 * Math.PI * 38}
-                  strokeDashoffset={(2 * Math.PI * 38) - ((2 * Math.PI * 38) * marginPercent) / 100}
-                  strokeLinecap="round"
-                  style={{ transition: "stroke-dashoffset 0.8s ease" }}
-                />
-                <defs>
-                  <linearGradient id="crmMarginGrad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" />
-                    <stop offset="100%" stopColor="#00CFDD" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div style={{ position: "absolute", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <span style={{ fontSize: "1.5rem", fontWeight: 800, fontFamily: "monospace" }}>{marginPercent}%</span>
-                <span style={{ fontSize: "0.65rem", color: "hsl(var(--text-muted))", textTransform: "uppercase" }}>Margen</span>
-              </div>
-            </div>
+                return (
+                  <g>
+                    <path d={pathD} fill="none" stroke="#6366f1" strokeWidth="3.5" strokeLinecap="round" />
+                    {points.map((p, i) => (
+                      <circle key={i} cx={p.x} cy={p.y} r="4.5" fill="#0f172a" stroke="#6366f1" strokeWidth="2.5" />
+                    ))}
+                  </g>
+                );
+              })()}
+            </svg>
 
-            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.8rem", marginTop: "auto" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "0.4rem" }}>
-                <span style={{ color: "hsl(var(--text-secondary))" }}>Venta Bruta:</span>
-                <span style={{ fontWeight: 600 }}>{formattedUSD(defaultStats.financialsUSD.revenue)}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "0.4rem" }}>
-                <span style={{ color: "hsl(var(--text-secondary))" }}>Costo Total:</span>
-                <span style={{ fontWeight: 600 }}>{formattedUSD(defaultStats.financialsUSD.cost)}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "0.15rem" }}>
-                <span style={{ color: "hsl(var(--text-secondary))" }}>Ganancia Neta:</span>
-                <span style={{ fontWeight: 600, color: "hsl(var(--success))" }}>{formattedUSD(defaultStats.financialsUSD.profit)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Widget 5: Earning Reports (Ventas vs Costos) */}
-        <div className="vuexy-col-8">
-          <div className="vuexy-card" ref={chartContainerRef}>
-            <div className="earning-header-flex">
-              <div>
-                <span className="stats-title">Reporte de Ventas vs Costos</span>
-                <p className="stats-subtitle">Comparativa consolidada mensual en USD</p>
-              </div>
-              <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.725rem", fontWeight: 600 }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                  <span style={{ width: "8px", height: "8px", background: "hsl(var(--primary))", borderRadius: "2px" }} />
-                  Ingresos
+            {/* Tooltip Overlay */}
+            {hoveredData && (
+              <div 
+                className="absolute z-10 bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs shadow-2xl flex flex-col space-y-1 text-slate-300 pointer-events-none" 
+                style={{ left: `${hoveredData.x}px`, top: `${hoveredData.y}px` }}
+              >
+                <strong className="block text-slate-200 border-b border-slate-800 pb-1 mb-1 font-bold text-center uppercase tracking-wider text-[10px]">
+                  {hoveredData.month}
+                </strong>
+                <span className="flex justify-between items-center gap-6">
+                  <span className="text-amber-500 font-semibold">Ventas:</span>
+                  <strong className="text-slate-100">{formattedUSD(hoveredData.revenue)}</strong>
                 </span>
-                <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                  <span style={{ width: "8px", height: "8px", background: "hsl(var(--accent))", borderRadius: "2px" }} />
-                  Costos
+                <span className="flex justify-between items-center gap-6">
+                  <span className="text-indigo-400 font-semibold">Costos:</span>
+                  <strong className="text-slate-100">{formattedUSD(hoveredData.cost)}</strong>
                 </span>
-              </div>
-            </div>
-
-            <div className="earning-layout-container">
-              {/* Double bar chart SVG */}
-              <div className="earning-chart-wrapper">
-                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} width="100%" height="100%" style={{ overflow: "visible" }}>
-                  {/* Grid Lines */}
-                  {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
-                    const y = paddingTop + (chartHeight - paddingTop - paddingBottom) * ratio;
-                    const gridVal = maxVal * (1 - ratio);
-                    return (
-                      <g key={idx}>
-                        <line x1={paddingLeft} y1={y} x2={chartWidth - paddingRight} y2={y} stroke="hsla(var(--foreground), 0.05)" strokeWidth="1" />
-                        <text x={paddingLeft - 8} y={y + 4} fill="hsl(var(--text-muted))" fontSize="9" textAnchor="end" fontFamily="monospace">
-                          {gridVal >= 1000 ? `${Math.round(gridVal / 1000)}k` : Math.round(gridVal)}
-                        </text>
-                      </g>
-                    );
-                  })}
-
-                  {/* Bars rendering */}
-                  {history.map((item, idx) => {
-                    const usableWidth = chartWidth - paddingLeft - paddingRight;
-                    const barGroupSpacing = usableWidth / history.length;
-                    const groupX = paddingLeft + idx * barGroupSpacing + barGroupSpacing * 0.15;
-                    const barWidth = barGroupSpacing * 0.32;
-
-                    const heightRatio = chartHeight - paddingTop - paddingBottom;
-                    const salesHeight = (item.revenue / maxVal) * heightRatio;
-                    const costHeight = (item.cost / maxVal) * heightRatio;
-
-                    const salesY = chartHeight - paddingBottom - salesHeight;
-                    const costY = chartHeight - paddingBottom - costHeight;
-
-                    return (
-                      <g key={idx} className="chart-bar-group">
-                        {/* Hover detector */}
-                        <rect
-                          x={groupX - 4}
-                          y={paddingTop}
-                          width={barWidth * 2 + 12}
-                          height={heightRatio}
-                          fill="transparent"
-                          onMouseMove={(e) => handleBarMouseMove(e, idx, item)}
-                          onMouseLeave={handleBarMouseLeave}
-                        />
-                        {/* Revenue Bar */}
-                        <rect x={groupX} y={salesY} width={barWidth} height={Math.max(salesHeight, 3)} rx="2" fill="url(#crmRevenueBarGrad)" style={{ pointerEvents: "none" }} />
-                        {/* Cost Bar */}
-                        <rect x={groupX + barWidth + 4} y={costY} width={barWidth} height={Math.max(costHeight, 3)} rx="2" fill="url(#crmCostBarGrad)" style={{ pointerEvents: "none" }} />
-                        {/* Month text label */}
-                        <text x={groupX + barWidth + 2} y={chartHeight - 12} fill="hsl(var(--text-secondary))" fontSize="10" fontWeight="600" textAnchor="middle" style={{ pointerEvents: "none" }}>
-                          {getMonthName(item.month)}
-                        </text>
-                      </g>
-                    );
-                  })}
-
-                  <defs>
-                    <linearGradient id="crmRevenueBarGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" />
-                      <stop offset="100%" stopColor="hsla(var(--primary), 0.4)" />
-                    </linearGradient>
-                    <linearGradient id="crmCostBarGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--accent))" />
-                      <stop offset="100%" stopColor="hsla(var(--accent), 0.3)" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-
-                {/* Tooltip HTML overlay */}
-                {hoveredBar && (
-                  <div className="chart-tooltip-box" style={{ left: `${hoveredBar.x}px`, top: `${hoveredBar.y}px` }}>
-                    <strong style={{ borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "2px", marginBottom: "2px" }}>
-                      {hoveredBar.month}
-                    </strong>
-                    <span style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
-                      <span style={{ color: "hsl(var(--primary))", fontWeight: 600 }}>Ventas:</span>
-                      <strong>{formattedUSD(hoveredBar.revenue)}</strong>
-                    </span>
-                    <span style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
-                      <span style={{ color: "hsl(var(--accent))", fontWeight: 600 }}>Costos:</span>
-                      <strong>{formattedUSD(hoveredBar.cost)}</strong>
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Side panel */}
-              <div className="earning-side-panel">
-                <div className="side-panel-metric">
-                  <div className="side-panel-header">Ventas</div>
-                  <span className="side-panel-value">{formattedUSD(defaultStats.financialsUSD.revenue)}</span>
-                  <div className="side-panel-progress-track">
-                    <div className="side-panel-progress-bar" style={{ width: "100%", background: "hsl(var(--primary))" }} />
-                  </div>
-                </div>
-                <div className="side-panel-metric">
-                  <div className="side-panel-header">Costos</div>
-                  <span className="side-panel-value">{formattedUSD(defaultStats.financialsUSD.cost)}</span>
-                  <div className="side-panel-progress-track">
-                    <div
-                      className="side-panel-progress-bar"
-                      style={{
-                        width: `${defaultStats.financialsUSD.revenue > 0 ? (defaultStats.financialsUSD.cost / defaultStats.financialsUSD.revenue) * 100 : 0}%`,
-                        background: "hsl(var(--accent))"
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Row 3: Control de Obras, Especialidades & Proyectos Recientes */}
-      <div className="vuexy-grid-row">
-        
-        {/* Widget 6: Control de Obras (Project Status style) */}
-        <div className="vuexy-col-4">
-          <div className="vuexy-card">
-            <span className="stats-title">Control de Obras</span>
-            <p className="stats-subtitle">Avance de proyectos finalizados</p>
-            
-            <div className="support-tracker-layout" style={{ marginTop: "0.5rem" }}>
-              <div className="gauge-chart-container" style={{ width: "130px", height: "130px" }}>
-                <svg width="120" height="120" viewBox="0 0 100 100" style={{ transform: "rotate(-90deg)" }}>
-                  <circle cx="50" cy="50" r="38" fill="transparent" stroke="hsla(var(--foreground), 0.05)" strokeWidth="6" />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    fill="transparent"
-                    stroke="url(#crmRadialGrad)"
-                    strokeWidth="6"
-                    strokeDasharray={2 * Math.PI * 38}
-                    strokeDashoffset={(2 * Math.PI * 38) - ((2 * Math.PI * 38) * completedRate) / 100}
-                    strokeLinecap="round"
-                    style={{ transition: "stroke-dashoffset 0.8s ease" }}
-                  />
-                  <defs>
-                    <linearGradient id="crmRadialGrad" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" />
-                      <stop offset="100%" stopColor="hsl(var(--success))" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="gauge-text-overlay">
-                  <span className="gauge-percentage" style={{ fontSize: "1.5rem" }}>{completedRate}%</span>
-                  <span className="gauge-label" style={{ fontSize: "0.65rem" }}>Entregados</span>
-                </div>
-              </div>
-
-              <div className="support-tracker-footer-grid" style={{ paddingTop: "1rem" }}>
-                <div className="support-footer-item">
-                  <span className="support-footer-value">{defaultStats.projects.IN_PROGRESS}</span>
-                  <span className="support-footer-label">Instalación</span>
-                </div>
-                <div className="support-footer-item" style={{ borderLeft: "1px solid hsl(var(--border-glass))", borderRight: "1px solid hsl(var(--border-glass))" }}>
-                  <span className="support-footer-value" style={{ color: "hsl(var(--warning))" }}>{defaultStats.projects.QUOTED}</span>
-                  <span className="support-footer-label">Cotizados</span>
-                </div>
-                <div className="support-footer-item">
-                  <span className="support-footer-value" style={{ color: "hsl(var(--success))" }}>{defaultStats.projects.COMPLETED}</span>
-                  <span className="support-footer-label">Finalizados</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Widget 7: Especialidades */}
-        <div className="vuexy-col-4">
-          <div className="vuexy-card">
-            <span className="stats-title">Especialidades de Instalación</span>
-            <p className="stats-subtitle">Distribución del catálogo contratado</p>
-            
-            <div className="specialty-list" style={{ marginTop: "0.75rem" }}>
-              <div className="specialty-item">
-                <div className="specialty-icon-wrapper" style={{ borderColor: "hsla(250, 95%, 68%, 0.2)", width: "34px", height: "34px", fontSize: "0.95rem" }}>
-                  📹
-                </div>
-                <div className="specialty-details">
-                  <div className="specialty-name-flex" style={{ fontSize: "0.8rem" }}>
-                    <span>CCTV y Monitoreo IP</span>
-                    <span className="text-glow-primary">45%</span>
-                  </div>
-                  <div className="specialty-progress-track" style={{ height: "4px" }}>
-                    <div className="specialty-progress-bar" style={{ width: "45%", background: "hsl(var(--primary))" }} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="specialty-item">
-                <div className="specialty-icon-wrapper" style={{ borderColor: "hsla(30, 100%, 63%, 0.2)", width: "34px", height: "34px", fontSize: "0.95rem" }}>
-                  ⚡
-                </div>
-                <div className="specialty-details">
-                  <div className="specialty-name-flex" style={{ fontSize: "0.8rem" }}>
-                    <span>Cercos y Perímetros</span>
-                    <span style={{ color: "hsl(var(--warning))" }}>30%</span>
-                  </div>
-                  <div className="specialty-progress-track" style={{ height: "4px" }}>
-                    <div className="specialty-progress-bar" style={{ width: "30%", background: "hsl(var(--warning))" }} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="specialty-item">
-                <div className="specialty-icon-wrapper" style={{ borderColor: "hsla(147, 66%, 47%, 0.2)", width: "34px", height: "34px", fontSize: "0.95rem" }}>
-                  🔌
-                </div>
-                <div className="specialty-details">
-                  <div className="specialty-name-flex" style={{ fontSize: "0.8rem" }}>
-                    <span>Redes y Conectividad</span>
-                    <span style={{ color: "hsl(var(--success))" }}>25%</span>
-                  </div>
-                  <div className="specialty-progress-track" style={{ height: "4px" }}>
-                    <div className="specialty-progress-bar" style={{ width: "25%", background: "hsl(var(--success))" }} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Widget 8: Proyectos Recientes (CrmRecentProjects style) */}
-        <div className="vuexy-col-4">
-          <div className="vuexy-card">
-            <span className="stats-title">Proyectos Recientes</span>
-            <p className="stats-subtitle">Últimos levantamientos registrados</p>
-            
-            {recentProjects.length === 0 ? (
-              <p className="empty-text" style={{ fontSize: "0.8rem", padding: "1.5rem 0" }}>No hay obras registradas.</p>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "0.75rem" }}>
-                {recentProjects.map((project) => (
-                  <div key={project.id} className="crm-project-item-flex">
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                      <div className="crm-client-avatar">
-                        {getInitials(project.client?.name || "C")}
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <Link href={`/projects/${project.id}`} className="font-weight-medium" style={{ fontSize: "0.85rem", textDecoration: "none" }}>
-                          {project.name}
-                        </Link>
-                        <span style={{ fontSize: "0.725rem", color: "hsl(var(--text-muted))" }}>{project.client?.name}</span>
-                      </div>
-                    </div>
-                    
-                    <span className={`status-badge status-${project.status.toLowerCase()}`} style={{ fontSize: "0.65rem", padding: "0.15rem 0.5rem" }}>
-                      {project.status === "PENDING" && "Levantamiento"}
-                      {project.status === "QUOTED" && "Cotizado"}
-                      {project.status === "APPROVED" && "Aprobado"}
-                      {project.status === "IN_PROGRESS" && "Instalación"}
-                      {project.status === "COMPLETED" && "Completado"}
-                      {project.status === "CANCELLED" && "Cancelado"}
-                    </span>
-                  </div>
-                ))}
               </div>
             )}
           </div>
         </div>
-
       </div>
 
+      {/* Row 3: Rentabilidad Comercial, Avance de Obras, Proyectos por Clientes */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Card: Rentabilidad Comercial */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
+          <div>
+            <h2 className="text-base font-bold text-slate-100">Rentabilidad Comercial</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Márgenes netos del mes</p>
+          </div>
+          
+          <div className="space-y-4 mt-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold text-slate-300">Margen Promedio</span>
+                  <span className="block text-[10px] text-slate-500">Ponderado de obras</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="block text-sm font-bold text-slate-200">{marginPercent}%</span>
+                <span className="block text-[9px] font-bold text-emerald-500">+25.8%</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">
+                  <DollarSign className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold text-slate-300">Ganancia Bruta</span>
+                  <span className="block text-[10px] text-slate-500">Proyectada en USD</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="block text-sm font-bold text-slate-200">{formattedUSD(defaultStats.financialsUSD.profit)}</span>
+                <span className="block text-[9px] font-bold text-emerald-500">+4.3%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card: Avance de Obras */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between items-center text-center">
+          <div className="w-full text-left">
+            <h2 className="text-base font-bold text-slate-100">Avance de Obras</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Entregas culminadas</p>
+          </div>
+          
+          <div className="relative w-36 h-36 mt-4 flex items-center justify-center">
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" fill="transparent" stroke="#1e293b" strokeWidth="6" />
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                fill="transparent"
+                stroke="#10b981"
+                strokeWidth="6"
+                strokeDasharray={2 * Math.PI * 40}
+                strokeDashoffset={(2 * Math.PI * 40) - ((2 * Math.PI * 40) * completedRate) / 100}
+                strokeLinecap="round"
+                className="transition-all duration-1000 ease-in-out"
+              />
+            </svg>
+            <div className="absolute flex flex-col items-center justify-center">
+              <span className="text-2xl font-bold text-slate-100">{completedRate}%</span>
+              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Obras</span>
+            </div>
+          </div>
+
+          <span className="text-xs text-slate-400 mt-4 font-medium">
+            {defaultStats.projects.COMPLETED} de {defaultStats.projects.total} proyectos entregados
+          </span>
+        </div>
+
+        {/* Card: Proyectos por Clientes */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
+          <div>
+            <h2 className="text-base font-bold text-slate-100">Proyectos por Clientes</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Últimas órdenes en curso</p>
+          </div>
+          
+          {/* Tabs */}
+          <div className="grid grid-cols-3 bg-slate-950 p-1 rounded-lg border border-slate-800/80 mt-4 text-[10px] font-semibold text-center uppercase tracking-wider">
+            <button 
+              className={`py-1.5 rounded-md transition-colors ${activeTab === "PENDING" ? "bg-amber-500 text-slate-950 font-bold" : "text-slate-400 hover:text-slate-200"}`}
+              onClick={() => setActiveTab("PENDING")}
+            >
+              Nuevos
+            </button>
+            <button 
+              className={`py-1.5 rounded-md transition-colors ${activeTab === "IN_PROGRESS" ? "bg-amber-500 text-slate-950 font-bold" : "text-slate-400 hover:text-slate-200"}`}
+              onClick={() => setActiveTab("IN_PROGRESS")}
+            >
+              Ejecución
+            </button>
+            <button 
+              className={`py-1.5 rounded-md transition-colors ${activeTab === "COMPLETED" ? "bg-amber-500 text-slate-950 font-bold" : "text-slate-400 hover:text-slate-200"}`}
+              onClick={() => setActiveTab("COMPLETED")}
+            >
+              Entregas
+            </button>
+          </div>
+
+          {/* List panel */}
+          <div className="flex-1 space-y-3 mt-4 flex flex-col justify-center min-h-[120px]">
+            {filteredProjects.length === 0 ? (
+              <p className="text-center text-xs text-slate-500 py-6 font-medium">
+                No hay proyectos en esta fase.
+              </p>
+            ) : (
+              filteredProjects.map((project) => (
+                <div key={project.id} className="bg-slate-950 border border-slate-800/50 rounded-lg p-3 flex flex-col gap-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-200 truncate pr-2">{project.name}</span>
+                    <span className="text-[9px] text-amber-500 font-mono font-semibold flex-shrink-0 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                      {project.client?.rutOrId || "RUT"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] text-slate-400">
+                    <span>Cli: {project.client?.name}</span>
+                    <span className="text-slate-500">
+                      {project.manager ? `${project.manager.firstName} ${project.manager.lastName[0]}.` : "Sin manager"}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

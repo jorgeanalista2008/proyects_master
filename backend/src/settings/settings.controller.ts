@@ -17,9 +17,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Settings')
-@ApiBearerAuth('JWT-auth')
 @Controller('settings')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
@@ -29,12 +27,16 @@ export class SettingsController {
   }
 
   @Patch()
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('settings:write')
   update(@Body() updateSettingDto: UpdateSettingDto) {
     return this.settingsService.updateSettings(updateSettingDto);
   }
 
   @Post('logo')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('settings:write')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')

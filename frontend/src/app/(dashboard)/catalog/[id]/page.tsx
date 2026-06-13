@@ -62,7 +62,7 @@ export default function CatalogItemForm({ params }: PageProps) {
         setPriceCash(Number(data.priceCash) || 0);
         setPriceCredit(Number(data.priceCredit) || 0);
         setPricePreferred(Number(data.pricePreferred) || 0);
-        setImageId(data.imageId || null);
+        setImageId((data.images && data.images.length > 0) ? data.images[0].id : null);
       } catch (err: any) {
         console.error("Error loading catalog item:", err);
         setError("No se pudo cargar el producto o servicio solicitado.");

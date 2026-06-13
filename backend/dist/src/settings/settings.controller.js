@@ -45,6 +45,8 @@ __decorate([
 ], SettingsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
     (0, permissions_decorator_1.Permissions)('settings:write'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -53,6 +55,8 @@ __decorate([
 ], SettingsController.prototype, "update", null);
 __decorate([
     (0, common_1.Post)('logo'),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
     (0, permissions_decorator_1.Permissions)('settings:write'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
@@ -63,9 +67,7 @@ __decorate([
 ], SettingsController.prototype, "uploadLogo", null);
 exports.SettingsController = SettingsController = __decorate([
     (0, swagger_1.ApiTags)('Settings'),
-    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, common_1.Controller)('settings'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
     __metadata("design:paramtypes", [settings_service_1.SettingsService])
 ], SettingsController);
 //# sourceMappingURL=settings.controller.js.map
