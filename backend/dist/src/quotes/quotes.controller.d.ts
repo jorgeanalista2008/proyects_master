@@ -5,10 +5,6 @@ export declare class QuotesController {
     private readonly quotesService;
     constructor(quotesService: QuotesService);
     create(createQuoteDto: CreateQuoteDto, creatorId: string): Promise<{
-        creator: {
-            firstName: string;
-            lastName: string;
-        };
         items: ({
             product: {
                 name: string;
@@ -25,6 +21,10 @@ export declare class QuotesController {
             unitPrice: import("@prisma/client-runtime-utils").Decimal;
             quoteId: string;
         })[];
+        creator: {
+            firstName: string;
+            lastName: string;
+        };
     } & {
         id: string;
         createdAt: Date;
@@ -83,6 +83,12 @@ export declare class QuotesController {
                 address: string | null;
                 city: string | null;
             };
+            surveyImages: {
+                id: string;
+                createdAt: Date;
+                fileName: string;
+                mimeType: string;
+            }[];
         } & {
             id: string;
             name: string;
@@ -93,14 +99,13 @@ export declare class QuotesController {
             clientId: string;
             managerId: string | null;
         };
-        creator: {
-            id: string;
-            email: string;
-            firstName: string;
-            lastName: string;
-        };
         items: ({
             product: {
+                images: {
+                    id: string;
+                    fileName: string;
+                }[];
+            } & {
                 id: string;
                 name: string;
                 description: string | null;
@@ -123,6 +128,12 @@ export declare class QuotesController {
             unitPrice: import("@prisma/client-runtime-utils").Decimal;
             quoteId: string;
         })[];
+        creator: {
+            id: string;
+            email: string;
+            firstName: string;
+            lastName: string;
+        };
     } & {
         id: string;
         createdAt: Date;

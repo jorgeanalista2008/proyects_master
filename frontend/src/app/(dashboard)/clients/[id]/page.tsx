@@ -37,7 +37,7 @@ export default function ClientForm({ params }: PageProps) {
         setName(data.name || "");
         setEmail(data.email || "");
         setPhone(data.phone || "");
-        setTaxId(data.taxId || "");
+        setTaxId(data.rutOrId || "");
       } catch (err: any) {
         console.error("Error loading client:", err);
         setError("No se pudo cargar la información del cliente.");
@@ -65,13 +65,13 @@ export default function ClientForm({ params }: PageProps) {
         name,
         email,
         phone,
-        taxId
+        rutOrId: taxId
       };
 
       if (isNew) {
         await api.post("/clients", payload);
       } else {
-        await api.put(`/clients/${id}`, payload);
+        await api.patch(`/clients/${id}`, payload);
       }
 
       setSuccess(`¡Cliente ${isNew ? "registrado" : "actualizado"} con éxito!`);

@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 
 interface Client {
   name: string;
-  taxId: string;
+  rutOrId: string;
   email: string;
   phone: string;
 }
@@ -277,7 +277,7 @@ export default function QuoteDetailView({ params }: PageProps) {
           <div>
             <h4 style={{ fontSize: "0.85rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>CLIENTE</h4>
             <h5 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.25rem" }}>{project.client.name}</h5>
-            <p style={{ fontSize: "0.9rem", color: "#475569", margin: "0.15rem 0" }}>ID Fiscal: <strong>{project.client.taxId}</strong></p>
+            <p style={{ fontSize: "0.9rem", color: "#475569", margin: "0.15rem 0" }}>ID Fiscal: <strong>{project.client.rutOrId}</strong></p>
             <p style={{ fontSize: "0.9rem", color: "#475569", margin: "0.15rem 0" }}>Email: {project.client.email}</p>
             <p style={{ fontSize: "0.9rem", color: "#475569", margin: "0.15rem 0" }}>Teléfono: {project.client.phone}</p>
           </div>

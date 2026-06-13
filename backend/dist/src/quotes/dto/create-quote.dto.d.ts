@@ -9,5 +9,6 @@ export declare class CreateQuoteDto {
     exchangeRate?: number;
     taxRate?: number;
     discount?: number;
+    validUntil?: string;
     items: QuoteItemDto[];
 }

@@ -203,14 +203,13 @@ export default function NewQuoteBuilder({ params }: PageProps) {
         tax,
         total,
         items: selectedItems.map((item) => ({
-          catalogItemId: item.catalogItemId,
-          quantity: item.quantity,
-          price: item.salePrice * exchangeRate // save item price in the currency of the quote
+          productId: item.catalogItemId,
+          quantity: item.quantity
         }))
       };
 
-      // Create quote (POST /projects/:id/quotes or POST /quotes)
-      await api.post(`/projects/${projectId}/quotes`, payload);
+      // Create quote (POST /quotes)
+      await api.post("/quotes", payload);
 
       setSuccess("¡Cotización creada con éxito!");
       

@@ -9,7 +9,7 @@ export class QuotesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createQuoteDto: CreateQuoteDto, creatorId: string) {
-    const { projectId, currency, exchangeRate, taxRate, discount, items } = createQuoteDto;
+    const { projectId, currency, exchangeRate, taxRate, discount, items, validUntil } = createQuoteDto;
 
     if (!items || items.length === 0) {
       throw new BadRequestException('La cotización debe contener al menos un ítem.');
@@ -93,6 +93,7 @@ export class QuotesService {
           totalCost,
           marginAmount,
           createdById: creatorId,
+          validUntil: validUntil ? new Date(validUntil) : null,
           items: {
             create: processedItems.map(i => ({
               productId: i.productId,
@@ -156,11 +157,28 @@ export class QuotesService {
         project: {
           include: {
             client: true,
+            surveyImages: {
+              select: {
+                id: true,
+                fileName: true,
+                mimeType: true,
+                createdAt: true,
+              },
+            },
           },
         },
         items: {
           include: {
-            product: true,
+            product: {
+              include: {
+                images: {
+                  select: {
+                    id: true,
+                    fileName: true,
+                  },
+                },
+              },
+            },
           },
         },
         creator: {

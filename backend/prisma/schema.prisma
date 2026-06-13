@@ -27,22 +27,23 @@ model Role {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  passwordHash  String
-  firstName     String
-  lastName      String
-  phone         String?
-  isActive      Boolean        @default(true)
-  roleId        String
-  role          Role           @relation(fields: [roleId], references: [id])
+  id                 String             @id @default(uuid())
+  email              String             @unique
+  passwordHash       String
+  firstName          String
+  lastName           String
+  phone              String?
+  isActive           Boolean            @default(true)
+  roleId             String
+  role               Role               @relation(fields: [roleId], references: [id])
   
   // Relaciones del negocio
-  managedProjects Project[]    @relation("ProjectManager")
-  createdQuotes   Quote[]      @relation("QuoteCreator")
+  managedProjects    Project[]          @relation("ProjectManager")
+  createdQuotes      Quote[]            @relation("QuoteCreator")
+  technicianProfile  TechnicianProfile?
   
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   @@index([email])
 }
@@ -199,6 +200,7 @@ model QuoteItem {
 enum ImageType {
   PRODUCT_THUMBNAIL
   PROJECT_SURVEY
+  TECHNICIAN_PHOTO
 }
 
 model Image {
@@ -216,4 +218,34 @@ model Image {
   project     Project?  @relation("ProjectSurveyImage", fields: [projectId], references: [id], onDelete: Cascade)
   
   createdAt   DateTime  @default(now())
+}
+
+model TechnicianProfile {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Datos Personales
+  documentNumber String    @unique // Número de documento (DNI, RUT, etc.)
+  birthDate      DateTime?
+  academicLevel  String?   // Nivel académico (ej. Técnico, Universitario, Secundario)
+  profession     String?   // Profesión (ej. Ingeniero, Técnico electrónico)
+  trade          String?   // Oficio (ej. Instalador CCTV, Cableador estructurado)
+  
+  // Ubicación y Contacto
+  address        String?   @db.Text
+  landmark       String?   @db.Text // Punto de referencia
+  
+  // Tallas y Fisonomía
+  shirtSize      String?   // Talla camisa (S, M, L, XL, etc.)
+  pantsSize      String?   // Talla pantalón (30, 32, 40, etc.)
+  shoeSize       String?   // Talla zapatos (38, 40, 42, etc.)
+  weight         Float?    // Peso en Kg
+  height         Float?    // Altura en metros
+  
+  // Foto de perfil
+  photoId        String?   @unique
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }

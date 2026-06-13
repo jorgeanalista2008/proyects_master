@@ -41,6 +41,7 @@ export default function DashboardLayout({
     { href: '/projects', label: 'Proyectos', icon: '📁', roles: ['ADMIN', 'SELLER', 'TECHNICIAN', 'CLIENT'] },
     { href: '/catalog', label: 'Catálogo e Inventario', icon: '📦', roles: ['ADMIN', 'SELLER', 'TECHNICIAN'] },
     { href: '/clients', label: 'Clientes', icon: '👥', roles: ['ADMIN', 'SELLER'] },
+    { href: '/technicians', label: 'Técnicos', icon: '🛠️', roles: ['ADMIN', 'SELLER'] },
     { href: '/analytics', label: 'Analíticas y Margen', icon: '📈', roles: ['ADMIN', 'SELLER'] },
   ];
 

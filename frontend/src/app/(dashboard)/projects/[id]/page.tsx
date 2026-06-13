@@ -15,7 +15,9 @@ interface User {
   id: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role: {
+    name: string;
+  } | string;
 }
 
 interface ProjectImage {
@@ -328,9 +330,14 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
                   style={{ cursor: "pointer" }}
                 >
                   <option value="">Selecciona un Manager (Opcional)...</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.role})</option>
-                  ))}
+                  {users.map((u) => {
+                    const roleLabel = typeof u.role === "object" ? u.role.name : u.role;
+                    return (
+                      <option key={u.id} value={u.id}>
+                        {u.firstName} {u.lastName} ({roleLabel})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>

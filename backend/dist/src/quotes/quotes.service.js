@@ -19,7 +19,7 @@ let QuotesService = class QuotesService {
         this.prisma = prisma;
     }
     async create(createQuoteDto, creatorId) {
-        const { projectId, currency, exchangeRate, taxRate, discount, items } = createQuoteDto;
+        const { projectId, currency, exchangeRate, taxRate, discount, items, validUntil } = createQuoteDto;
         if (!items || items.length === 0) {
             throw new common_1.BadRequestException('La cotización debe contener al menos un ítem.');
         }
@@ -84,6 +84,7 @@ let QuotesService = class QuotesService {
                     totalCost,
                     marginAmount,
                     createdById: creatorId,
+                    validUntil: validUntil ? new Date(validUntil) : null,
                     items: {
                         create: processedItems.map(i => ({
                             productId: i.productId,
@@ -143,11 +144,28 @@ let QuotesService = class QuotesService {
                 project: {
                     include: {
                         client: true,
+                        surveyImages: {
+                            select: {
+                                id: true,
+                                fileName: true,
+                                mimeType: true,
+                                createdAt: true,
+                            },
+                        },
                     },
                 },
                 items: {
                     include: {
-                        product: true,
+                        product: {
+                            include: {
+                                images: {
+                                    select: {
+                                        id: true,
+                                        fileName: true,
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
                 creator: {

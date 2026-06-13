@@ -16,6 +16,7 @@ export interface User {
 interface LoginResponse {
   token?: string;
   accessToken?: string;
+  access_token?: string;
   user: User;
 }
 
@@ -65,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Calls http://localhost:3000/api/auth/login
       const response = await api.post<LoginResponse>("/auth/login", { email, password });
       
-      const sessionToken = response.token || response.accessToken;
+      const sessionToken = response.access_token || response.token || response.accessToken;
       if (!sessionToken) {
         throw new Error("Invalid server response: Access token is missing.");
       }

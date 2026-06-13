@@ -51,13 +51,13 @@ export default function DashboardPage() {
         // Si el usuario es ADMIN o SELLER, puede ver las analíticas completas
         if (user && (user.role === 'ADMIN' || user.role === 'SELLER')) {
           const statsRes = await api.get('/analytics/summary');
-          setStats(statsRes.data);
+          setStats(statsRes);
         }
 
         // Obtener proyectos recientes para todos los roles
-        const projectsRes = await api.get('/projects');
+        const projectsRes = await api.get<ProjectSummary[]>('/projects');
         // Ordenar por fecha y tomar los 5 más recientes
-        const sorted = projectsRes.data
+        const sorted = (projectsRes || [])
           .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .slice(0, 5);
         setRecentProjects(sorted);

@@ -7,17 +7,17 @@ export declare class ImagesController {
     uploadProductImage(productId: string, file: Express.Multer.File): Promise<{
         id: string;
         createdAt: Date;
+        type: import("@prisma/client").$Enums.ImageType;
         fileName: string;
         mimeType: string;
-        type: import("@prisma/client").$Enums.ImageType;
         productId: string | null;
     }>;
     uploadProjectSurveyImage(projectId: string, file: Express.Multer.File): Promise<{
         id: string;
         createdAt: Date;
+        type: import("@prisma/client").$Enums.ImageType;
         fileName: string;
         mimeType: string;
-        type: import("@prisma/client").$Enums.ImageType;
         projectId: string | null;
     }>;
     remove(id: string): Promise<{

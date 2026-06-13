@@ -10,7 +10,7 @@ interface Client {
   name: string;
   email: string;
   phone: string;
-  taxId: string; // RUT/RFC/DNI
+  rutOrId: string; // RUT/RFC/DNI
   projects?: any[];
   _count?: {
     projects: number;
@@ -43,7 +43,7 @@ export default function ClientsPage() {
     return (
       client.name.toLowerCase().includes(search.toLowerCase()) ||
       client.email.toLowerCase().includes(search.toLowerCase()) ||
-      client.taxId.toLowerCase().includes(search.toLowerCase())
+      client.rutOrId.toLowerCase().includes(search.toLowerCase())
     );
   });
 
@@ -154,7 +154,7 @@ export default function ClientsPage() {
                         fontSize: "0.85rem",
                         border: "1px solid hsl(var(--border-glass))"
                       }}>
-                        {client.taxId}
+                        {client.rutOrId}
                       </code>
                     </td>
                     <td>
