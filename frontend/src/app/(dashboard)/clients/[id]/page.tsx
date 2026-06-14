@@ -5,6 +5,18 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Card,
+  CardContent,
+  Grid,
+  Divider,
+  Alert,
+  CircularProgress
+} from "@mui/material";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -91,129 +103,191 @@ export default function ClientForm({ params }: PageProps) {
 
   if (fetching) {
     return (
-      <div className="loader-container">
-        <div className="spinner" style={{ width: "2.5rem", height: "2.5rem" }} />
-        <p>Cargando información del cliente...</p>
-      </div>
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "300px", gap: 2 }}>
+        <CircularProgress size={40} sx={{ color: "var(--primary)" }} />
+        <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
+          Cargando información del cliente...
+        </Typography>
+      </Box>
     );
   }
 
   return (
-    <div className="fade-in" style={{ maxWidth: "600px", margin: "0 auto" }}>
-      <div style={{ marginBottom: "2rem" }}>
-        <Link href="/clients" style={{
-          color: "hsl(var(--text-secondary))",
-          fontSize: "0.9rem",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          marginBottom: "1rem"
-        }}>
-          ⬅️ Volver a Clientes
+    <Box sx={{ maxWidth: 800, mx: "auto", p: { xs: 1, sm: 3 } }}>
+      <Box sx={{ mb: 4 }}>
+        <Link href="/clients" style={{ textDecoration: "none" }}>
+          <Button variant="text" size="small" sx={{ color: "var(--text-muted)", mb: 2, textTransform: "none", fontSize: "0.9rem" }}>
+            ← Volver a Clientes
+          </Button>
         </Link>
-        <h1 className="title-primary">{isNew ? "Registrar Nuevo Cliente" : `Editar Cliente`}</h1>
-        <p className="subtitle-secondary">
+        <Typography variant="h5" sx={{ fontWeight: 600, color: "var(--text-main)", mb: 0.5 }}>
+          {isNew ? "Registrar Nuevo Cliente" : "Editar Cliente"}
+        </Typography>
+        <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
           {isNew ? "Ingresa la información fiscal y datos de contacto del cliente" : "Actualiza la información fiscal y de contacto."}
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <div className="glass-card">
-        {error && (
-          <div style={{
-            background: "hsla(0, 84.2%, 60.2%, 0.15)",
-            border: "1px solid hsl(var(--danger))",
-            color: "#ff8888",
-            padding: "1rem",
-            borderRadius: "var(--radius-md)",
-            marginBottom: "1.5rem"
-          }}>
-            ⚠️ {error}
-          </div>
-        )}
+      <Card sx={{ 
+        bgcolor: "var(--bg-card)", 
+        borderRadius: "6px", 
+        border: "1px solid var(--border-light)", 
+        boxShadow: "var(--shadow-sm)" 
+      }}>
+        <CardContent sx={{ p: 4 }}>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: "6px" }}>
+              {error}
+            </Alert>
+          )}
 
-        {success && (
-          <div style={{
-            background: "hsla(142.1, 70.6%, 45.3%, 0.15)",
-            border: "1px solid hsl(var(--success))",
-            color: "#a3e635",
-            padding: "1rem",
-            borderRadius: "var(--radius-md)",
-            marginBottom: "1.5rem"
-          }}>
-            ✓ {success}
-          </div>
-        )}
+          {success && (
+            <Alert severity="success" sx={{ mb: 3, borderRadius: "6px" }}>
+              {success}
+            </Alert>
+          )}
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          
-          <div className="input-group">
-            <label className="input-label" htmlFor="name">Nombre / Razón Social</label>
-            <input
-              id="name"
-              type="text"
-              placeholder="Ej. Distribuidora de Alimentos S.A."
-              className="input-field"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={loading}
-              required
-            />
-          </div>
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  label="Nombre / Razón Social"
+                  placeholder="Ej. Distribuidora de Alimentos S.A."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={loading}
+                  required
+                  slotProps={{
+                    inputLabel: { shrink: true }
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "6px",
+                      "& fieldset": { borderColor: "var(--border-light)" },
+                      "&.Mui-focused fieldset": { borderColor: "var(--primary)" }
+                    },
+                    "& .MuiInputLabel-root": { color: "var(--text-muted)" },
+                    "& .MuiInputLabel-root.Mui-focused": { color: "var(--primary)" },
+                    "& .MuiInputBase-input": { color: "var(--text-main)" }
+                  }}
+                />
+              </Grid>
 
-          <div className="input-group">
-            <label className="input-label" htmlFor="taxId">Identificación Fiscal (RUT / RFC / DNI)</label>
-            <input
-              id="taxId"
-              type="text"
-              placeholder="Ej. 76.543.210-K o RFC: ORE660421-H54"
-              className="input-field"
-              value={taxId}
-              onChange={(e) => setTaxId(e.target.value)}
-              disabled={loading}
-              required
-            />
-          </div>
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  label="Identificación Fiscal (RUT / RFC / DNI)"
+                  placeholder="Ej. 76.543.210-K o RFC: ORE660421-H54"
+                  value={taxId}
+                  onChange={(e) => setTaxId(e.target.value)}
+                  disabled={loading}
+                  required
+                  slotProps={{
+                    inputLabel: { shrink: true }
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "6px",
+                      "& fieldset": { borderColor: "var(--border-light)" },
+                      "&.Mui-focused fieldset": { borderColor: "var(--primary)" }
+                    },
+                    "& .MuiInputLabel-root": { color: "var(--text-muted)" },
+                    "& .MuiInputLabel-root.Mui-focused": { color: "var(--primary)" },
+                    "& .MuiInputBase-input": { color: "var(--text-main)" }
+                  }}
+                />
+              </Grid>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-            <div className="input-group" style={{ marginBottom: 0 }}>
-              <label className="input-label" htmlFor="email">Correo Electrónico</label>
-              <input
-                id="email"
-                type="email"
-                placeholder="cliente@dominio.com"
-                className="input-field"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Correo Electrónico"
+                  type="email"
+                  placeholder="cliente@dominio.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                  required
+                  slotProps={{
+                    inputLabel: { shrink: true }
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "6px",
+                      "& fieldset": { borderColor: "var(--border-light)" },
+                      "&.Mui-focused fieldset": { borderColor: "var(--primary)" }
+                    },
+                    "& .MuiInputLabel-root": { color: "var(--text-muted)" },
+                    "& .MuiInputLabel-root.Mui-focused": { color: "var(--primary)" },
+                    "& .MuiInputBase-input": { color: "var(--text-main)" }
+                  }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Teléfono de Contacto"
+                  type="tel"
+                  placeholder="+56 9 8765 4321"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={loading}
+                  slotProps={{
+                    inputLabel: { shrink: true }
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "6px",
+                      "& fieldset": { borderColor: "var(--border-light)" },
+                      "&.Mui-focused fieldset": { borderColor: "var(--primary)" }
+                    },
+                    "& .MuiInputLabel-root": { color: "var(--text-muted)" },
+                    "& .MuiInputLabel-root.Mui-focused": { color: "var(--primary)" },
+                    "& .MuiInputBase-input": { color: "var(--text-main)" }
+                  }}
+                />
+              </Grid>
+            </Grid>
+
+            <Divider sx={{ my: 4, borderColor: "var(--border-light)" }} />
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+              <Link href="/clients" style={{ textDecoration: "none" }}>
+                <Button 
+                  variant="outlined" 
+                  disabled={loading}
+                  sx={{ 
+                    borderRadius: "6px", 
+                    textTransform: "none", 
+                    borderColor: "var(--border-light)", 
+                    color: "var(--text-muted)",
+                    "&:hover": { borderColor: "var(--text-muted)", bgcolor: "transparent" }
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </Link>
+              <Button 
+                type="submit" 
+                variant="contained" 
                 disabled={loading}
-                required
-              />
-            </div>
-            
-            <div className="input-group" style={{ marginBottom: 0 }}>
-              <label className="input-label" htmlFor="phone">Teléfono de Contacto</label>
-              <input
-                id="phone"
-                type="tel"
-                placeholder="+56 9 8765 4321"
-                className="input-field"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "1rem" }}>
-            <Link href="/clients" className="btn btn-secondary" style={{ pointerEvents: loading ? "none" : "auto" }}>
-              Cancelar
-            </Link>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? <span className="spinner" /> : null}
-              <span>{isNew ? "Registrar Cliente" : "Guardar Cambios"}</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+                sx={{ 
+                  borderRadius: "6px", 
+                  textTransform: "none", 
+                  bgcolor: "var(--primary)",
+                  boxShadow: "0 4px 8px 0 rgba(115, 103, 240, 0.3)",
+                  "&:hover": { bgcolor: "var(--primary-hover)" }
+                }}
+              >
+                {loading ? <CircularProgress size={20} sx={{ mr: 1, color: "white" }} /> : null}
+                {isNew ? "Registrar Cliente" : "Guardar Cambios"}
+              </Button>
+            </Box>
+          </form>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

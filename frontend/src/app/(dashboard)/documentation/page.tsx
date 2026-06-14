@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useConfig } from "@/context/ConfigContext";
 
 type DocTab = "readme" | "user_manual" | "data_dictionary";
 
@@ -130,6 +131,9 @@ function buildTableHtml(rows: string[]): string {
 }
 
 export default function DocumentationPage() {
+  const { config: sysConfig } = useConfig();
+  const appName = sysConfig?.appName || "Nexxos.pro";
+
   const [activeTab, setActiveTab] = useState<DocTab>("readme");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
@@ -150,7 +154,11 @@ export default function DocumentationPage() {
         if (!res.ok) {
           throw new Error("No se pudo cargar el archivo de documentación.");
         }
-        const markdown = await res.text();
+        let markdown = await res.text();
+        
+        // Dynamically replace hardcoded "SecurityNet" with dynamic appName
+        markdown = markdown.replace(/SecurityNet/g, appName);
+
         const parsedHtml = parseMarkdownToHtml(markdown);
         setContent(parsedHtml);
       } catch (err: any) {
@@ -161,7 +169,7 @@ export default function DocumentationPage() {
       }
     }
     fetchDoc();
-  }, [activeTab]);
+  }, [activeTab, appName]);
 
   return (
     <div className="fade-in" style={{ maxWidth: "950px", margin: "0 auto" }}>

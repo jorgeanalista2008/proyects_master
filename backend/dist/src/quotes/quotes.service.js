@@ -169,6 +169,7 @@ let QuotesService = class QuotesService {
                     include: {
                         product: {
                             include: {
+                                category: true,
                                 images: {
                                     select: {
                                         id: true,

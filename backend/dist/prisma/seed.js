@@ -67,15 +67,15 @@ async function main() {
         { name: 'users:write', description: 'Administrar usuarios, perfiles, permisos y menús' },
     ];
     const menuItemsList = [
-        { label: 'Inicio', route: '/', icon: '📊', order: 1 },
-        { label: 'Proyectos', route: '/projects', icon: '📁', order: 2 },
-        { label: 'Catálogo e Inventario', route: '/catalog', icon: '📦', order: 3 },
-        { label: 'Clientes', route: '/clients', icon: '👥', order: 4 },
-        { label: 'Técnicos', route: '/technicians', icon: '🛠️', order: 5 },
-        { label: 'Analíticas y Margen', route: '/analytics', icon: '📈', order: 6 },
-        { label: 'Personalización', route: '/settings', icon: '⚙️', order: 7 },
-        { label: 'Documentación', route: '/documentation', icon: '📚', order: 8 },
-        { label: 'Administración', route: '/roles', icon: '🔑', order: 9 },
+        { label: 'Inicio', route: '/', icon: 'mdi:view-dashboard-outline', order: 1 },
+        { label: 'Proyectos', route: '/projects', icon: 'mdi:briefcase-outline', order: 2 },
+        { label: 'Catálogo e Inventario', route: '/catalog', icon: 'mdi:archive-outline', order: 3 },
+        { label: 'Clientes', route: '/clients', icon: 'mdi:account-group-outline', order: 4 },
+        { label: 'Técnicos', route: '/technicians', icon: 'mdi:account-wrench-outline', order: 5 },
+        { label: 'Analíticas y Margen', route: '/analytics', icon: 'mdi:chart-timeline-variant', order: 6 },
+        { label: 'Personalización', route: '/settings', icon: 'mdi:settings-outline', order: 7 },
+        { label: 'Documentación', route: '/documentation', icon: 'mdi:book-open-page-variant-outline', order: 8 },
+        { label: 'Administración', route: '/roles', icon: 'mdi:shield-key-outline', order: 9 },
     ];
     const seededPermissions = {};
     for (const perm of permissionsList) {
@@ -169,12 +169,31 @@ async function main() {
         },
     });
     console.log('Administrador por defecto creado o actualizado:', defaultAdmin.email);
+    const categoriesList = [
+        { name: 'CAMERA', label: 'Cámara de Seguridad' },
+        { name: 'DVR_NVR', label: 'Grabador DVR / NVR' },
+        { name: 'CABLE', label: 'Cableado Estructurado' },
+        { name: 'TUBING', label: 'Tuberías y Canalización' },
+        { name: 'ACCESSORY', label: 'Accesorios / Anclajes' },
+        { name: 'LABOR', label: 'Mano de Obra' },
+        { name: 'SERVICE', label: 'Servicios / Viáticos' }
+    ];
+    const seededCategories = {};
+    for (const cat of categoriesList) {
+        const c = await prisma.category.upsert({
+            where: { name: cat.name },
+            update: { label: cat.label },
+            create: cat
+        });
+        seededCategories[cat.name] = c;
+    }
+    console.log('Categorías creadas.');
     const products = [
         {
             sku: 'CAM-DOM-001',
             name: 'Cámara Domo IP 4MP',
             description: 'Cámara domo de seguridad IP con resolución de 4MP, visión nocturna infrarroja y resistencia a la intemperie (IP67).',
-            category: 'CAMERA',
+            categoryKey: 'CAMERA',
             unitCost: 25.5000,
             marginCash: 30.00,
             priceCash: 33.1500,
@@ -184,10 +203,23 @@ async function main() {
             pricePreferred: 30.6000,
         },
         {
+            sku: 'CAM-PTZ-002',
+            name: 'Cámara PTZ Exterior 2MP 25x',
+            description: 'Cámara domo motorizada PTZ de 2 Megapíxeles, zoom óptico de 25x, seguimiento inteligente por IA y alcance IR de 150 metros.',
+            categoryKey: 'CAMERA',
+            unitCost: 280.0000,
+            marginCash: 35.00,
+            priceCash: 378.0000,
+            marginCredit: 45.00,
+            priceCredit: 406.0000,
+            marginPreferred: 25.00,
+            pricePreferred: 350.0000,
+        },
+        {
             sku: 'NVR-08C-002',
             name: 'NVR 8 Canales 4K',
             description: 'Grabador de video en red (NVR) de 8 canales con soporte de resolución hasta 4K y compresión H.265+.',
-            category: 'DVR_NVR',
+            categoryKey: 'DVR_NVR',
             unitCost: 110.0000,
             marginCash: 30.00,
             priceCash: 143.0000,
@@ -197,10 +229,23 @@ async function main() {
             pricePreferred: 132.0000,
         },
         {
+            sku: 'NVR-16C-003',
+            name: 'NVR 16 Canales con PoE',
+            description: 'Grabador NVR de 16 canales de video, 16 puertos PoE integrados, soporta hasta 2 discos duros SATA de 10TB cada uno.',
+            categoryKey: 'DVR_NVR',
+            unitCost: 225.0000,
+            marginCash: 30.00,
+            priceCash: 292.5000,
+            marginCredit: 40.00,
+            priceCredit: 315.0000,
+            marginPreferred: 20.00,
+            pricePreferred: 270.0000,
+        },
+        {
             sku: 'CAB-UTP-003',
             name: 'Bobina Cable UTP Cat6 305m',
             description: 'Bobina de cable de red UTP Categoría 6, 100% cobre, ideal para transmisiones Gigabit y tendidos de CCTV.',
-            category: 'CABLE',
+            categoryKey: 'CABLE',
             unitCost: 65.0000,
             marginCash: 30.00,
             priceCash: 84.5000,
@@ -210,10 +255,36 @@ async function main() {
             pricePreferred: 78.0000,
         },
         {
+            sku: 'TUB-CON-004',
+            name: 'Tubo Conduit Galvanizado 3/4 3m',
+            description: 'Tubería metálica rígida tipo Conduit Galvanizado de 3/4 pulgada por 3 metros de largo para protección de cables exteriores.',
+            categoryKey: 'TUBING',
+            unitCost: 8.5000,
+            marginCash: 40.00,
+            priceCash: 11.9000,
+            marginCredit: 50.00,
+            priceCredit: 12.7500,
+            marginPreferred: 25.00,
+            pricePreferred: 10.6300,
+        },
+        {
+            sku: 'ACC-CON-005',
+            name: 'Conector Caja Conduit 3/4',
+            description: 'Conector metálico para acoplar tubos Conduit de 3/4 a cajas de paso estancas en exterior.',
+            categoryKey: 'ACCESSORY',
+            unitCost: 0.9000,
+            marginCash: 60.05,
+            priceCash: 1.4400,
+            marginCredit: 80.00,
+            priceCredit: 1.6200,
+            marginPreferred: 40.00,
+            pricePreferred: 1.2605,
+        },
+        {
             sku: 'LAB-TEC-004',
             name: 'Hora de Mano de Obra Técnica',
             description: 'Hora de servicio de instalación, montaje y conexionado de cámaras o sistemas de seguridad por técnico calificado.',
-            category: 'LABOR',
+            categoryKey: 'LABOR',
             unitCost: 15.0000,
             marginCash: 50.00,
             priceCash: 22.5000,
@@ -226,7 +297,7 @@ async function main() {
             sku: 'SRV-LEV-005',
             name: 'Servicio de Levantamiento Técnico y Diseño',
             description: 'Visita técnica al sitio del cliente para tomar medidas, evaluar la topografía, definir puntos de cámaras y diseñar planos de canalización.',
-            category: 'SERVICE',
+            categoryKey: 'SERVICE',
             unitCost: 0.0000,
             marginCash: 0.00,
             priceCash: 30.0000,
@@ -235,13 +306,28 @@ async function main() {
             marginPreferred: 0.00,
             pricePreferred: 25.0000,
         },
+        {
+            sku: 'SRV-MNT-006',
+            name: 'Servicio Anual de Mantenimiento Preventivo',
+            description: 'Póliza anual de mantenimiento preventivo de hasta 8 cámaras, incluye limpieza de lentes, verificación de conectores, y actualización de firmware.',
+            categoryKey: 'SERVICE',
+            unitCost: 120.0000,
+            marginCash: 40.00,
+            priceCash: 168.0000,
+            marginCredit: 50.00,
+            priceCredit: 180.0000,
+            marginPreferred: 25.00,
+            pricePreferred: 150.0000,
+        },
     ];
     for (const prod of products) {
+        const category = seededCategories[prod.categoryKey];
         await prisma.product.upsert({
             where: { sku: prod.sku },
             update: {
                 name: prod.name,
                 description: prod.description,
+                categoryId: category.id,
                 unitCost: prod.unitCost,
                 marginCash: prod.marginCash,
                 priceCash: prod.priceCash,
@@ -250,7 +336,19 @@ async function main() {
                 marginPreferred: prod.marginPreferred,
                 pricePreferred: prod.pricePreferred,
             },
-            create: prod,
+            create: {
+                sku: prod.sku,
+                name: prod.name,
+                description: prod.description,
+                categoryId: category.id,
+                unitCost: prod.unitCost,
+                marginCash: prod.marginCash,
+                priceCash: prod.priceCash,
+                marginCredit: prod.marginCredit,
+                priceCredit: prod.priceCredit,
+                marginPreferred: prod.marginPreferred,
+                pricePreferred: prod.pricePreferred,
+            },
         });
     }
     console.log('Productos de catálogo creados.');

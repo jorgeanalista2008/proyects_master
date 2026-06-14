@@ -1,9 +1,40 @@
+// d:\github\proyects_master\frontend\src\app\(dashboard)\settings\page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { useConfig } from "@/context/ConfigContext";
 import { useAuth } from "@/hooks/useAuth";
-import { getApiUrl } from "@/lib/api";
+import { api, getApiUrl } from "@/lib/api";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  MenuItem,
+  Card,
+  CardContent,
+  Grid,
+  Divider,
+  Alert,
+  CircularProgress,
+  Tabs,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton
+} from "@mui/material";
+import { Trash2 } from "lucide-react";
+
+interface Category {
+  id: string;
+  name: string;
+  label: string;
+}
 
 const PRESET_PALETTES = [
   { name: "Vuexy Corporate (Recomendado)", primary: "#7367F0", accent: "#82868B" },
@@ -18,6 +49,8 @@ const PRESET_PALETTES = [
 export default function SettingsPage() {
   const { user } = useAuth();
   const { config, updateConfig, uploadLogo } = useConfig();
+
+  const [activeTab, setActiveTab] = useState<"general" | "categories">("general");
 
   const [appName, setAppName] = useState("");
   const [phone, setPhone] = useState("");
@@ -36,7 +69,12 @@ export default function SettingsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Sync state with global config
+  // Categories states
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryLabel, setCategoryLabel] = useState("");
+  const [loadingCats, setLoadingCats] = useState(false);
+
   useEffect(() => {
     if (config) {
       setAppName(config.appName || "");
@@ -54,15 +92,35 @@ export default function SettingsPage() {
     }
   }, [config]);
 
-  // Deny access if not admin
+  // Fetch Categories on demand
+  const fetchCategories = async () => {
+    try {
+      setLoadingCats(true);
+      const data = await api.get<Category[]>("/settings/categories");
+      setCategories(data);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    } finally {
+      setLoadingCats(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "categories") {
+      fetchCategories();
+    }
+  }, [activeTab]);
+
   if (user && user.role !== "ADMIN") {
     return (
-      <div className="glass-card" style={{ textAlign: "center", padding: "4rem" }}>
-        <h3 style={{ color: "hsl(var(--danger))" }}>Acceso Denegado</h3>
-        <p style={{ marginTop: "1rem", color: "hsl(var(--text-secondary))" }}>
-          Solo los administradores del sistema pueden acceder al panel de personalización.
-        </p>
-      </div>
+      <Card sx={{ border: "1px solid", borderColor: "divider", textAlign: "center", py: 8 }}>
+        <CardContent sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+          <Typography variant="h5" color="error" sx={{ fontWeight: 700 }}>Acceso Denegado</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360 }}>
+            Solo los administradores del sistema pueden acceder al panel de personalización.
+          </Typography>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -87,9 +145,7 @@ export default function SettingsPage() {
     try {
       const newLogoId = await uploadLogo(logoFile);
       setLogoFile(null);
-      
       setLogoPreviewUrl(getApiUrl(`/images/${newLogoId}`));
-      
       setSuccess("Logo corporativo actualizado con éxito.");
     } catch (err: any) {
       console.error(err);
@@ -131,254 +187,410 @@ export default function SettingsPage() {
     }
   };
 
+  // Add Category Handler
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryName || !categoryLabel) return;
+    setError("");
+    setSuccess("");
+    try {
+      await api.post("/settings/categories", { name: categoryName, label: categoryLabel });
+      setCategoryName("");
+      setCategoryLabel("");
+      setSuccess("Categoría agregada exitosamente.");
+      fetchCategories();
+    } catch (err: any) {
+      console.error(err);
+      setError("No se pudo agregar la categoría.");
+    }
+  };
+
+  // Delete Category Handler
+  const handleDeleteCategory = async (catId: string) => {
+    if (!confirm("¿Estás seguro de eliminar esta categoría? Esto podría afectar a los productos asociados.")) return;
+    setError("");
+    setSuccess("");
+    try {
+      await api.delete(`/settings/categories/${catId}`);
+      setSuccess("Categoría eliminada exitosamente.");
+      fetchCategories();
+    } catch (err: any) {
+      console.error(err);
+      setError("No se pudo eliminar la categoría.");
+    }
+  };
+
+  const fieldStyle = {
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "6px",
+      "& fieldset": { borderColor: "var(--border-light)" },
+      "&.Mui-focused fieldset": { borderColor: "var(--primary)" }
+    },
+    "& .MuiInputLabel-root": { color: "var(--text-muted)" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "var(--primary)" },
+    "& .MuiInputBase-input": { color: "var(--text-main)" }
+  };
+
   return (
-    <div className="fade-in" style={{ maxWidth: "800px", margin: "0 auto" }}>
-      <div style={{ marginBottom: "2rem" }}>
-        <h1 className="title-primary">Personalización del Software</h1>
-        <p className="subtitle-secondary">
-          Modifica los colores, logo e identidad del software aplicables en toda la plataforma.
-        </p>
-      </div>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, maxWidth: 850, mx: "auto", p: { xs: 1, sm: 3 } }}>
+      {/* Title */}
+      <Box>
+        <Typography variant="h5" sx={{ fontWeight: 750, color: "var(--text-main)", mb: 0.5 }}>
+          Configuración y Personalización
+        </Typography>
+        <Typography variant="body2" color="var(--text-muted)">
+          Modifica los colores, logo corporativo, clasificaciones de productos e identidad general aplicables en la plataforma.
+        </Typography>
+      </Box>
 
-      {error && (
-        <div style={{
-          background: "hsla(0, 84.2%, 60.2%, 0.15)",
-          border: "1px solid hsl(var(--danger))",
-          color: "#ff8888",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
-          ⚠️ {error}
-        </div>
-      )}
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: "var(--border-light)", mb: 2 }}>
+        <Tabs 
+          value={activeTab} 
+          onChange={(_, val) => setActiveTab(val)}
+          sx={{
+            "& .MuiTab-root": { textTransform: "none", fontWeight: 600, fontSize: "0.95rem" },
+            "& .Mui-selected": { color: "var(--primary) !important" },
+            "& .MuiTabs-indicator": { bgcolor: "var(--primary)" }
+          }}
+        >
+          <Tab label="⚙️ Ajustes Generales" value="general" />
+          <Tab label="🏷️ Categorías del Catálogo" value="categories" />
+        </Tabs>
+      </Box>
 
-      {success && (
-        <div style={{
-          background: "hsla(142.1, 70.6%, 45.3%, 0.15)",
-          border: "1px solid hsl(var(--success))",
-          color: "#a3e635",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
-          ✓ {success}
-        </div>
-      )}
+      {error && <Alert severity="error" sx={{ borderRadius: "6px" }}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ borderRadius: "6px" }}>{success}</Alert>}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: "2rem", alignItems: "start" }}>
-        {/* Left Side: Logo Uploader */}
-        <div className="glass-card" style={{ padding: "1.5rem", textAlign: "center" }}>
-          <h3 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "1rem" }}>Logo Corporativo</h3>
-          
-          <div style={{
-            background: "hsla(0, 0%, 100%, 0.05)",
-            border: "1px solid hsl(var(--border-glass))",
-            borderRadius: "var(--radius-md)",
-            height: "150px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: "1rem",
-            padding: "1rem",
-            overflow: "hidden"
-          }}>
-            {logoPreviewUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoPreviewUrl} alt="Logo Corporativo" style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
-            ) : (
-              <span style={{ fontSize: "0.85rem", color: "hsl(var(--text-muted))" }}>Sin Logo Cargado</span>
-            )}
-          </div>
+      {activeTab === "general" && (
+        <Grid container spacing={3}>
+          {/* Logo Uploader */}
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Card sx={{ bgcolor: "var(--bg-card)", borderRadius: "6px", border: "1px solid var(--border-light)", textAlign: "center" }}>
+              <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--text-main)" }}>Logo Corporativo</Typography>
+                <Box sx={{
+                  bgcolor: "rgba(115, 103, 240, 0.01)",
+                  border: "1px solid var(--border-light)",
+                  borderRadius: "6px",
+                  height: 150,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  p: 2,
+                  overflow: "hidden"
+                }}>
+                  {logoPreviewUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={logoPreviewUrl} alt="Logo" style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
+                  ) : (
+                    <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>Sin Logo Cargado</Typography>
+                  )}
+                </Box>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <input
-              type="file"
-              accept="image/*"
-              id="settings-logo-upload"
-              style={{ display: "none" }}
-              onChange={handleFileChange}
-            />
-            <label htmlFor="settings-logo-upload" className="btn btn-secondary btn-sm" style={{ cursor: "pointer" }}>
-              📁 Elegir Archivo Logo
-            </label>
-            {logoFile && (
-              <button
-                onClick={handleUploadLogo}
-                disabled={uploadingLogo}
-                className="btn btn-primary btn-sm"
-              >
-                {uploadingLogo ? "Subiendo..." : "✓ Subir Logo"}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Right Side: Settings fields */}
-        <div className="glass-card" style={{ padding: "2rem" }}>
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-            <h3 style={{ fontSize: "1.15rem", fontWeight: 600, borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "0.5rem", margin: 0 }}>
-              Identidad de Marca
-            </h3>
-
-            <div className="input-group">
-              <label className="input-label" htmlFor="appName">Nombre Comercial (App)</label>
-              <input
-                id="appName"
-                type="text"
-                className="input-field"
-                value={appName}
-                onChange={(e) => setAppName(e.target.value)}
-                disabled={saving}
-                required
-              />
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="phone">Teléfono Empresa</label>
-                <input
-                  id="phone"
-                  type="text"
-                  className="input-field"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={saving}
-                />
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="email">Correo Empresa</label>
-                <input
-                  id="email"
-                  type="email"
-                  className="input-field"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={saving}
-                />
-              </div>
-            </div>
-
-            <div className="input-group">
-              <label className="input-label" htmlFor="address">Dirección Principal</label>
-              <input
-                id="address"
-                type="text"
-                className="input-field"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                disabled={saving}
-              />
-            </div>
-
-            <div className="input-group">
-              <label className="input-label" htmlFor="website">Página Web</label>
-              <input
-                id="website"
-                type="text"
-                className="input-field"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                disabled={saving}
-              />
-            </div>
-
-            <h3 style={{ fontSize: "1.15rem", fontWeight: 600, borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "0.5rem", marginTop: "0.5rem", margin: 0 }}>
-              Estética & Temas
-            </h3>
-
-            {/* Presets */}
-            <div className="input-group">
-              <label className="input-label">Paletas de Colores Predeterminadas</label>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.5rem" }}>
-                {PRESET_PALETTES.map((palette) => (
-                  <button
-                    key={palette.name}
-                    type="button"
-                    onClick={() => handleApplyPalette(palette)}
-                    className="btn btn-secondary btn-sm"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      fontSize: "0.75rem",
-                      padding: "0.3rem 0.6rem"
-                    }}
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="settings-logo-upload"
+                    style={{ display: "none" }}
+                    onChange={handleFileChange}
+                  />
+                  <Button 
+                    component="label" 
+                    htmlFor="settings-logo-upload" 
+                    variant="outlined" 
+                    size="small"
+                    sx={{ textTransform: "none", fontWeight: 600, borderColor: "var(--border-light)", color: "var(--text-muted)" }}
                   >
-                    <span style={{ display: "flex", gap: "2px" }}>
-                      <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: palette.primary, display: "inline-block" }}></span>
-                      <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: palette.accent, display: "inline-block" }}></span>
-                    </span>
-                    {palette.name.split(" ")[0]}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    Elegir Archivo Logo
+                  </Button>
+                  {logoFile && (
+                    <Button
+                      onClick={handleUploadLogo}
+                      disabled={uploadingLogo}
+                      variant="contained"
+                      size="small"
+                      sx={{ textTransform: "none", fontWeight: 600, bgcolor: "var(--primary)", "&:hover": { bgcolor: "var(--primary-hover)" } }}
+                    >
+                      {uploadingLogo ? "Subiendo..." : "Subir Logo"}
+                    </Button>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
 
-            {/* Color Pickers */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label">Color Primario (Hex)</label>
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                  <input
-                    type="color"
-                    value={primaryColor}
-                    onChange={(e) => setPrimaryColor(e.target.value)}
-                    style={{ border: "none", width: "40px", height: "40px", borderRadius: "8px", cursor: "pointer", background: "transparent" }}
-                  />
-                  <input
-                    type="text"
-                    className="input-field"
-                    style={{ flex: 1, marginBottom: 0 }}
-                    value={primaryColor}
-                    onChange={(e) => setPrimaryColor(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label">Color de Acento (Hex)</label>
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                  <input
-                    type="color"
-                    value={accentColor}
-                    onChange={(e) => setAccentColor(e.target.value)}
-                    style={{ border: "none", width: "40px", height: "40px", borderRadius: "8px", cursor: "pointer", background: "transparent" }}
-                  />
-                  <input
-                    type="text"
-                    className="input-field"
-                    style={{ flex: 1, marginBottom: 0 }}
-                    value={accentColor}
-                    onChange={(e) => setAccentColor(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
+          {/* Branding Form */}
+          <Grid size={{ xs: 12, md: 8 }}>
+            <Card sx={{ bgcolor: "var(--bg-card)", borderRadius: "6px", border: "1px solid var(--border-light)" }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, pb: 0.5, borderBottom: "1px solid var(--border-light)", color: "var(--text-main)" }}>
+                    Identidad de Marca
+                  </Typography>
 
-            <div className="input-group">
-              <label className="input-label" htmlFor="defaultTheme">Tema Predeterminado</label>
-              <select
-                id="defaultTheme"
-                className="input-field"
-                value={defaultTheme}
-                onChange={(e) => setDefaultTheme(e.target.value)}
-                disabled={saving}
-              >
-                <option value="dark">Tema Oscuro (Moderno)</option>
-                <option value="light">Tema Claro (Limpio)</option>
-              </select>
-            </div>
+                  <TextField
+                    label="Nombre Comercial (App)"
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    value={appName}
+                    onChange={(e) => setAppName(e.target.value)}
+                    disabled={saving}
+                    required
+                    sx={fieldStyle}
+                  />
 
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
-              <button type="submit" className="btn btn-primary" disabled={saving}>
-                {saving ? <span className="spinner" /> : null}
-                <span>Guardar Personalización</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        label="Teléfono Empresa"
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        disabled={saving}
+                        sx={fieldStyle}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        label="Correo Empresa"
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={saving}
+                        sx={fieldStyle}
+                      />
+                    </Grid>
+                  </Grid>
+
+                  <TextField
+                    label="Dirección Principal"
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    disabled={saving}
+                    sx={fieldStyle}
+                  />
+
+                  <TextField
+                    label="Página Web"
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    disabled={saving}
+                    sx={fieldStyle}
+                  />
+
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, pb: 0.5, borderBottom: "1px solid var(--border-light)", color: "var(--text-main)", mt: 1 }}>
+                    Estética & Temas
+                  </Typography>
+
+                  <Box>
+                    <Typography variant="caption" color="var(--text-muted)" sx={{ fontWeight: 600, display: "block", mb: 1 }}>
+                      Paletas de Colores Predeterminadas
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                      {PRESET_PALETTES.map((palette) => (
+                        <Button
+                          key={palette.name}
+                          onClick={() => handleApplyPalette(palette)}
+                          variant="outlined"
+                          size="small"
+                          sx={{ 
+                            textTransform: "none", 
+                            fontSize: "11px", 
+                            display: "flex", 
+                            alignItems: "center", 
+                            gap: 1,
+                            py: 0.5,
+                            borderColor: "var(--border-light)",
+                            color: "var(--text-muted)"
+                          }}
+                        >
+                          <Box sx={{ display: "flex", gap: "2px" }}>
+                            <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: palette.primary }} />
+                            <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: palette.accent }} />
+                          </Box>
+                          {palette.name.split(" ")[0]}
+                        </Button>
+                      ))}
+                    </Box>
+                  </Box>
+
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" color="var(--text-muted)" sx={{ fontWeight: 600, display: "block", mb: 0.5 }}>Color Primario</Typography>
+                      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                        <input
+                          type="color"
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          style={{ border: "none", width: 40, height: 40, borderRadius: 4, cursor: "pointer", padding: 0, background: "transparent" }}
+                        />
+                        <TextField
+                          size="small"
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          sx={{ flex: 1, ...fieldStyle }}
+                        />
+                      </Box>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" color="var(--text-muted)" sx={{ fontWeight: 600, display: "block", mb: 0.5 }}>Color Acento</Typography>
+                      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                        <input
+                          type="color"
+                          value={accentColor}
+                          onChange={(e) => setAccentColor(e.target.value)}
+                          style={{ border: "none", width: 40, height: 40, borderRadius: 4, cursor: "pointer", padding: 0, background: "transparent" }}
+                        />
+                        <TextField
+                          size="small"
+                          value={accentColor}
+                          onChange={(e) => setAccentColor(e.target.value)}
+                          sx={{ flex: 1, ...fieldStyle }}
+                        />
+                      </Box>
+                    </Grid>
+                  </Grid>
+
+                  <TextField
+                    select
+                    label="Tema Predeterminado"
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    value={defaultTheme}
+                    onChange={(e) => setDefaultTheme(e.target.value)}
+                    disabled={saving}
+                    sx={fieldStyle}
+                  >
+                    <MenuItem value="dark">Tema Oscuro (Moderno)</MenuItem>
+                    <MenuItem value="light">Tema Claro (Limpio)</MenuItem>
+                  </TextField>
+
+                  <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1.5 }}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={saving}
+                      sx={{ bgcolor: "var(--primary)", "&:hover": { bgcolor: "var(--primary-hover)" }, textTransform: "none", borderRadius: "6px" }}
+                    >
+                      {saving ? <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> : null}
+                      Guardar Personalización
+                    </Button>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
+      {activeTab === "categories" && (
+        <Grid container spacing={3}>
+          {/* Add Category Card */}
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Card sx={{ bgcolor: "var(--bg-card)", borderRadius: "6px", border: "1px solid var(--border-light)" }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 3, color: "var(--text-main)" }}>
+                  Nueva Categoría
+                </Typography>
+                <Box component="form" onSubmit={handleAddCategory} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                  <TextField
+                    label="Identificador (E.g. CAMERA)"
+                    placeholder="En mayúsculas, sin espacios"
+                    value={categoryName}
+                    onChange={(e) => setCategoryName(e.target.value.toUpperCase().replace(/\s/g, "_"))}
+                    required
+                    sx={fieldStyle}
+                  />
+                  <TextField
+                    label="Etiqueta Visible (E.g. Cámaras)"
+                    placeholder="Nombre que verá el usuario"
+                    value={categoryLabel}
+                    onChange={(e) => setCategoryLabel(e.target.value)}
+                    required
+                    sx={fieldStyle}
+                  />
+                  <Button 
+                    type="submit" 
+                    variant="contained" 
+                    sx={{ bgcolor: "var(--primary)", "&:hover": { bgcolor: "var(--primary-hover)" }, textTransform: "none", borderRadius: "6px", mt: 1 }}
+                  >
+                    Agregar Categoría
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Categories List Table */}
+          <Grid size={{ xs: 12, md: 8 }}>
+            <Card sx={{ bgcolor: "var(--bg-card)", borderRadius: "6px", border: "1px solid var(--border-light)" }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 3, color: "var(--text-main)" }}>
+                  Listado de Categorías Existentes
+                </Typography>
+
+                {loadingCats ? (
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 4, gap: 1 }}>
+                    <CircularProgress size={30} sx={{ color: "var(--primary)" }} />
+                    <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>Cargando categorías...</Typography>
+                  </Box>
+                ) : (
+                  <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "6px", borderColor: "var(--border-light)", bgcolor: "transparent" }}>
+                    <Table size="small">
+                      <TableHead sx={{ bgcolor: "rgba(115, 103, 240, 0.02)" }}>
+                        <TableRow>
+                          <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700 }}>Identificador</TableCell>
+                          <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700 }}>Etiqueta Visible</TableCell>
+                          <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700 }} align="right">Eliminar</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {categories.map((cat) => (
+                          <TableRow key={cat.id}>
+                            <TableCell sx={{ fontWeight: 650, color: "var(--text-main)", fontFamily: "monospace" }}>{cat.name}</TableCell>
+                            <TableCell sx={{ color: "var(--text-main)" }}>{cat.label}</TableCell>
+                            <TableCell align="right">
+                              <IconButton 
+                                size="small" 
+                                onClick={() => handleDeleteCategory(cat.id)}
+                                sx={{ color: "#ea5455" }}
+                              >
+                                <Trash2 size={16} />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {categories.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={3} align="center" sx={{ color: "var(--text-muted)", py: 4 }}>
+                              No hay categorías dinámicas creadas.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+    </Box>
   );
 }

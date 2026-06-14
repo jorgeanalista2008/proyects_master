@@ -11,12 +11,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateCatalogDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
-const client_1 = require("@prisma/client");
 class CreateCatalogDto {
     sku;
     name;
     description;
-    category;
+    categoryId;
     unitCost;
     marginCash;
     marginCredit;
@@ -37,9 +36,9 @@ __decorate([
     __metadata("design:type", String)
 ], CreateCatalogDto.prototype, "description", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'CAMERA', description: 'Categoría del catálogo', enum: ['CAMERA', 'DVR_NVR', 'CABLE', 'TUBING', 'ACCESSORY', 'LABOR', 'SERVICE'] }),
+    (0, swagger_1.ApiProperty)({ example: 'some-uuid-of-category', description: 'ID de la categoría del catálogo' }),
     __metadata("design:type", String)
-], CreateCatalogDto.prototype, "category", void 0);
+], CreateCatalogDto.prototype, "categoryId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ example: 45.50, description: 'Costo unitario de adquisición sin IVA' }),
     __metadata("design:type", Number)

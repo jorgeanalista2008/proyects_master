@@ -1,16 +1,35 @@
-// d:\github\proyects_master\frontend\src\app\(dashboard)\clients\page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Card,
+  CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  CircularProgress,
+  Alert,
+  Avatar,
+  Chip
+} from "@mui/material";
+import { Plus } from "lucide-react";
 
 interface Client {
   id: string;
   name: string;
   email: string;
   phone: string;
-  rutOrId: string; // RUT/RFC/DNI
+  rutOrId: string;
   projects?: any[];
   _count?: {
     projects: number;
@@ -48,138 +67,150 @@ export default function ClientsPage() {
   });
 
   return (
-    <div className="fade-in">
-      <div className="card-header-flex" style={{ marginBottom: "2rem" }}>
-        <div>
-          <h1 className="title-primary" style={{ marginBottom: "0.25rem" }}>Directorio de Clientes</h1>
-          <p className="subtitle-secondary" style={{ marginBottom: 0 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Title & Action Bar */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 750, color: "text.primary" }}>
+            Directorio de Clientes
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             Administra la información fiscal, datos de contacto y proyectos de tus clientes
-          </p>
-        </div>
-        <Link href="/clients/new" className="btn btn-primary">
-          ➕ Registrar Cliente
-        </Link>
-      </div>
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          href="/clients/new"
+          variant="contained"
+          color="primary"
+          startIcon={<Plus className="w-4 h-4" />}
+        >
+          Registrar Cliente
+        </Button>
+      </Box>
 
       {error && (
-        <div style={{
-          background: "hsla(0, 84.2%, 60.2%, 0.15)",
-          border: "1px solid hsl(var(--danger))",
-          color: "#ff8888",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
-          ⚠️ {error}
-        </div>
+        <Alert severity="error" sx={{ borderRadius: 1.5 }}>
+          {error}
+        </Alert>
       )}
 
-      {/* Search Filter */}
-      <div style={{
-        marginBottom: "2rem",
-        background: "hsla(var(--bg-secondary), 0.3)",
-        padding: "1rem",
-        borderRadius: "var(--radius-md)",
-        border: "1px solid hsl(var(--border-glass))"
-      }}>
-        <input
-          type="text"
-          placeholder="Buscar por Nombre, RUT/RFC/DNI o Email..."
-          className="input-field"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ padding: "0.75rem 1rem" }}
-        />
-      </div>
+      {/* Search Input Box */}
+      <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Buscar por Nombre, RUT/RFC/DNI o Email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            size="small"
+          />
+        </CardContent>
+      </Card>
 
       {loading ? (
-        <div className="loader-container">
-          <div className="spinner" style={{ width: "2.5rem", height: "2.5rem" }} />
-          <p style={{ color: "hsl(var(--text-secondary))" }}>Cargando directorio...</p>
-        </div>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 6, gap: 2 }}>
+          <CircularProgress color="primary" />
+          <Typography variant="body2" color="text.secondary">Cargando directorio...</Typography>
+        </Box>
       ) : filteredClients.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: "center", padding: "4rem" }}>
-          <span style={{ fontSize: "3rem" }}>👥</span>
-          <h3 style={{ marginTop: "1rem", marginBottom: "0.5rem" }}>Directorio Vacío</h3>
-          <p style={{ color: "hsl(var(--text-secondary))", marginBottom: "1.5rem" }}>
-            No se encontraron clientes registrados en este momento.
-          </p>
-          <Link href="/clients/new" className="btn btn-secondary" style={{ margin: "0 auto" }}>
-            Registrar Primer Cliente
-          </Link>
-        </div>
+        <Card sx={{ border: "1px solid", borderColor: "divider", textAlign: "center", py: 8 }}>
+          <CardContent sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <Typography variant="h3">👥</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>Directorio Vacío</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360, mb: 1 }}>
+              No se encontraron clientes registrados en este momento.
+            </Typography>
+            <Button component={Link} href="/clients/new" variant="outlined" color="primary">
+              Registrar Primer Cliente
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="table-responsive">
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th>Nombre / Razón Social</th>
-                <th>Identificación Fiscal (RUT/RFC/DNI)</th>
-                <th>Contacto</th>
-                <th>Proyectos</th>
-                <th style={{ textAlign: "right" }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
+        <TableContainer component={Paper} sx={{ border: "1px solid", borderColor: "divider", boxShadow: "none", borderRadius: 1.5 }}>
+          <Table>
+            <TableHead sx={{ bgcolor: "background.default" }}>
+              <TableRow>
+                <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Nombre / Razón Social</Typography></TableCell>
+                <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Identificación Fiscal</Typography></TableCell>
+                <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Contacto</Typography></TableCell>
+                <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Proyectos</Typography></TableCell>
+                <TableCell align="right"><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Acciones</Typography></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {filteredClients.map((client) => {
                 const projectCount = client._count?.projects ?? client.projects?.length ?? 0;
-                
                 return (
-                  <tr key={client.id}>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                        <div style={{
-                          width: "36px",
-                          height: "36px",
-                          borderRadius: "var(--radius-sm)",
-                          background: "hsla(var(--primary), 0.1)",
-                          border: "1px solid hsla(var(--primary), 0.2)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "1.1rem",
+                  <TableRow key={client.id} hover>
+                    <TableCell>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Avatar sx={{ 
+                          width: 36, 
+                          height: 36, 
+                          bgcolor: 'primary.light', 
+                          color: 'primary.main', 
+                          fontSize: '14px', 
                           fontWeight: 700,
-                          color: "hsl(var(--primary-hover))"
+                          borderRadius: 1.5
                         }}>
                           {client.name[0]?.toUpperCase()}
-                        </div>
-                        <span className="font-weight-medium">{client.name}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <code style={{
-                        background: "hsla(var(--bg-secondary), 0.5)",
-                        padding: "0.2rem 0.5rem",
-                        borderRadius: "var(--radius-sm)",
-                        fontSize: "0.85rem",
-                        border: "1px solid hsl(var(--border-glass))"
+                        </Avatar>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
+                          {client.name}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ 
+                        fontFamily: "monospace", 
+                        bgcolor: "background.default", 
+                        px: 1, 
+                        py: 0.5, 
+                        borderRadius: 1, 
+                        display: "inline-block",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        fontSize: "0.85rem"
                       }}>
                         {client.rutOrId}
-                      </code>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
-                        <span style={{ fontSize: "0.85rem" }}>📧 {client.email}</span>
-                        <span style={{ fontSize: "0.8rem", color: "hsl(var(--text-secondary))" }}>📞 {client.phone}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${projectCount > 0 ? "status-approved" : "status-pending"}`}>
-                        📂 {projectCount} {projectCount === 1 ? "Proyecto" : "Proyectos"}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      <Link href={`/clients/${client.id}`} className="btn btn-secondary btn-sm" style={{ display: "inline-flex" }}>
-                        ✏️ Editar
-                      </Link>
-                    </td>
-                  </tr>
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        <Typography variant="body2">📧 {client.email}</Typography>
+                        <Typography variant="caption" color="text.secondary">📞 {client.phone}</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={`${projectCount} ${projectCount === 1 ? 'Proyecto' : 'Proyectos'}`} 
+                        color={projectCount > 0 ? "success" : "default"}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontWeight: 600 }}
+                      />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Button 
+                        component={Link} 
+                        href={`/clients/${client.id}`} 
+                        variant="outlined" 
+                        color="secondary" 
+                        size="small"
+                        sx={{ fontWeight: 600, textTransform: "none" }}
+                      >
+                        Editar
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
-    </div>
+    </Box>
   );
 }

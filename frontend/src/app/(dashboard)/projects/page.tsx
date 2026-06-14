@@ -1,9 +1,29 @@
-// d:\github\proyects_master\frontend\src\app\(dashboard)\projects\page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import {
+  Box,
+  Typography,
+  Button,
+  Tabs,
+  Tab,
+  TextField,
+  Card,
+  CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  CircularProgress,
+  Alert,
+  Chip
+} from "@mui/material";
+import { Plus } from "lucide-react";
 
 interface Client {
   id: string;
@@ -61,15 +81,22 @@ export default function ProjectsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusLabel = (status: string) => {
+  const getStatusChip = (status: string) => {
     switch (status) {
-      case "PENDING": return "Levantamiento";
-      case "QUOTED": return "Cotizado";
-      case "APPROVED": return "Aprobado";
-      case "IN_PROGRESS": return "Instalación";
-      case "COMPLETED": return "Completado";
-      case "CANCELLED": return "Cancelado";
-      default: return status;
+      case "PENDING":
+        return <Chip label="Levantamiento" color="warning" size="small" variant="outlined" sx={{ fontWeight: 600 }} />;
+      case "QUOTED":
+        return <Chip label="Cotizado" color="warning" size="small" variant="outlined" sx={{ fontWeight: 600 }} />;
+      case "APPROVED":
+        return <Chip label="Aprobado" color="success" size="small" variant="outlined" sx={{ fontWeight: 600 }} />;
+      case "IN_PROGRESS":
+        return <Chip label="Instalación" color="primary" size="small" variant="outlined" sx={{ fontWeight: 600 }} />;
+      case "COMPLETED":
+        return <Chip label="Completado" color="success" size="small" variant="outlined" sx={{ fontWeight: 600 }} />;
+      case "CANCELLED":
+        return <Chip label="Cancelado" color="error" size="small" variant="outlined" sx={{ fontWeight: 600 }} />;
+      default:
+        return <Chip label={status} size="small" />;
     }
   };
 
@@ -84,139 +111,140 @@ export default function ProjectsPage() {
   ];
 
   return (
-    <div className="fade-in">
-      <div className="card-header-flex" style={{ marginBottom: "2rem" }}>
-        <div>
-          <h1 className="title-primary" style={{ marginBottom: "0.25rem" }}>Tablero de Proyectos</h1>
-          <p className="subtitle-secondary" style={{ marginBottom: 0 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Title & Action Bar */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 750, color: "text.primary" }}>
+            Tablero de Proyectos
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             Supervisa el ciclo de vida de los proyectos de seguridad y cotizaciones de clientes
-          </p>
-        </div>
-        <Link href="/projects/new" className="btn btn-primary">
-          ➕ Nuevo Proyecto
-        </Link>
-      </div>
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          href="/projects/new"
+          variant="contained"
+          color="primary"
+          startIcon={<Plus className="w-4 h-4" />}
+        >
+          Nuevo Proyecto
+        </Button>
+      </Box>
 
       {error && (
-        <div style={{
-          background: "hsla(0, 84.2%, 60.2%, 0.15)",
-          border: "1px solid hsl(var(--danger))",
-          color: "#ff8888",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
-          ⚠️ {error}
-        </div>
+        <Alert severity="error" sx={{ borderRadius: 1.5 }}>
+          {error}
+        </Alert>
       )}
 
-      {/* Tabs Layout */}
-      <div style={{
-        display: "flex",
-        gap: "0.5rem",
-        marginBottom: "1.5rem",
-        overflowX: "auto",
-        paddingBottom: "0.5rem",
-        borderBottom: "1px solid hsl(var(--border-glass))"
-      }}>
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setStatusTab(tab.key)}
-            style={{
-              padding: "0.5rem 1rem",
-              background: statusTab === tab.key ? "hsla(var(--primary), 0.15)" : "transparent",
-              color: statusTab === tab.key ? "hsl(var(--primary-hover))" : "hsl(var(--text-secondary))",
-              border: statusTab === tab.key ? "1px solid hsla(var(--primary), 0.3)" : "1px solid transparent",
-              borderRadius: "var(--radius-sm)",
-              cursor: "pointer",
-              fontWeight: statusTab === tab.key ? 600 : 500,
-              fontSize: "0.85rem",
-              transition: "all var(--transition-fast)",
-              whiteSpace: "nowrap"
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {/* Tabs Filtering */}
+      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Tabs
+          value={statusTab}
+          onChange={(e, newVal) => setStatusTab(newVal)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ minHeight: 40 }}
+        >
+          {tabs.map((tab) => (
+            <Tab 
+              key={tab.key} 
+              label={tab.label} 
+              value={tab.key} 
+              sx={{ textTransform: "none", fontWeight: 600, minHeight: 40, py: 1 }}
+            />
+          ))}
+        </Tabs>
+      </Box>
 
-      {/* Search Input */}
-      <div style={{
-        marginBottom: "2rem",
-        background: "hsla(var(--bg-secondary), 0.3)",
-        padding: "1rem",
-        borderRadius: "var(--radius-md)",
-        border: "1px solid hsl(var(--border-glass))"
-      }}>
-        <input
-          type="text"
-          placeholder="Buscar por Nombre del Proyecto, Cliente o Manager..."
-          className="input-field"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ padding: "0.75rem 1rem" }}
-        />
-      </div>
+      {/* Search Input Box */}
+      <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Buscar por Nombre del Proyecto, Cliente o Manager..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            size="small"
+          />
+        </CardContent>
+      </Card>
 
       {loading ? (
-        <div className="loader-container">
-          <div className="spinner" style={{ width: "2.5rem", height: "2.5rem" }} />
-          <p style={{ color: "hsl(var(--text-secondary))" }}>Cargando proyectos...</p>
-        </div>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 6, gap: 2 }}>
+          <CircularProgress color="primary" />
+          <Typography variant="body2" color="text.secondary">Cargando proyectos...</Typography>
+        </Box>
       ) : filteredProjects.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: "center", padding: "4rem" }}>
-          <span style={{ fontSize: "3rem" }}>📁</span>
-          <h3 style={{ marginTop: "1rem", marginBottom: "0.5rem" }}>No se encontraron proyectos</h3>
-          <p style={{ color: "hsl(var(--text-secondary))", marginBottom: "1.5rem" }}>
-            No hay proyectos para el estado o filtro de búsqueda seleccionado.
-          </p>
-          <Link href="/projects/new" className="btn btn-secondary" style={{ margin: "0 auto" }}>
-            Crear un Proyecto
-          </Link>
-        </div>
+        <Card sx={{ border: "1px solid", borderColor: "divider", textAlign: "center", py: 8 }}>
+          <CardContent sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <Typography variant="h3">📁</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>No se encontraron proyectos</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360, mb: 1 }}>
+              No hay proyectos para el estado o filtro de búsqueda seleccionado.
+            </Typography>
+            <Button component={Link} href="/projects/new" variant="outlined" color="primary">
+              Crear un Proyecto
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="table-responsive">
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th>Proyecto</th>
-                <th>Cliente</th>
-                <th>Manager Asignado</th>
-                <th>Estado</th>
-                <th>Fecha de Creación</th>
-                <th style={{ textAlign: "right" }}>Detalle</th>
-              </tr>
-            </thead>
-            <tbody>
+        <TableContainer component={Paper} sx={{ border: "1px solid", borderColor: "divider", boxShadow: "none", borderRadius: 1.5 }}>
+          <Table>
+            <TableHead sx={{ bgcolor: "background.default" }}>
+              <TableRow>
+                <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Proyecto</Typography></TableCell>
+                <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Cliente</Typography></TableCell>
+                <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Manager Asignado</Typography></TableCell>
+                <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Estado</Typography></TableCell>
+                <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Fecha de Creación</Typography></TableCell>
+                <TableCell align="right"><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Detalle</Typography></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {filteredProjects.map((project) => (
-                <tr key={project.id}>
-                  <td>
-                    <span className="font-weight-medium">{project.name}</span>
-                  </td>
-                  <td>{project.client?.name || "Cliente no asignado"}</td>
-                  <td>
-                    {project.manager 
-                      ? `${project.manager.firstName} ${project.manager.lastName}` 
-                      : <span style={{ color: "hsl(var(--text-muted))" }}>Sin asignar</span>}
-                  </td>
-                  <td>
-                    <span className={`status-badge status-${project.status.toLowerCase()}`}>
-                      {getStatusLabel(project.status)}
-                    </span>
-                  </td>
-                  <td>{new Date(project.createdAt).toLocaleDateString("es-ES")}</td>
-                  <td style={{ textAlign: "right" }}>
-                    <Link href={`/projects/${project.id}`} className="link-action" style={{ fontWeight: 600 }}>
+                <TableRow key={project.id} hover>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
+                      {project.name}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">{project.client?.name || "Cliente no asignado"}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {project.manager 
+                        ? `${project.manager.firstName} ${project.manager.lastName}` 
+                        : <Typography variant="caption" sx={{ color: "text.secondary", fontStyle: "italic" }}>Sin asignar</Typography>}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{getStatusChip(project.status)}</TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {new Date(project.createdAt).toLocaleDateString("es-ES")}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Button 
+                      component={Link} 
+                      href={`/projects/${project.id}`} 
+                      variant="text" 
+                      color="primary" 
+                      sx={{ fontWeight: 700, textTransform: "none" }}
+                    >
                       Ver Detalles →
-                    </Link>
-                  </td>
-                </tr>
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
-    </div>
+    </Box>
   );
 }

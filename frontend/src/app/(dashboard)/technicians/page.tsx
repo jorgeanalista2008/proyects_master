@@ -1,9 +1,23 @@
-// d:\github\proyects_master\frontend\src\app\(dashboard)\technicians\page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, getApiUrl } from "@/lib/api";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Card,
+  CardContent,
+  Grid,
+  CircularProgress,
+  Alert,
+  Avatar,
+  Divider,
+  Chip
+} from "@mui/material";
+import { Plus } from "lucide-react";
 
 interface TechnicianProfile {
   id: string;
@@ -72,165 +86,146 @@ export default function TechniciansPage() {
   });
 
   return (
-    <div className="fade-in">
-      <div className="card-header-flex" style={{ marginBottom: "2rem" }}>
-        <div>
-          <h1 className="title-primary" style={{ marginBottom: "0.25rem" }}>Directorio de Técnicos</h1>
-          <p className="subtitle-secondary" style={{ marginBottom: 0 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Title & Action Bar */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 750, color: "text.primary" }}>
+            Directorio de Técnicos
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             Administra los datos personales, fisonomía, tallas de uniforme y contacto del personal técnico
-          </p>
-        </div>
-        <Link href="/technicians/new" className="btn btn-primary">
-          ➕ Registrar Técnico
-        </Link>
-      </div>
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          href="/technicians/new"
+          variant="contained"
+          color="primary"
+          startIcon={<Plus className="w-4 h-4" />}
+        >
+          Registrar Técnico
+        </Button>
+      </Box>
 
       {error && (
-        <div style={{
-          background: "hsla(0, 84.2%, 60.2%, 0.15)",
-          border: "1px solid hsl(var(--danger))",
-          color: "#ff8888",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
-          ⚠️ {error}
-        </div>
+        <Alert severity="error" sx={{ borderRadius: 1.5 }}>
+          {error}
+        </Alert>
       )}
 
-      {/* Search Filter */}
-      <div style={{
-        marginBottom: "2rem",
-        background: "hsla(var(--bg-secondary), 0.3)",
-        padding: "1rem",
-        borderRadius: "var(--radius-md)",
-        border: "1px solid hsl(var(--border-glass))"
-      }}>
-        <input
-          type="text"
-          placeholder="Buscar técnico por Nombre, RUT/DNI, Correo, Especialidad u Oficio..."
-          className="input-field"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ padding: "0.75rem 1rem" }}
-        />
-      </div>
+      {/* Search Filter Box */}
+      <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Buscar técnico por Nombre, RUT/DNI, Correo, Especialidad u Oficio..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            size="small"
+          />
+        </CardContent>
+      </Card>
 
       {loading ? (
-        <div className="loader-container">
-          <div className="spinner" style={{ width: "2.5rem", height: "2.5rem" }} />
-          <p style={{ color: "hsl(var(--text-secondary))" }}>Cargando directorio de técnicos...</p>
-        </div>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 6, gap: 2 }}>
+          <CircularProgress color="primary" />
+          <Typography variant="body2" color="text.secondary">Cargando directorio de técnicos...</Typography>
+        </Box>
       ) : filteredTechnicians.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: "center", padding: "4rem" }}>
-          <span style={{ fontSize: "3rem" }}>🛠️</span>
-          <h3 style={{ marginTop: "1rem", marginBottom: "0.5rem" }}>Directorio Vacío</h3>
-          <p style={{ color: "hsl(var(--text-secondary))", marginBottom: "1.5rem" }}>
-            No se encontraron técnicos registrados que coincidan con la búsqueda.
-          </p>
-          <Link href="/technicians/new" className="btn btn-secondary" style={{ margin: "0 auto" }}>
-            Registrar Primer Técnico
-          </Link>
-        </div>
+        <Card sx={{ border: "1px solid", borderColor: "divider", textAlign: "center", py: 8 }}>
+          <CardContent sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <Typography variant="h3">🛠️</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>Directorio Vacío</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360, mb: 1 }}>
+              No se encontraron técnicos registrados que coincidan con la búsqueda.
+            </Typography>
+            <Button component={Link} href="/technicians/new" variant="outlined" color="primary">
+              Registrar Primer Técnico
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-          gap: "1.5rem"
-        }}>
+        <Grid container spacing={3}>
           {filteredTechnicians.map((tech) => {
             const profile = tech.technicianProfile;
             return (
-              <div key={tech.id} className="glass-card" style={{
-                display: "flex",
-                flexDirection: "column",
-                padding: "1.5rem",
-                position: "relative",
-                transition: "transform 0.2s",
-                cursor: "default"
-              }}>
-                <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
-                  <div style={{
-                    width: "80px",
-                    height: "80px",
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    border: "2px solid hsla(var(--primary), 0.3)",
-                    background: "hsla(var(--bg-secondary), 0.8)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "2.2rem"
-                  }}>
-                    {profile?.photoId ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={getApiUrl(`/images/${profile.photoId}`)}
-                        alt={`${tech.firstName} ${tech.lastName}`}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
-                    ) : (
-                      "👨‍🔧"
-                    )}
-                  </div>
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                    <h3 style={{ fontSize: "1.15rem", fontWeight: 700, margin: 0 }}>
-                      {tech.firstName} {tech.lastName}
-                    </h3>
-                    <span style={{
-                      fontSize: "0.8rem",
-                      color: "hsl(var(--primary-hover))",
-                      fontWeight: 600,
-                      marginTop: "0.15rem"
-                    }}>
-                      💼 {profile?.trade || profile?.profession || "Sin Oficio Definido"}
-                    </span>
-                  </div>
-                </div>
+              <Grid key={tech.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%", display: "flex", flexDirection: "column" }}>
+                  <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
+                    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                      <Avatar
+                        src={profile?.photoId ? getApiUrl(`/images/${profile.photoId}`) : undefined}
+                        sx={{ 
+                          width: 64, 
+                          height: 64, 
+                          border: "2px solid", 
+                          borderColor: "primary.light",
+                          bgcolor: "primary.light",
+                          color: "primary.main",
+                          fontSize: "24px"
+                        }}
+                      >
+                        {!profile?.photoId && "👨‍🔧"}
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary", lineHeight: 1.2 }}>
+                          {tech.firstName} {tech.lastName}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700, display: "block", mt: 0.5 }}>
+                          💼 {profile?.trade || profile?.profession || "Sin Oficio Definido"}
+                        </Typography>
+                      </Box>
+                    </Box>
 
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.4rem",
-                  fontSize: "0.85rem",
-                  color: "hsl(var(--text-secondary))",
-                  borderTop: "1px solid hsl(var(--border-glass))",
-                  paddingTop: "0.75rem",
-                  marginBottom: "1rem",
-                  flex: 1
-                }}>
-                  <div>📄 <strong>Doc:</strong> {profile?.documentNumber || "No registrado"}</div>
-                  <div>📧 <strong>Correo:</strong> {tech.email}</div>
-                  <div>📞 <strong>Tel:</strong> {tech.phone || "No registrado"}</div>
-                  {profile?.academicLevel && (
-                    <div>🎓 <strong>Estudios:</strong> {profile.academicLevel}</div>
-                  )}
-                  {profile && (profile.shirtSize || profile.pantsSize || profile.shoeSize) && (
-                    <div style={{
-                      marginTop: "0.4rem",
-                      display: "flex",
-                      gap: "0.5rem",
-                      background: "hsla(var(--bg-secondary), 0.4)",
-                      padding: "0.25rem 0.5rem",
-                      borderRadius: "var(--radius-sm)",
-                      fontSize: "0.75rem",
-                      width: "fit-content"
-                    }}>
-                      👕 {profile.shirtSize || "-"} | 👖 {profile.pantsSize || "-"} | 👟 {profile.shoeSize || "-"}
-                    </div>
-                  )}
-                </div>
+                    <Divider />
 
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <Link href={`/technicians/${tech.id}`} className="btn btn-secondary btn-sm" style={{ width: "100%", textAlign: "center" }}>
-                    ✏️ Editar Perfil Completo
-                  </Link>
-                </div>
-              </div>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1, flex: 1 }}>
+                      <Typography variant="body2">
+                        📄 <strong>Doc:</strong> {profile?.documentNumber || "No registrado"}
+                      </Typography>
+                      <Typography variant="body2">
+                        📧 <strong>Correo:</strong> {tech.email}
+                      </Typography>
+                      <Typography variant="body2">
+                        📞 <strong>Tel:</strong> {tech.phone || "No registrado"}
+                      </Typography>
+                      {profile?.academicLevel && (
+                        <Typography variant="body2">
+                          🎓 <strong>Estudios:</strong> {profile.academicLevel}
+                        </Typography>
+                      )}
+                      
+                      {profile && (profile.shirtSize || profile.pantsSize || profile.shoeSize) && (
+                        <Box sx={{ mt: 1 }}>
+                          <Chip 
+                            label={`👕 ${profile.shirtSize || "-"} | 👖 ${profile.pantsSize || "-"} | 👟 ${profile.shoeSize || "-"}`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontWeight: 600, fontSize: "11px" }}
+                          />
+                        </Box>
+                      )}
+                    </Box>
+
+                    <Button
+                      component={Link}
+                      href={`/technicians/${tech.id}`}
+                      variant="outlined"
+                      color="secondary"
+                      fullWidth
+                      sx={{ mt: 2, textTransform: "none", fontWeight: 600 }}
+                    >
+                      Editar Perfil Completo
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
             );
           })}
-        </div>
+        </Grid>
       )}
-    </div>
+    </Box>
   );
 }

@@ -5,6 +5,23 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, getApiUrl } from "@/lib/api";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Card,
+  CardContent,
+  Grid,
+  Divider,
+  Alert,
+  CircularProgress,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  Avatar
+} from "@mui/material";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -185,384 +202,442 @@ export default function TechnicianForm({ params }: PageProps) {
 
   if (fetching) {
     return (
-      <div className="loader-container">
-        <div className="spinner" style={{ width: "2.5rem", height: "2.5rem" }} />
-        <p>Cargando información del técnico...</p>
-      </div>
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "300px", gap: 2 }}>
+        <CircularProgress size={40} sx={{ color: "var(--primary)" }} />
+        <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
+          Cargando información del técnico...
+        </Typography>
+      </Box>
     );
   }
 
+  // MUI customized text field style config
+  const fieldStyle = {
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "6px",
+      "& fieldset": { borderColor: "var(--border-light)" },
+      "&.Mui-focused fieldset": { borderColor: "var(--primary)" }
+    },
+    "& .MuiInputLabel-root": { color: "var(--text-muted)" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "var(--primary)" },
+    "& .MuiInputBase-input": { color: "var(--text-main)" }
+  };
+
   return (
-    <div className="fade-in" style={{ maxWidth: "800px", margin: "0 auto" }}>
-      <div style={{ marginBottom: "2rem" }}>
-        <Link href="/technicians" style={{
-          color: "hsl(var(--text-secondary))",
-          fontSize: "0.9rem",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          marginBottom: "1rem"
-        }}>
-          ⬅️ Volver a Técnicos
+    <Box sx={{ maxWidth: 900, mx: "auto", p: { xs: 1, sm: 3 } }}>
+      <Box sx={{ mb: 4 }}>
+        <Link href="/technicians" style={{ textDecoration: "none" }}>
+          <Button variant="text" size="small" sx={{ color: "var(--text-muted)", mb: 2, textTransform: "none", fontSize: "0.9rem" }}>
+            ← Volver a Técnicos
+          </Button>
         </Link>
-        <h1 className="title-primary">{isNew ? "Registrar Nuevo Técnico" : `Editar Perfil de Técnico`}</h1>
-        <p className="subtitle-secondary">
+        <Typography variant="h5" sx={{ fontWeight: 600, color: "var(--text-main)", mb: 0.5 }}>
+          {isNew ? "Registrar Nuevo Técnico" : "Editar Perfil de Técnico"}
+        </Typography>
+        <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
           Completa la ficha detallada, credenciales de acceso y tallas físicas de equipamiento del técnico.
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <div className="glass-card" style={{ padding: "2rem" }}>
-        {error && (
-          <div style={{
-            background: "hsla(0, 84.2%, 60.2%, 0.15)",
-            border: "1px solid hsl(var(--danger))",
-            color: "#ff8888",
-            padding: "1rem",
-            borderRadius: "var(--radius-md)",
-            marginBottom: "1.5rem"
-          }}>
-            ⚠️ {error}
-          </div>
-        )}
+      <Card sx={{ 
+        bgcolor: "var(--bg-card)", 
+        borderRadius: "6px", 
+        border: "1px solid var(--border-light)", 
+        boxShadow: "var(--shadow-sm)" 
+      }}>
+        <CardContent sx={{ p: 4 }}>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: "6px" }}>
+              {error}
+            </Alert>
+          )}
 
-        {success && (
-          <div style={{
-            background: "hsla(142.1, 70.6%, 45.3%, 0.15)",
-            border: "1px solid hsl(var(--success))",
-            color: "#a3e635",
-            padding: "1rem",
-            borderRadius: "var(--radius-md)",
-            marginBottom: "1.5rem"
-          }}>
-            ✓ {success}
-          </div>
-        )}
+          {success && (
+            <Alert severity="success" sx={{ mb: 3, borderRadius: "6px" }}>
+              {success}
+            </Alert>
+          )}
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-          
-          {/* FOTO DE PERFIL */}
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "2rem",
-            background: "hsla(var(--bg-secondary), 0.2)",
-            padding: "1.5rem",
-            borderRadius: "var(--radius-md)",
-            border: "1px solid hsl(var(--border-glass))"
-          }}>
-            <div style={{
-              width: "100px",
-              height: "100px",
-              borderRadius: "50%",
-              overflow: "hidden",
-              border: "3px solid hsla(var(--primary), 0.4)",
-              background: "hsla(var(--bg-secondary), 0.8)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "2.5rem"
-            }}>
-              {previewUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={previewUrl} alt="Previsualización" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : photoId ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={getApiUrl(`/images/${photoId}`)} alt="Técnico" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : (
-                "👨‍🔧"
-              )}
-            </div>
-            <div>
-              <label htmlFor="tech-photo" className="btn btn-secondary btn-sm" style={{ cursor: "pointer", display: "inline-flex", marginBottom: "0.5rem" }}>
-                📷 {previewUrl || photoId ? "Cambiar Foto de Perfil" : "Subir Foto de Perfil"}
-              </label>
-              <input
-                id="tech-photo"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                style={{ display: "none" }}
-                disabled={loading}
-              />
-              <p style={{ fontSize: "0.75rem", color: "hsl(var(--text-secondary))", margin: 0 }}>
-                Formatos permitidos: JPG, PNG. Máximo 5MB. Se almacena directamente en la base de datos.
-              </p>
-            </div>
-          </div>
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={3}>
+              {/* Foto de perfil */}
+              <Grid size={{ xs: 12 }}>
+                <Box sx={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: 3, 
+                  p: 3, 
+                  borderRadius: "6px", 
+                  bgcolor: "rgba(115, 103, 240, 0.04)", 
+                  border: "1px dashed var(--border-light)" 
+                }}>
+                  <Avatar 
+                    src={previewUrl || (photoId ? getApiUrl(`/images/${photoId}`) : undefined)}
+                    sx={{ 
+                      width: 80, 
+                      height: 80, 
+                      border: "2px solid var(--primary)",
+                      bgcolor: "var(--primary-light)",
+                      color: "var(--primary)",
+                      fontSize: "2rem"
+                    }}
+                  >
+                    {!previewUrl && !photoId ? "👨‍🔧" : undefined}
+                  </Avatar>
+                  <Box>
+                    <Button 
+                      variant="outlined" 
+                      component="label"
+                      size="small"
+                      sx={{ 
+                        borderRadius: "6px", 
+                        textTransform: "none", 
+                        borderColor: "var(--primary)", 
+                        color: "var(--primary)",
+                        mb: 1,
+                        "&:hover": { borderColor: "var(--primary-hover)", bgcolor: "var(--primary-light)" }
+                      }}
+                    >
+                      📷 {previewUrl || photoId ? "Cambiar Foto" : "Subir Foto"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        hidden
+                        disabled={loading}
+                      />
+                    </Button>
+                    <Typography variant="caption" sx={{ display: "block", color: "var(--text-muted)" }}>
+                      Formatos permitidos: JPG, PNG. Máximo 5MB.
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
 
-          {/* SECCIÓN 1: DATOS DE USUARIO */}
-          <div>
-            <h3 style={{ fontSize: "1.1rem", borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "0.5rem", marginBottom: "1.25rem", color: "hsl(var(--primary-hover))" }}>
-              1. Credenciales y Contacto (Usuario)
-            </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="firstName">Nombres</label>
-                <input
-                  id="firstName"
-                  type="text"
+              {/* Seccion 1: Credenciales y Contacto */}
+              <Grid size={{ xs: 12 }}>
+                <Typography variant="subtitle2" sx={{ color: "var(--primary)", fontWeight: 600, mb: 1, borderBottom: "1px solid var(--border-light)", pb: 1 }}>
+                  1. Credenciales y Contacto (Usuario)
+                </Typography>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Nombres"
                   placeholder="Ej. Juan Andrés"
-                  className="input-field"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   disabled={loading}
                   required
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="lastName">Apellidos</label>
-                <input
-                  id="lastName"
-                  type="text"
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Apellidos"
                   placeholder="Ej. Pérez Gómez"
-                  className="input-field"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   disabled={loading}
                   required
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="email">Correo Electrónico</label>
-                <input
-                  id="email"
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Correo Electrónico"
                   type="email"
                   placeholder="juan.perez@securitynet.com"
-                  className="input-field"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
                   required
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="phone">Número de Teléfono</label>
-                <input
-                  id="phone"
-                  type="tel"
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Número de Teléfono"
                   placeholder="Ej. +56987654321"
-                  className="input-field"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   disabled={loading}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-              <div className="input-group" style={{ gridColumn: "span 2", marginBottom: 0 }}>
-                <label className="input-label" htmlFor="password">
-                  Contraseña {isNew ? "" : "(dejar en blanco para no cambiarla)"}
-                </label>
-                <input
-                  id="password"
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  label={`Contraseña ${isNew ? "" : "(dejar en blanco para no cambiarla)"}`}
                   type="password"
                   placeholder={isNew ? "Ingresa la contraseña de acceso" : "••••••••"}
-                  className="input-field"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
                   required={isNew}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-            </div>
-          </div>
+              </Grid>
 
-          {/* SECCIÓN 2: DATOS PERSONALES */}
-          <div>
-            <h3 style={{ fontSize: "1.1rem", borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "0.5rem", marginBottom: "1.25rem", color: "hsl(var(--primary-hover))" }}>
-              2. Datos Personales y Profesionales
-            </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="doc">Número de Documento (RUT / DNI / RFC)</label>
-                <input
-                  id="doc"
-                  type="text"
+              {/* Seccion 2: Datos Personales y Profesionales */}
+              <Grid size={{ xs: 12 }} sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" sx={{ color: "var(--primary)", fontWeight: 600, mb: 1, borderBottom: "1px solid var(--border-light)", pb: 1 }}>
+                  2. Datos Personales y Profesionales
+                </Typography>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Número de Documento (RUT / DNI / RFC)"
                   placeholder="Ej. 18.765.432-1 o DNI: 09876543"
-                  className="input-field"
                   value={documentNumber}
                   onChange={(e) => setDocumentNumber(e.target.value)}
                   disabled={loading}
                   required
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="birth">Fecha de Nacimiento</label>
-                <input
-                  id="birth"
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Fecha de Nacimiento"
                   type="date"
-                  className="input-field"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
                   disabled={loading}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="academy">Nivel Académico</label>
-                <select
-                  id="academy"
-                  className="input-field"
-                  value={academicLevel}
-                  onChange={(e) => setAcademicLevel(e.target.value)}
-                  disabled={loading}
-                >
-                  <option value="">Selecciona...</option>
-                  <option value="Secundaria Completa">Secundaria Completa</option>
-                  <option value="Técnico Medio">Técnico Medio</option>
-                  <option value="Técnico Superior / Tecnólogo">Técnico Superior / Tecnólogo</option>
-                  <option value="Universitario Incompleto">Universitario Incompleto</option>
-                  <option value="Universitario Graduado">Universitario Graduado</option>
-                  <option value="Postgrado">Postgrado</option>
-                </select>
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="profession">Profesión / Título</label>
-                <input
-                  id="profession"
-                  type="text"
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FormControl fullWidth sx={fieldStyle}>
+                  <InputLabel shrink id="academic-level-label">Nivel Académico</InputLabel>
+                  <Select
+                    labelId="academic-level-label"
+                    label="Nivel Académico"
+                    notched
+                    value={academicLevel}
+                    onChange={(e) => setAcademicLevel(e.target.value)}
+                    disabled={loading}
+                    sx={{ borderRadius: "6px" }}
+                  >
+                    <MenuItem value="">Selecciona...</MenuItem>
+                    <MenuItem value="Secundaria Completa">Secundaria Completa</MenuItem>
+                    <MenuItem value="Técnico Medio">Técnico Medio</MenuItem>
+                    <MenuItem value="Técnico Superior / Tecnólogo">Técnico Superior / Tecnólogo</MenuItem>
+                    <MenuItem value="Universitario Incompleto">Universitario Incompleto</MenuItem>
+                    <MenuItem value="Universitario Graduado">Universitario Graduado</MenuItem>
+                    <MenuItem value="Postgrado">Postgrado</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Profesión / Título"
                   placeholder="Ej. Ingeniero de Telecomunicaciones"
-                  className="input-field"
                   value={profession}
                   onChange={(e) => setProfession(e.target.value)}
                   disabled={loading}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-              <div className="input-group" style={{ gridColumn: "span 2", marginBottom: 0 }}>
-                <label className="input-label" htmlFor="trade">Oficio / Especialidad Operativa</label>
-                <input
-                  id="trade"
-                  type="text"
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  label="Oficio / Especialidad Operativa"
                   placeholder="Ej. Especialista en Fibra Óptica, Fusionador, Instalador CCTV Senior"
-                  className="input-field"
                   value={trade}
                   onChange={(e) => setTrade(e.target.value)}
                   disabled={loading}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-            </div>
-          </div>
+              </Grid>
 
-          {/* SECCIÓN 3: TALLAS Y MEDIDAS */}
-          <div>
-            <h3 style={{ fontSize: "1.1rem", borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "0.5rem", marginBottom: "1.25rem", color: "hsl(var(--primary-hover))" }}>
-              3. Tallas de Uniforme e Indicadores Físicos
-            </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem" }}>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="shirt">Talla Camisa</label>
-                <select
-                  id="shirt"
-                  className="input-field"
-                  value={shirtSize}
-                  onChange={(e) => setShirtSize(e.target.value)}
-                  disabled={loading}
-                >
-                  <option value="">Selecciona...</option>
-                  <option value="XS">XS</option>
-                  <option value="S">S</option>
-                  <option value="M">M</option>
-                  <option value="L">L</option>
-                  <option value="XL">XL</option>
-                  <option value="XXL">XXL</option>
-                </select>
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="pants">Talla Pantalón</label>
-                <input
-                  id="pants"
-                  type="text"
+              {/* Seccion 3: Tallas y Medidas */}
+              <Grid size={{ xs: 12 }} sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" sx={{ color: "var(--primary)", fontWeight: 600, mb: 1, borderBottom: "1px solid var(--border-light)", pb: 1 }}>
+                  3. Tallas de Uniforme e Indicadores Físicos
+                </Typography>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormControl fullWidth sx={fieldStyle}>
+                  <InputLabel shrink id="shirt-size-label">Talla Camisa</InputLabel>
+                  <Select
+                    labelId="shirt-size-label"
+                    label="Talla Camisa"
+                    notched
+                    value={shirtSize}
+                    onChange={(e) => setShirtSize(e.target.value)}
+                    disabled={loading}
+                    sx={{ borderRadius: "6px" }}
+                  >
+                    <MenuItem value="">Selecciona...</MenuItem>
+                    <MenuItem value="XS">XS</MenuItem>
+                    <MenuItem value="S">S</MenuItem>
+                    <MenuItem value="M">M</MenuItem>
+                    <MenuItem value="L">L</MenuItem>
+                    <MenuItem value="XL">XL</MenuItem>
+                    <MenuItem value="XXL">XXL</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TextField
+                  fullWidth
+                  label="Talla Pantalón"
                   placeholder="Ej. 32 / 42"
-                  className="input-field"
                   value={pantsSize}
                   onChange={(e) => setPantsSize(e.target.value)}
                   disabled={loading}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="shoes">Talla Calzado (Zapato)</label>
-                <input
-                  id="shoes"
-                  type="text"
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TextField
+                  fullWidth
+                  label="Talla Calzado (Zapato)"
                   placeholder="Ej. 40 / 41 / 8"
-                  className="input-field"
                   value={shoeSize}
                   onChange={(e) => setShoeSize(e.target.value)}
                   disabled={loading}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-              <div className="input-group" style={{ gridColumn: "span 1.5", marginBottom: 0 }}>
-                <label className="input-label" htmlFor="weight">Peso Corporal (Kg)</label>
-                <input
-                  id="weight"
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Peso Corporal (Kg)"
                   type="number"
-                  step="0.1"
                   placeholder="Ej. 75.5"
-                  className="input-field"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
                   disabled={loading}
+                  slotProps={{ 
+                    inputLabel: { shrink: true },
+                    htmlInput: { step: "0.1" }
+                  }}
+                  sx={fieldStyle}
                 />
-              </div>
-              <div className="input-group" style={{ gridColumn: "span 1.5", marginBottom: 0 }}>
-                <label className="input-label" htmlFor="height">Estatura / Altura (metros)</label>
-                <input
-                  id="height"
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Estatura / Altura (metros)"
                   type="number"
-                  step="0.01"
                   placeholder="Ej. 1.76"
-                  className="input-field"
                   value={height}
                   onChange={(e) => setHeight(e.target.value)}
                   disabled={loading}
+                  slotProps={{ 
+                    inputLabel: { shrink: true },
+                    htmlInput: { step: "0.01" }
+                  }}
+                  sx={fieldStyle}
                 />
-              </div>
-            </div>
-          </div>
+              </Grid>
 
-          {/* SECCIÓN 4: DIRECCIÓN */}
-          <div>
-            <h3 style={{ fontSize: "1.1rem", borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "0.5rem", marginBottom: "1.25rem", color: "hsl(var(--primary-hover))" }}>
-              4. Dirección y Ubicación
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="address">Dirección Particular</label>
-                <input
-                  id="address"
-                  type="text"
+              {/* Seccion 4: Dirección */}
+              <Grid size={{ xs: 12 }} sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" sx={{ color: "var(--primary)", fontWeight: 600, mb: 1, borderBottom: "1px solid var(--border-light)", pb: 1 }}>
+                  4. Dirección y Ubicación
+                </Typography>
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  label="Dirección Particular"
                   placeholder="Calle, Número, Departamento, Ciudad"
-                  className="input-field"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   disabled={loading}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="landmark">Punto de Referencia</label>
-                <textarea
-                  id="landmark"
-                  placeholder="Ej. Frente a Plaza Central, Edificio Amarillo segundo piso"
-                  className="input-field"
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  multiline
                   rows={2}
+                  label="Punto de Referencia"
+                  placeholder="Ej. Frente a Plaza Central, Edificio Amarillo segundo piso"
                   value={landmark}
                   onChange={(e) => setLandmark(e.target.value)}
                   disabled={loading}
-                  style={{ resize: "vertical", fontFamily: "inherit" }}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-            </div>
-          </div>
+              </Grid>
+            </Grid>
 
-          {/* BOTONES DE ACCIÓN */}
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "1rem" }}>
-            <Link href="/technicians" className="btn btn-secondary" style={{ pointerEvents: loading ? "none" : "auto" }}>
-              Cancelar
-            </Link>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? <span className="spinner" /> : null}
-              <span>{isNew ? "Registrar Técnico" : "Guardar Cambios"}</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            <Divider sx={{ my: 4, borderColor: "var(--border-light)" }} />
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+              <Link href="/technicians" style={{ textDecoration: "none" }}>
+                <Button 
+                  variant="outlined" 
+                  disabled={loading}
+                  sx={{ 
+                    borderRadius: "6px", 
+                    textTransform: "none", 
+                    borderColor: "var(--border-light)", 
+                    color: "var(--text-muted)",
+                    "&:hover": { borderColor: "var(--text-muted)", bgcolor: "transparent" }
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </Link>
+              <Button 
+                type="submit" 
+                variant="contained" 
+                disabled={loading}
+                sx={{ 
+                  borderRadius: "6px", 
+                  textTransform: "none", 
+                  bgcolor: "var(--primary)",
+                  boxShadow: "0 4px 8px 0 rgba(115, 103, 240, 0.3)",
+                  "&:hover": { bgcolor: "var(--primary-hover)" }
+                }}
+              >
+                {loading ? <CircularProgress size={20} sx={{ mr: 1, color: "white" }} /> : null}
+                {isNew ? "Registrar Técnico" : "Guardar Cambios"}
+              </Button>
+            </Box>
+          </form>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

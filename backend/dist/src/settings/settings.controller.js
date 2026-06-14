@@ -35,6 +35,15 @@ let SettingsController = class SettingsController {
     uploadLogo(file) {
         return this.settingsService.uploadLogo(file);
     }
+    findCategories() {
+        return this.settingsService.getCategories();
+    }
+    createCategory(body) {
+        return this.settingsService.createCategory(body.name, body.label);
+    }
+    deleteCategory(id) {
+        return this.settingsService.deleteCategory(id);
+    }
 };
 exports.SettingsController = SettingsController;
 __decorate([
@@ -65,6 +74,32 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], SettingsController.prototype, "uploadLogo", null);
+__decorate([
+    (0, common_1.Get)('categories'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], SettingsController.prototype, "findCategories", null);
+__decorate([
+    (0, common_1.Post)('categories'),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
+    (0, permissions_decorator_1.Permissions)('settings:write'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], SettingsController.prototype, "createCategory", null);
+__decorate([
+    (0, common_1.Delete)('categories/:id'),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
+    (0, permissions_decorator_1.Permissions)('settings:write'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SettingsController.prototype, "deleteCategory", null);
 exports.SettingsController = SettingsController = __decorate([
     (0, swagger_1.ApiTags)('Settings'),
     (0, common_1.Controller)('settings'),

@@ -1,52 +1,348 @@
-@import "tailwindcss";
-
-@theme {
-  --color-primary: hsl(var(--primary));
-  --color-accent: hsl(var(--accent));
-}
-
 :root {
-  /* Default dark theme values (Slate 950 base, Slate 900 surfaces) */
-  --background: 222 47% 4%;
-  --foreground: 210 40% 98%;
-  --card: 222 47% 7%;
-  --card-foreground: 210 40% 98%;
-  --border: 217 33% 12%;
-  --input: 217 33% 12%;
+  /* Vuexy Light Palette */
+  --bg-app: #f8f7fa;
+  --bg-card: #ffffff;
+  --text-main: #2f2b3d;
+  --text-muted: #797686;
+  --text-success: #28c76f;
   
-  /* Default dynamic brand colors (Vuexy/Amber values, overwritten dynamically by ConfigContext) */
-  --primary: 245 82% 67%; /* #7367F0 */
-  --accent: 38 92% 50%;   /* #F59E0B */
+  --primary: #7367f0;
+  --primary-hover: #6559e0;
+  --primary-light: #eae8fd;
+  
+  --accent: #00cfe8;
+  --accent-light: #e0f9fc;
+  
+  --border-light: #dbdade;
+  --shadow-sm: 0 2px 4px 0 rgba(165, 163, 174, 0.2);
+  --shadow-md: 0 4px 8px -2px rgba(165, 163, 174, 0.3), 0 2px 4px -1px rgba(165, 163, 174, 0.2);
+  
+  --font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --border-radius: 6px;
 }
 
-.light-theme {
-  /* Light theme values */
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
+.dark {
+  /* Vuexy Dark Palette */
+  --bg-app: #25293c;
+  --bg-card: #2f3349;
+  --text-main: #cfd3ec;
+  --text-muted: #b0b5dd;
+  --border-light: #434968;
+  --shadow-sm: 0 2px 4px 0 rgba(15, 20, 34, 0.4);
+  --shadow-md: 0 4px 12px 0 rgba(15, 20, 34, 0.6);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  @apply min-h-screen font-sans antialiased;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.light-theme body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+/* Premium Layout Sheet */
+.odoo-form-sheet {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius);
+  padding: 2.25rem;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 2rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-/* Custom UI Components and utilities */
-@utility glass-card {
-  @apply bg-slate-900/50 backdrop-blur-md border border-slate-800/80;
+@media (max-width: 768px) {
+  .odoo-form-sheet {
+    padding: 1.25rem;
+  }
 }
-.light-theme .glass-card {
-  @apply bg-white/70 backdrop-blur-md border-slate-200/80;
+
+/* Statusbar Flow */
+.odoo-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  border-bottom: none;
+  min-height: 48px;
+  padding: 0 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.odoo-statusbar-stages {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.odoo-statusbar-stage {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 1.25rem;
+  color: var(--text-muted);
+  border-left: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  height: 48px;
+  position: relative;
+  user-select: none;
+}
+
+.odoo-statusbar-stage:first-child {
+  border-left: none;
+}
+
+.odoo-statusbar-stage.active {
+  color: var(--primary);
+  background: var(--primary-light);
+  font-weight: 700;
+}
+
+/* Data Tables */
+.odoo-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.odoo-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.odoo-table th {
+  background: rgba(115, 103, 240, 0.02);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.dark .odoo-table th {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.odoo-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+.odoo-table tr:last-child td {
+  border-bottom: none;
+}
+
+.odoo-table tbody tr:hover td {
+  background: rgba(115, 103, 240, 0.015);
+}
+
+.dark .odoo-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+/* Inputs & Labels */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+  width: 100%;
+}
+
+.input-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.input-field {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius);
+  color: var(--text-main);
+  font-size: 13px;
+  transition: border-color 0.15s ease;
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+}
+
+.input-field::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.input-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  width: max-content;
+  border: 1px solid transparent;
+}
+
+.btn-sm {
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+}
+
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  box-shadow: 0 2px 4px 0 rgba(115, 103, 240, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  border-color: var(--border-light);
+  color: var(--text-muted);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+}
+
+.btn-danger {
+  background: #ea5455;
+  border-color: #ea5455;
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background-color: #e04b4c;
+  box-shadow: 0 2px 4px 0 rgba(234, 84, 85, 0.4);
+}
+
+.btn-success {
+  background: #28c76f;
+  border-color: #28c76f;
+  color: #ffffff;
+}
+
+.btn-success:hover {
+  background-color: #20b05e;
+  box-shadow: 0 2px 4px 0 rgba(40, 199, 111, 0.4);
+}
+
+.btn-block {
+  width: 100% !important;
+}
+
+/* Flat Tabs */
+.odoo-tab-nav {
+  display: flex;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 1.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.odoo-tab-button {
+  padding: 8px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.odoo-tab-button:hover {
+  color: var(--text-main);
+}
+
+.odoo-tab-button.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* Glass Card Support */
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-pending, .status-quoted {
+  background: #fff5e6;
+  color: #ff9f43;
+}
+
+.status-approved, .status-completed {
+  background: #e8f9ee;
+  color: #28c76f;
+}
+
+.status-in_progress {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.status-cancelled, .status-rejected {
+  background: #fcebeb;
+  color: #ea5455;
 }
 
 /* Scrollbars */
@@ -54,28 +350,16 @@ body {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border) / 0.5);
+  background: var(--border-light);
   border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
 
-/* Print helper rules */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  body {
-    background-color: white !important;
-    color: black !important;
-  }
-  .print-w-full {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }

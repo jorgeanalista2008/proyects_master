@@ -76,6 +76,24 @@ let SettingsService = class SettingsService {
             mimeType: newImage.mimeType,
         };
     }
+    async getCategories() {
+        return this.prisma.category.findMany({
+            orderBy: { label: 'asc' },
+        });
+    }
+    async createCategory(name, label) {
+        const formattedName = name.toUpperCase().replace(/\s/g, '_');
+        return this.prisma.category.upsert({
+            where: { name: formattedName },
+            update: { label },
+            create: { name: formattedName, label },
+        });
+    }
+    async deleteCategory(id) {
+        return this.prisma.category.delete({
+            where: { id },
+        });
+    }
 };
 exports.SettingsService = SettingsService;
 exports.SettingsService = SettingsService = __decorate([

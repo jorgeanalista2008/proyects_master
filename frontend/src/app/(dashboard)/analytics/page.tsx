@@ -1,10 +1,32 @@
-// d:\github\proyects_master\frontend\src\app\(dashboard)\analytics\page.tsx
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardHeader,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  CircularProgress,
+  Alert,
+  Divider,
+  LinearProgress,
+  Avatar,
+  Chip
+} from "@mui/material";
+import { TrendingUp, DollarSign } from "lucide-react";
 
 interface SummaryStats {
   projects: {
@@ -52,7 +74,6 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // States for interactive SVG bar chart tooltip
   const [hoveredBar, setHoveredBar] = useState<{
     idx: number;
     month: string;
@@ -86,7 +107,6 @@ export default function AnalyticsPage() {
 
         setSummary(summaryData);
         setHistory(historyData);
-        // Sort projects by date and slice top 5
         const sortedProjects = (projectsData || [])
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .slice(0, 5);
@@ -103,24 +123,27 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="loader-container">
-        <div className="spinner" style={{ width: "2.5rem", height: "2.5rem" }} />
-        <p>Cargando reportes y analíticas corporativas...</p>
-      </div>
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "50vh", gap: 2 }}>
+        <CircularProgress color="primary" />
+        <Typography variant="body2" color="text.secondary">Cargando reportes y analíticas corporativas...</Typography>
+      </Box>
     );
   }
 
   if (error || !summary) {
     return (
-      <div className="glass-card" style={{ textAlign: "center", padding: "4rem" }}>
-        <span style={{ fontSize: "3rem" }}>⚠️</span>
-        <h3 style={{ marginTop: "1rem" }}>Error de Conexión</h3>
-        <p style={{ color: "hsl(var(--text-secondary))" }}>{error || "No hay información de resumen disponible."}</p>
-      </div>
+      <Card sx={{ border: "1px solid", borderColor: "divider", textAlign: "center", py: 8 }}>
+        <CardContent sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+          <Typography variant="h3">⚠️</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>Error de Conexión</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {error || "No hay información de resumen disponible."}
+          </Typography>
+        </CardContent>
+      </Card>
     );
   }
 
-  // --- Date Translation Helpers ---
   const getMonthName = (monthStr: string) => {
     const parts = monthStr.split("-");
     if (parts.length < 2) return monthStr;
@@ -137,19 +160,16 @@ export default function AnalyticsPage() {
     }).format(val);
   };
 
-  // --- Calculations for widgets ---
   const activeProjectsCount = summary.projects.APPROVED + summary.projects.IN_PROGRESS;
   const quotesTotal = summary.quotes.total || 0;
   const quotesApproved = summary.quotes.APPROVED || 0;
   const approvalRate = quotesTotal > 0 ? Math.round((quotesApproved / quotesTotal) * 100) : 0;
   const marginPercent = summary.financialsUSD.marginPercent || 0;
 
-  // Percentage of completed projects for radial gauge tracker
   const completedRate = summary.projects.total > 0
     ? Math.round((summary.projects.COMPLETED / summary.projects.total) * 100)
     : 0;
 
-  // --- SVG DOUBLE BAR CHART CONFIG ---
   const maxVal = Math.max(...history.map((h) => Math.max(h.revenue, h.cost)), 1000);
   const chartHeight = 200;
   const chartWidth = 460;
@@ -177,549 +197,354 @@ export default function AnalyticsPage() {
     });
   };
 
-  const handleBarMouseLeave = () => {
-    setHoveredBar(null);
-  };
-
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      
-      {/* Top Banner Title */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <h1 className="title-primary" style={{ margin: 0, fontSize: "1.75rem" }}>Panel Analítico</h1>
-          <p className="subtitle-secondary" style={{ margin: 0, fontSize: "0.875rem" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Title Header */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 750, color: "text.primary" }}>
+            Panel Analítico
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             Monitoreo en tiempo real de rentabilidad, cotizaciones y conversión de infraestructura.
-          </p>
-        </div>
-        <div className="date-badge">
-          📅 {new Date().toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
-        </div>
-      </div>
+          </Typography>
+        </Box>
+        <Box sx={{ 
+          px: 2, 
+          py: 1, 
+          bgcolor: "background.paper", 
+          border: "1px solid", 
+          borderColor: "divider", 
+          borderRadius: 1.5 
+        }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, color: "text.primary" }}>
+            📅 {new Date().toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
+          </Typography>
+        </Box>
+      </Box>
 
-      {/* Row 1: Congratulations Banner & Statistics Grid */}
-      <div className="vuexy-grid-row">
-        
-        {/* Widget 1: Congratulations Card */}
-        <div className="vuexy-col-4">
-          <div className="vuexy-card card-congratulations">
-            <div className="card-congratulations-content">
-              <h3 className="stats-title" style={{ fontSize: "1.25rem", color: "hsl(var(--primary))", marginBottom: "0.5rem" }}>
+      {/* Row 1: Congratulation Card & Quick KPIs */}
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%", bgcolor: "primary.light", color: "primary.contrastText" }}>
+            <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2, position: "relative", overflow: "hidden" }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "primary.main" }}>
                 ¡Felicidades {user?.firstName}! 🎉
-              </h3>
-              <p className="stats-subtitle" style={{ fontSize: "0.825rem", marginBottom: "1rem", lineHeight: "1.4" }}>
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: "80%", lineHeight: 1.4 }}>
                 Has sido el miembro más activo del mes. Tu tasa promedio de ganancia comercial se mantiene óptima.
-              </p>
-              <h2 style={{ fontSize: "1.6rem", fontWeight: 800, margin: "0.25rem 0 0.75rem 0" }}>
-                {marginPercent}% <span style={{ fontSize: "0.85rem", fontWeight: 500, color: "hsl(var(--text-secondary))" }}>utilidad promedio</span>
-              </h2>
-              <Link href="/projects" className="btn btn-primary btn-sm" style={{ padding: "0.45rem 1rem", fontSize: "0.8rem" }}>
+              </Typography>
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: "text.primary", display: "inline-block", mr: 1 }}>
+                  {marginPercent}%
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>utilidad promedio</Typography>
+              </Box>
+              <Button component={Link} href="/projects" variant="contained" color="primary" size="small" sx={{ width: "fit-content", mt: 1 }}>
                 Ver Proyectos
-              </Link>
-            </div>
-            
-            <div className="card-congratulations-illustration floating-trophy">
-              <svg width="120" height="120" viewBox="0 0 100 100" fill="none">
-                {/* Gold Trophy Illustration SVG */}
-                <circle cx="50" cy="50" r="45" fill="hsla(var(--primary), 0.1)" />
-                <path d="M30 35H70V45C70 56 61 65 50 65C39 65 30 56 30 45V35Z" fill="url(#trophyGold)" stroke="#EAB308" strokeWidth="2" />
-                <path d="M50 65V78M38 78H62" stroke="#EAB308" strokeWidth="3" strokeLinecap="round" />
-                <path d="M30 40H22C18 40 18 48 22 48H30" stroke="#EAB308" strokeWidth="2" strokeLinecap="round" />
-                <path d="M70 40H78C82 40 82 48 78 48H70" stroke="#EAB308" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="50" cy="46" r="6" fill="#FDE047" />
-                <polygon points="50,42 52,45 55,45 53,47 54,50 50,48 46,50 47,47 45,45 48,45" fill="#EAB308" />
-                {/* Glow particles */}
-                <circle cx="25" cy="25" r="2" fill="#FDE047" opacity="0.8" />
-                <circle cx="75" cy="22" r="3" fill="#FDE047" opacity="0.6" />
-                <circle cx="82" cy="65" r="2" fill="#FDE047" opacity="0.7" />
-                <defs>
-                  <linearGradient id="trophyGold" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FDE047" />
-                    <stop offset="100%" stopColor="#CA8A04" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-          </div>
-        </div>
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        {/* Widget 2: Statistics Grid (Transactions) */}
-        <div className="vuexy-col-8">
-          <div className="vuexy-card" style={{ justifyContent: "center" }}>
-            <div className="stats-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <h3 className="stats-title">Estadísticas Comerciales</h3>
-                <p className="stats-subtitle">Historial acumulado de operaciones vigentes</p>
-              </div>
-              <span style={{ fontSize: "0.775rem", color: "hsl(var(--text-muted))" }}>Actualizado hace un momento</span>
-            </div>
-            
-            <div className="stats-list-grid">
-              
-              {/* Stat 1: Revenue */}
-              <div className="stats-item-flex">
-                <div className="stats-avatar-circle avatar-primary">
-                  💰
-                </div>
-                <div className="stats-item-data">
-                  <span className="stats-item-value">{formattedUSD(summary.financialsUSD.revenue)}</span>
-                  <span className="stats-item-label">Ventas Netas</span>
-                </div>
-              </div>
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%" }}>
+            <CardHeader
+              title="Estadísticas Comerciales"
+              subheader="Historial acumulado de operaciones vigentes"
+              titleTypographyProps={{ variant: "subtitle1", sx: { fontWeight: 700 } }}
+              subheaderTypographyProps={{ variant: "caption" }}
+            />
+            <CardContent sx={{ pt: 1 }}>
+              <Grid container spacing={3}>
+                {[
+                  { label: "Ventas Netas", val: formattedUSD(summary.financialsUSD.revenue), icon: "💰", color: "primary.light" },
+                  { label: "Instalaciones", val: activeProjectsCount, icon: "📁", color: "warning.light" },
+                  { label: "Aprobación", val: `${approvalRate}%`, icon: "📈", color: "success.light" },
+                  { label: "Margen Bruto", val: `${marginPercent}%`, icon: "📊", color: "info.light" }
+                ].map((stat, idx) => (
+                  <Grid size={{ xs: 6, sm: 3 }} key={idx}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <Avatar sx={{ bgcolor: stat.color, width: 40, height: 40, fontSize: "16px", borderRadius: 1.5 }}>{stat.icon}</Avatar>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.1 }}>{stat.val}</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>{stat.label}</Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
-              {/* Stat 2: Active Projects */}
-              <div className="stats-item-flex">
-                <div className="stats-avatar-circle avatar-warning">
-                  📁
-                </div>
-                <div className="stats-item-data">
-                  <span className="stats-item-value">{activeProjectsCount}</span>
-                  <span className="stats-item-label">Instalaciones</span>
-                </div>
-              </div>
+      {/* Row 2: Charts and support tracker */}
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 7 }}>
+          <Card ref={chartContainerRef} sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardHeader
+              title="Reporte de Ventas vs Costos"
+              subheader="Comparativa consolidada mensual en USD"
+              titleTypographyProps={{ variant: "subtitle1", sx: { fontWeight: 700 } }}
+              subheaderTypographyProps={{ variant: "caption" }}
+              action={
+                <Box sx={{ display: "flex", gap: 2, pr: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "primary.main" }} />
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Ingresos</Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "secondary.main" }} />
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Costos</Typography>
+                  </Box>
+                </Box>
+              }
+            />
+            <CardContent sx={{ pt: 0 }}>
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, sm: 8 }}>
+                  <Box sx={{ width: "100%", height: 200, position: "relative" }}>
+                    <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} width="100%" height="100%" style={{ overflow: "visible" }}>
+                      {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+                        const y = paddingTop + (chartHeight - paddingTop - paddingBottom) * ratio;
+                        const gridVal = maxVal * (1 - ratio);
+                        return (
+                          <g key={idx}>
+                            <line x1={paddingLeft} y1={y} x2={chartWidth - paddingRight} y2={y} stroke="var(--border-light)" strokeWidth="1" strokeDasharray="3 3" />
+                            <text x={paddingLeft - 8} y={y + 4} fill="#64748b" style={{ fontSize: "9px", fontFamily: "monospace" }} textAnchor="end">
+                              {gridVal >= 1000 ? `${Math.round(gridVal / 1000)}k` : Math.round(gridVal)}
+                            </text>
+                          </g>
+                        );
+                      })}
 
-              {/* Stat 3: Approval Rate */}
-              <div className="stats-item-flex">
-                <div className="stats-avatar-circle avatar-success">
-                  📈
-                </div>
-                <div className="stats-item-data">
-                  <span className="stats-item-value">{approvalRate}%</span>
-                  <span className="stats-item-label">Aprobación</span>
-                </div>
-              </div>
+                      {history.map((item, idx) => {
+                        const usableWidth = chartWidth - paddingLeft - paddingRight;
+                        const barGroupSpacing = usableWidth / history.length;
+                        const groupX = paddingLeft + idx * barGroupSpacing + barGroupSpacing * 0.15;
+                        const barWidth = barGroupSpacing * 0.32;
 
-              {/* Stat 4: Margin */}
-              <div className="stats-item-flex">
-                <div className="stats-avatar-circle avatar-info">
-                  📊
-                </div>
-                <div className="stats-item-data">
-                  <span className="stats-item-value">{marginPercent}%</span>
-                  <span className="stats-item-label">Margen Bruto</span>
-                </div>
-              </div>
+                        const heightRatio = chartHeight - paddingTop - paddingBottom;
+                        const salesHeight = (item.revenue / maxVal) * heightRatio;
+                        const costHeight = (item.cost / maxVal) * heightRatio;
 
-            </div>
-          </div>
-        </div>
+                        const salesY = chartHeight - paddingBottom - salesHeight;
+                        const costY = chartHeight - paddingBottom - costHeight;
 
-      </div>
+                        return (
+                          <g key={idx}>
+                            <rect
+                              x={groupX - 4}
+                              y={paddingTop}
+                              width={barWidth * 2 + 12}
+                              height={heightRatio}
+                              fill="transparent"
+                              style={{ cursor: "pointer" }}
+                              onMouseMove={(e) => handleBarMouseMove(e, idx, item)}
+                              onMouseLeave={() => setHoveredBar(null)}
+                            />
+                            <rect x={groupX} y={salesY} width={barWidth} height={Math.max(salesHeight, 3)} rx="2" fill="var(--primary)" style={{ opacity: 0.9, pointerEvents: "none" }} />
+                            <rect x={groupX + barWidth + 4} y={costY} width={barWidth} height={Math.max(costHeight, 3)} rx="2" fill="var(--accent)" style={{ opacity: 0.9, pointerEvents: "none" }} />
+                            <text x={groupX + barWidth + 2} y={chartHeight - 12} fill="#94a3b8" style={{ fontSize: "10px", fontWeight: 600, pointerEvents: "none" }} textAnchor="middle">
+                              {getMonthName(item.month)}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
 
-      {/* Row 2: Earning Reports & Support Tracker */}
-      <div className="vuexy-grid-row">
-        
-        {/* Widget 3: Earning Reports Chart */}
-        <div className="vuexy-col-7">
-          <div className="vuexy-card" ref={chartContainerRef}>
-            <div className="earning-header-flex">
-              <div>
-                <h3 className="stats-title">Reporte de Ventas vs Costos</h3>
-                <p className="stats-subtitle">Comparativa consolidada mensual en USD</p>
-              </div>
-              <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.725rem", fontWeight: 600 }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                  <span style={{ width: "8px", height: "8px", background: "hsl(var(--primary))", borderRadius: "2px" }} />
-                  Ingresos
-                </span>
-                <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                  <span style={{ width: "8px", height: "8px", background: "hsl(var(--accent))", borderRadius: "2px" }} />
-                  Costos
-                </span>
-              </div>
-            </div>
+                    {hoveredBar && (
+                      <Box sx={{ 
+                        position: "absolute", 
+                        zIndex: 10, 
+                        bgcolor: "background.paper", 
+                        border: "1px solid", 
+                        borderColor: "divider", 
+                        p: 1.5, 
+                        borderRadius: 1, 
+                        boxShadow: 2, 
+                        display: "flex", 
+                        flexDirection: "column", 
+                        gap: 0.5, 
+                        pointerEvents: "none" 
+                      }} style={{ left: `${hoveredBar.x}px`, top: `${hoveredBar.y}px` }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, borderBottom: "1px solid", borderColor: "divider", pb: 0.5, mb: 0.5, display: "block", textAlign: "center" }}>
+                          {hoveredBar.month}
+                        </Typography>
+                        <Box sx={{ display: "flex", gap: 3, justifyContent: "space-between" }}>
+                          <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600 }}>Ventas:</Typography>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>{formattedUSD(hoveredBar.revenue)}</Typography>
+                        </Box>
+                        <Box sx={{ display: "flex", gap: 3, justifyContent: "space-between" }}>
+                          <Typography variant="caption" sx={{ color: "warning.main", fontWeight: 600 }}>Costos:</Typography>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>{formattedUSD(hoveredBar.cost)}</Typography>
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+                </Grid>
 
-            <div className="earning-layout-container">
-              {/* Interactive SVG double bar chart */}
-              <div className="earning-chart-wrapper">
-                <svg
-                  viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                  width="100%"
-                  height="100%"
-                  style={{ overflow: "visible" }}
-                >
-                  {/* Grid Lines */}
-                  {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
-                    const y = paddingTop + (chartHeight - paddingTop - paddingBottom) * ratio;
-                    const gridVal = maxVal * (1 - ratio);
-                    return (
-                      <g key={idx}>
-                        <line
-                          x1={paddingLeft}
-                          y1={y}
-                          x2={chartWidth - paddingRight}
-                          y2={y}
-                          stroke="hsla(var(--foreground), 0.06)"
-                          strokeWidth="1"
-                        />
-                        <text
-                          x={paddingLeft - 8}
-                          y={y + 4}
-                          fill="hsl(var(--text-muted))"
-                          fontSize="9"
-                          textAnchor="end"
-                          fontFamily="monospace"
-                        >
-                          {gridVal >= 1000 ? `${Math.round(gridVal / 1000)}k` : Math.round(gridVal)}
-                        </text>
-                      </g>
-                    );
-                  })}
+                <Grid size={{ xs: 12, sm: 4 }} sx={{ display: "flex", flexDirection: "column", gap: 2, justifyContent: "center" }}>
+                  {[
+                    { label: "Venta Total", val: formattedUSD(summary.financialsUSD.revenue), color: "primary.main", pct: 100 },
+                    { label: "Costo Total", val: formattedUSD(summary.financialsUSD.cost), color: "warning.main", pct: summary.financialsUSD.revenue > 0 ? (summary.financialsUSD.cost / summary.financialsUSD.revenue) * 100 : 0 },
+                    { label: "Utilidad Neta", val: formattedUSD(summary.financialsUSD.profit), color: "success.main", pct: marginPercent }
+                  ].map((item, idx) => (
+                    <Box key={idx}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>{item.label}</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: item.color }}>{item.val}</Typography>
+                      </Box>
+                      <LinearProgress variant="determinate" value={item.pct} sx={{ height: 6, borderRadius: 3, bgcolor: "divider", "& .MuiLinearProgress-bar": { bgcolor: item.color } }} />
+                    </Box>
+                  ))}
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
 
-                  {/* Bars rendering */}
-                  {history.map((item, idx) => {
-                    const usableWidth = chartWidth - paddingLeft - paddingRight;
-                    const barGroupSpacing = usableWidth / history.length;
-                    const groupX = paddingLeft + idx * barGroupSpacing + barGroupSpacing * 0.15;
-                    const barWidth = barGroupSpacing * 0.32;
-
-                    const heightRatio = chartHeight - paddingTop - paddingBottom;
-                    const salesHeight = (item.revenue / maxVal) * heightRatio;
-                    const costHeight = (item.cost / maxVal) * heightRatio;
-
-                    const salesY = chartHeight - paddingBottom - salesHeight;
-                    const costY = chartHeight - paddingBottom - costHeight;
-
-                    return (
-                      <g key={idx} className="chart-bar-group">
-                        {/* Background invisible hovering capsule for easier hover */}
-                        <rect
-                          x={groupX - 4}
-                          y={paddingTop}
-                          width={barWidth * 2 + 12}
-                          height={heightRatio}
-                          fill="transparent"
-                          onMouseMove={(e) => handleBarMouseMove(e, idx, item)}
-                          onMouseLeave={handleBarMouseLeave}
-                        />
-
-                        {/* Revenue Bar */}
-                        <rect
-                          x={groupX}
-                          y={salesY}
-                          width={barWidth}
-                          height={Math.max(salesHeight, 3)}
-                          rx="3"
-                          fill="url(#revenueBarGrad)"
-                          style={{ pointerEvents: "none" }}
-                        />
-
-                        {/* Cost Bar */}
-                        <rect
-                          x={groupX + barWidth + 4}
-                          y={costY}
-                          width={barWidth}
-                          height={Math.max(costHeight, 3)}
-                          rx="3"
-                          fill="url(#costBarGrad)"
-                          style={{ pointerEvents: "none" }}
-                        />
-
-                        {/* Month text label */}
-                        <text
-                          x={groupX + barWidth + 2}
-                          y={chartHeight - 12}
-                          fill="hsl(var(--text-secondary))"
-                          fontSize="10"
-                          fontWeight="600"
-                          textAnchor="middle"
-                          style={{ pointerEvents: "none" }}
-                        >
-                          {getMonthName(item.month)}
-                        </text>
-                      </g>
-                    );
-                  })}
-
-                  <defs>
-                    <linearGradient id="revenueBarGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" />
-                      <stop offset="100%" stopColor="hsla(var(--primary), 0.4)" />
-                    </linearGradient>
-                    <linearGradient id="costBarGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--accent))" />
-                      <stop offset="100%" stopColor="hsla(var(--accent), 0.3)" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-
-                {/* Render interactive HTML Tooltip */}
-                {hoveredBar && (
-                  <div
-                    className="chart-tooltip-box"
-                    style={{
-                      left: `${hoveredBar.x}px`,
-                      top: `${hoveredBar.y}px`,
-                    }}
-                  >
-                    <strong style={{ borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "2px", marginBottom: "2px" }}>
-                      {hoveredBar.month}
-                    </strong>
-                    <span style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
-                      <span style={{ color: "hsl(var(--primary))", fontWeight: 600 }}>Ventas:</span>
-                      <strong>{formattedUSD(hoveredBar.revenue)}</strong>
-                    </span>
-                    <span style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
-                      <span style={{ color: "hsl(var(--accent))", fontWeight: 600 }}>Costos:</span>
-                      <strong>{formattedUSD(hoveredBar.cost)}</strong>
-                    </span>
-                    <span style={{ display: "flex", justifyContent: "space-between", gap: "1rem", borderTop: "1px dashed hsl(var(--border-glass))", paddingTop: "2px", marginTop: "2px" }}>
-                      <span style={{ color: "hsl(var(--success))", fontWeight: 600 }}>Margen:</span>
-                      <strong style={{ color: "hsl(var(--success))" }}>
-                        {formattedUSD(hoveredBar.revenue - hoveredBar.cost)}
-                      </strong>
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Side Stats Panel */}
-              <div className="earning-side-panel">
-                
-                {/* Metric 1: Ingreso Acumulado */}
-                <div className="side-panel-metric">
-                  <div className="side-panel-header">
-                    <span style={{ width: "6px", height: "6px", background: "hsl(var(--primary))", borderRadius: "50%" }} />
-                    Venta Total
-                  </div>
-                  <span className="side-panel-value">{formattedUSD(summary.financialsUSD.revenue)}</span>
-                  <div className="side-panel-progress-track">
-                    <div className="side-panel-progress-bar" style={{ width: "100%", background: "hsl(var(--primary))" }} />
-                  </div>
-                </div>
-
-                {/* Metric 2: Costo Acumulado */}
-                <div className="side-panel-metric">
-                  <div className="side-panel-header">
-                    <span style={{ width: "6px", height: "6px", background: "hsl(var(--accent))", borderRadius: "50%" }} />
-                    Costo Total
-                  </div>
-                  <span className="side-panel-value">{formattedUSD(summary.financialsUSD.cost)}</span>
-                  <div className="side-panel-progress-track">
-                    <div
-                      className="side-panel-progress-bar"
-                      style={{
-                        width: `${summary.financialsUSD.revenue > 0 ? (summary.financialsUSD.cost / summary.financialsUSD.revenue) * 100 : 0}%`,
-                        background: "hsl(var(--accent))"
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Metric 3: Ganancia */}
-                <div className="side-panel-metric">
-                  <div className="side-panel-header">
-                    <span style={{ width: "6px", height: "6px", background: "hsl(var(--success))", borderRadius: "50%" }} />
-                    Utilidad Neta
-                  </div>
-                  <span className="side-panel-value" style={{ color: "hsl(var(--success))" }}>
-                    {formattedUSD(summary.financialsUSD.profit)}
-                  </span>
-                  <div className="side-panel-progress-track">
-                    <div className="side-panel-progress-bar" style={{ width: `${marginPercent}%`, background: "hsl(var(--success))" }} />
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Widget 4: Support Tracker (Control de Instalaciones) */}
-        <div className="vuexy-col-5">
-          <div className="vuexy-card">
-            <h3 className="stats-title">Control de Instalaciones</h3>
-            <p className="stats-subtitle" style={{ marginBottom: "1rem" }}>Avance total de obras finalizadas</p>
-            
-            <div className="support-tracker-layout">
-              {/* Radial gauge circle */}
-              <div className="gauge-chart-container">
-                <svg width="150" height="150" viewBox="0 0 100 100" style={{ transform: "rotate(-90deg)" }}>
-                  {/* Outer Background Circle */}
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%", display: "flex", flexDirection: "column" }}>
+            <CardHeader
+              title="Control de Instalaciones"
+              subheader="Avance total de obras finalizadas"
+              titleTypographyProps={{ variant: "subtitle1", sx: { fontWeight: 700 } }}
+              subheaderTypographyProps={{ variant: "caption" }}
+            />
+            <CardContent sx={{ pt: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 3.5 }}>
+              <Box sx={{ position: "relative", width: 140, height: 140 }}>
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="38" fill="transparent" stroke="var(--border-light)" strokeWidth="6" />
                   <circle
                     cx="50"
                     cy="50"
                     r="38"
                     fill="transparent"
-                    stroke="hsla(var(--foreground), 0.05)"
+                    stroke="#10b981"
                     strokeWidth="6"
-                  />
-                  {/* Glowing Active Progress Arc */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    fill="transparent"
-                    stroke="url(#radialGaugeGrad)"
-                    strokeWidth="6.5"
                     strokeDasharray={2 * Math.PI * 38}
                     strokeDashoffset={(2 * Math.PI * 38) - ((2 * Math.PI * 38) * completedRate) / 100}
                     strokeLinecap="round"
-                    style={{ transition: "stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1)" }}
                   />
-                  <defs>
-                    <linearGradient id="radialGaugeGrad" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" />
-                      <stop offset="100%" stopColor="hsl(var(--success))" />
-                    </linearGradient>
-                  </defs>
                 </svg>
+                <Box sx={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  lineHeight: 1
+                }}>
+                  <Typography variant="h4" sx={{ fontWeight: 800 }}>{completedRate}%</Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>Completados</Typography>
+                </Box>
+              </Box>
 
-                <div className="gauge-text-overlay">
-                  <span className="gauge-percentage">{completedRate}%</span>
-                  <span className="gauge-label">Completados</span>
-                </div>
-              </div>
+              <Grid container spacing={2} sx={{ textAlign: "center", borderTop: "1px solid", borderColor: "divider", pt: 2 }}>
+                <Grid size={{ xs: 4 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{summary.projects.IN_PROGRESS}</Typography>
+                  <Typography variant="caption" color="text.secondary">Ejecución</Typography>
+                </Grid>
+                <Grid size={{ xs: 4 }} sx={{ borderLeft: "1px solid", borderRight: "1px solid", borderColor: "divider" }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "warning.main" }}>{summary.projects.QUOTED}</Typography>
+                  <Typography variant="caption" color="text.secondary">Cotizados</Typography>
+                </Grid>
+                <Grid size={{ xs: 4 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "success.main" }}>{summary.projects.COMPLETED}</Typography>
+                  <Typography variant="caption" color="text.secondary">Entregas</Typography>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
-              {/* Quick statistics list under the gauge */}
-              <div className="support-tracker-footer-grid">
-                
-                <div className="support-footer-item">
-                  <span className="support-footer-value">{summary.projects.IN_PROGRESS}</span>
-                  <span className="support-footer-label">Ejecución</span>
-                </div>
+      {/* Row 3: Tables & Demands */}
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardHeader
+              title="Estatus de Proyectos Recientes"
+              subheader="Últimos levantamientos de CCTV y cableado estructurado"
+              titleTypographyProps={{ variant: "subtitle1", sx: { fontWeight: 700 } }}
+              subheaderTypographyProps={{ variant: "caption" }}
+              action={
+                <Button component={Link} href="/projects" variant="outlined" color="secondary" size="small" sx={{ textTransform: "none", fontWeight: 600 }}>
+                  Ver Todos
+                </Button>
+              }
+            />
+            <CardContent sx={{ pt: 0 }}>
+              {projects.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: "center" }}>No hay proyectos ingresados en el sistema.</Typography>
+              ) : (
+                <TableContainer component={Paper} sx={{ boxShadow: "none", border: "1px solid", borderColor: "divider", borderRadius: 1.5 }}>
+                  <Table size="small">
+                    <TableHead sx={{ bgcolor: "background.default" }}>
+                      <TableRow>
+                        <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Proyecto</Typography></TableCell>
+                        <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Cliente</Typography></TableCell>
+                        <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Estado</Typography></TableCell>
+                        <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Creado</Typography></TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {projects.map((project) => (
+                        <TableRow key={project.id} hover>
+                          <TableCell sx={{ fontWeight: 600, color: "text.primary" }}>{project.name}</TableCell>
+                          <TableCell>{project.client?.name}</TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={project.status === "PENDING" ? "Levantamiento" : project.status === "IN_PROGRESS" ? "Instalación" : project.status} 
+                              size="small" 
+                              color={project.status === "COMPLETED" ? "success" : project.status === "PENDING" ? "warning" : "primary"}
+                              variant="outlined"
+                              sx={{ fontWeight: 650 }}
+                            />
+                          </TableCell>
+                          <TableCell>{new Date(project.createdAt).toLocaleDateString("es-ES")}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
 
-                <div className="support-footer-item" style={{ borderLeft: "1px solid hsl(var(--border-glass))", borderRight: "1px solid hsl(var(--border-glass))" }}>
-                  <span className="support-footer-value" style={{ color: "hsl(var(--warning))" }}>{summary.projects.QUOTED}</span>
-                  <span className="support-footer-label">Cotizados</span>
-                </div>
-
-                <div className="support-footer-item">
-                  <span className="support-footer-value" style={{ color: "hsl(var(--success))" }}>{summary.projects.COMPLETED}</span>
-                  <span className="support-footer-label">Entregas</span>
-                </div>
-
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Row 3: Recent Projects Table & Specialty Breakdown */}
-      <div className="vuexy-grid-row">
-        
-        {/* Widget 5: Project Statistics Table */}
-        <div className="vuexy-col-8">
-          <div className="vuexy-card" style={{ padding: "1.75rem" }}>
-            <div className="card-header-flex" style={{ marginBottom: "1.25rem" }}>
-              <div>
-                <h3 className="stats-title" style={{ fontSize: "1.125rem" }}>Estatus de Proyectos Recientes</h3>
-                <p className="stats-subtitle">Últimos levantamientos de CCTV y cableado estructurado</p>
-              </div>
-              <Link href="/projects" className="btn btn-secondary btn-sm" style={{ border: "1px solid hsl(var(--border-glass))", background: "transparent" }}>
-                Ver Todos
-              </Link>
-            </div>
-
-            {projects.length === 0 ? (
-              <p className="empty-text">No hay proyectos ingresados en el sistema en este momento.</p>
-            ) : (
-              <div className="table-responsive">
-                <table className="custom-table" style={{ width: "100%" }}>
-                  <thead>
-                    <tr>
-                      <th style={{ paddingLeft: 0 }}>Proyecto</th>
-                      <th>Cliente</th>
-                      <th>Estado</th>
-                      <th>Creado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {projects.map((project) => (
-                      <tr key={project.id}>
-                        <td className="font-weight-medium" style={{ paddingLeft: 0, color: "hsl(var(--text-primary))" }}>
-                          {project.name}
-                        </td>
-                        <td>{project.client?.name}</td>
-                        <td>
-                          <span className={`status-badge status-${project.status.toLowerCase()}`}>
-                            {project.status === "PENDING" && "Levantamiento"}
-                            {project.status === "QUOTED" && "Cotizado"}
-                            {project.status === "APPROVED" && "Aprobado"}
-                            {project.status === "IN_PROGRESS" && "Instalación"}
-                            {project.status === "COMPLETED" && "Completado"}
-                            {project.status === "CANCELLED" && "Cancelado"}
-                          </span>
-                        </td>
-                        <td>
-                          {new Date(project.createdAt).toLocaleDateString("es-ES", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric"
-                          })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Widget 6: Specialty Distribution */}
-        <div className="vuexy-col-4">
-          <div className="vuexy-card">
-            <h3 className="stats-title">Especialidades de Instalación</h3>
-            <p className="stats-subtitle">Porcentaje de demanda de infraestructura</p>
-            
-            <div className="specialty-list">
-              
-              {/* Specialty 1: CCTV */}
-              <div className="specialty-item">
-                <div className="specialty-icon-wrapper" style={{ borderColor: "hsla(250, 95%, 68%, 0.2)" }}>
-                  📹
-                </div>
-                <div className="specialty-details">
-                  <div className="specialty-name-flex">
-                    <span>CCTV y Monitoreo IP</span>
-                    <span className="text-glow-primary">45%</span>
-                  </div>
-                  <div className="specialty-progress-track">
-                    <div className="specialty-progress-bar" style={{ width: "45%", background: "hsl(var(--primary))" }} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Specialty 2: Cercos */}
-              <div className="specialty-item">
-                <div className="specialty-icon-wrapper" style={{ borderColor: "hsla(30, 100%, 63%, 0.2)" }}>
-                  ⚡
-                </div>
-                <div className="specialty-details">
-                  <div className="specialty-name-flex">
-                    <span>Cercos Eléctricos y Perímetros</span>
-                    <span style={{ color: "hsl(var(--warning))" }}>30%</span>
-                  </div>
-                  <div className="specialty-progress-track">
-                    <div className="specialty-progress-bar" style={{ width: "30%", background: "hsl(var(--warning))" }} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Specialty 3: Redes */}
-              <div className="specialty-item">
-                <div className="specialty-icon-wrapper" style={{ borderColor: "hsla(147, 66%, 47%, 0.2)" }}>
-                  🔌
-                </div>
-                <div className="specialty-details">
-                  <div className="specialty-name-flex">
-                    <span>Redes de Datos y Conectividad</span>
-                    <span style={{ color: "hsl(var(--success))" }}>25%</span>
-                  </div>
-                  <div className="specialty-progress-track">
-                    <div className="specialty-progress-bar" style={{ width: "25%", background: "hsl(var(--success))" }} />
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-    </div>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%" }}>
+            <CardHeader
+              title="Especialidades de Instalación"
+              subheader="Porcentaje de demanda de infraestructura"
+              titleTypographyProps={{ variant: "subtitle1", sx: { fontWeight: 700 } }}
+              subheaderTypographyProps={{ variant: "caption" }}
+            />
+            <CardContent sx={{ pt: 0, display: "flex", flexDirection: "column", gap: 3.5 }}>
+              {[
+                { name: "CCTV y Monitoreo IP", icon: "📹", pct: 45, color: "primary.main" },
+                { name: "Cercos Eléctricos y Perímetros", icon: "⚡", pct: 30, color: "warning.main" },
+                { name: "Redes de Datos y Conectividad", icon: "🔌", pct: 25, color: "success.main" }
+              ].map((item, idx) => (
+                <Box key={idx} sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                  <Avatar sx={{ bgcolor: "background.default", border: "1px solid", borderColor: "divider", width: 40, height: 40, fontSize: "16px", borderRadius: 1.5 }}>{item.icon}</Avatar>
+                  <Box sx={{ flex: 1 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.name}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: item.color }}>{item.pct}%</Typography>
+                    </Box>
+                    <LinearProgress variant="determinate" value={item.pct} sx={{ height: 6, borderRadius: 3, bgcolor: "divider", "& .MuiLinearProgress-bar": { bgcolor: item.color } }} />
+                  </Box>
+                </Box>
+              ))}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }

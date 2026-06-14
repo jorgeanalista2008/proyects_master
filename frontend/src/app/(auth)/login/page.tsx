@@ -3,7 +3,19 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { Shield, Key, AlertCircle, Loader2 } from "lucide-react";
+import { 
+  Box, 
+  Button, 
+  TextField, 
+  Typography, 
+  Card, 
+  CardContent, 
+  IconButton, 
+  InputAdornment, 
+  Alert,
+  CircularProgress
+} from "@mui/material";
+import { Shield, Eye, EyeOff, Lock } from "lucide-react";
 
 export default function LoginPage() {
   const { login, user, loading } = useAuth();
@@ -11,6 +23,7 @@ export default function LoginPage() {
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,98 +54,113 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
-        <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
-      </div>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", bgcolor: "background.default" }}>
+        <CircularProgress color="primary" />
+      </Box>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-950 relative overflow-hidden px-4">
-      {/* Sutil gradiente de fondo */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
-      
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-2xl relative z-10">
-        <div className="flex flex-col items-center mb-8 text-center">
-          <div className="w-12 h-12 bg-amber-500/10 rounded-lg flex items-center justify-center mb-4 border border-amber-500/20">
-            <Shield className="w-6 h-6 text-amber-500" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Acceso al Panel</h1>
-          <p className="text-sm text-slate-400 mt-2">
-            Ingresa tus credenciales para administrar proyectos
-          </p>
-        </div>
+    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", bgcolor: "background.default", px: 2 }}>
+      <Card sx={{ width: "105%", maxWidth: 400, border: "1px solid", borderColor: "divider" }}>
+        <CardContent sx={{ p: 4 }}>
+          {/* Logo & Header */}
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", mb: 3 }}>
+            <Box sx={{ 
+              width: 48, 
+              height: 48, 
+              borderRadius: "50%", 
+              bgcolor: "primary.light", 
+              color: "primary.main", 
+              display: "flex", 
+              alignItems: "center", 
+              justify: "center", 
+              justifyContent: "center",
+              mb: 2,
+              opacity: 0.85
+            }}>
+              <Shield className="w-6 h-6" />
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: "-0.5px", color: "text.primary" }}>
+              Acceso al Panel
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+              Ingresa tus credenciales para administrar proyectos
+            </Typography>
+          </Box>
 
-        {errorMsg && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3.5 rounded-lg text-sm mb-6 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
+          {errorMsg && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 1.5 }}>
+              {errorMsg}
+            </Alert>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2" htmlFor="email">
-              Correo Electrónico
-            </label>
-            <input
-              id="email"
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <TextField
+              label="Correo Electrónico"
+              variant="outlined"
               type="email"
-              placeholder="nombre@ejemplo.com"
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2.5 px-4 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-colors text-sm"
+              fullWidth
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isSubmitting}
               required
               autoComplete="email"
+              placeholder="nombre@ejemplo.com"
             />
-          </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400" htmlFor="password">
-                Contraseña
-              </label>
-              <a href="#" className="text-xs text-amber-500 hover:text-amber-400 transition-colors">
-                ¿Olvidaste tu contraseña?
-              </a>
-            </div>
-            <input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2.5 px-4 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-colors text-sm"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+            <Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase" }}>
+                  Contraseña
+                </Typography>
+                <Typography variant="caption" component="a" href="#" sx={{ color: "primary.main", textDecoration: "none", fontWeight: 600, "&:hover": { textDecoration: "underline" } }}>
+                  ¿Olvidaste tu contraseña?
+                </Typography>
+              </Box>
+              <TextField
+                variant="outlined"
+                type={showPassword ? "text" : "password"}
+                fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isSubmitting}
+                required
+                autoComplete="current-password"
+                placeholder="••••••••"
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }
+                }}
+              />
+            </Box>
+
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              size="large"
               disabled={isSubmitting}
-              required
-              autoComplete="current-password"
-            />
-          </div>
+              startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Lock className="w-4 h-4" />}
+              sx={{ py: 1.2, mt: 1 }}
+            >
+              {isSubmitting ? "Autenticando..." : "Ingresar"}
+            </Button>
+          </Box>
 
-          <button
-            type="submit"
-            className="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 text-slate-950 font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Autenticando...</span>
-              </>
-            ) : (
-              <>
-                <Key className="w-4 h-4" />
-                <span>Ingresar</span>
-              </>
-            )}
-          </button>
-        </form>
-
-        <div className="mt-8 pt-6 border-t border-slate-800/60 text-center text-xs text-slate-500">
-          ¿Problemas para acceder? Contacta al administrador del sistema.
-        </div>
-      </div>
-    </div>
+          <Typography variant="body2" sx={{ mt: 3, pt: 2, borderTop: "1px solid", borderColor: "divider", textAlign: "center", color: "text.secondary", fontSize: "12px" }}>
+            ¿Problemas para acceder? Contacta al administrador del sistema.
+          </Typography>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

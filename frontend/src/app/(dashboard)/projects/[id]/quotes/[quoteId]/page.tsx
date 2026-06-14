@@ -14,6 +14,23 @@ import {
   UploadCloud,
   Check
 } from "lucide-react";
+import {
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Typography,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Alert,
+  CircularProgress,
+  Divider
+} from "@mui/material";
 
 interface Client {
   name: string;
@@ -45,11 +62,17 @@ interface ProductImage {
   fileName: string;
 }
 
+interface Category {
+  id: string;
+  name: string;
+  label: string;
+}
+
 interface Product {
   id: string;
   sku: string;
   name: string;
-  category: string;
+  category: Category;
   description?: string;
   images?: ProductImage[];
 }
@@ -74,7 +97,7 @@ interface Quote {
   total: number;
   validUntil: string;
   terms: string;
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  status: "DRAFT" | "SENT" | "APPROVED" | "REJECTED" | "EXPIRED";
   createdAt: string;
   items: QuoteItem[];
 }
@@ -162,7 +185,7 @@ export default function QuoteDetailView({ params }: PageProps) {
       // Initialize default units
       const units: { [itemId: string]: string } = {};
       quote.items?.forEach((item) => {
-        const cat = item.product?.category;
+        const cat = item.product?.category?.name;
         if (cat === "CABLE") {
           units[item.id] = "Bobina";
         } else if (cat === "TUBING") {
@@ -224,24 +247,37 @@ export default function QuoteDetailView({ params }: PageProps) {
 
   if (fetching) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-2" />
-        <p className="text-sm font-medium">Cargando presupuesto...</p>
-      </div>
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "50vh", gap: 2 }}>
+        <CircularProgress color="primary" />
+        <Typography variant="body2" sx={{ color: "var(--text-muted)", fontWeight: 550 }}>
+          Cargando presupuesto...
+        </Typography>
+      </Box>
     );
   }
 
   if (!quote || !project) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center max-w-md mx-auto space-y-4 mt-6">
-        <h3 className="text-slate-100 font-bold text-lg">Presupuesto no encontrado</h3>
-        <Link 
-          href={`/projects/${projectId}`} 
-          className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm inline-block transition-colors"
-        >
-          Volver al Proyecto
-        </Link>
-      </div>
+      <Card sx={{ maxWidth: 400, mx: "auto", mt: 6, bgcolor: "var(--bg-card)", borderColor: "var(--border-light)", borderRadius: "8px", textAlign: "center" }} variant="outlined">
+        <CardContent sx={{ p: 4, display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-main)" }}>
+            Presupuesto no encontrado
+          </Typography>
+          <Button 
+            component={Link}
+            href={`/projects/${projectId}`} 
+            variant="contained"
+            sx={{ 
+              textTransform: "none", 
+              borderRadius: "6px", 
+              bgcolor: "var(--primary)",
+              "&:hover": { bgcolor: "var(--primary-hover)" }
+            }}
+          >
+            Volver al Proyecto
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -255,13 +291,13 @@ export default function QuoteDetailView({ params }: PageProps) {
   // Group items by category
   const items = quote.items || [];
   const techItems = items.filter(item =>
-    ["CAMERA", "DVR_NVR", "ACCESSORY"].includes(item.product?.category)
+    ["CAMERA", "DVR_NVR", "ACCESSORY"].includes(item.product?.category?.name)
   );
   const fittingItems = items.filter(item =>
-    ["CABLE", "TUBING"].includes(item.product?.category)
+    ["CABLE", "TUBING"].includes(item.product?.category?.name)
   );
   const serviceItems = items.filter(item =>
-    ["LABOR", "SERVICE"].includes(item.product?.category)
+    ["LABOR", "SERVICE"].includes(item.product?.category?.name)
   );
 
   const techSubtotal = techItems.reduce((acc, item) => acc + Number(item.unitPrice) * Number(item.quantity), 0);
@@ -419,165 +455,244 @@ export default function QuoteDetailView({ params }: PageProps) {
             page-break-before: always !important;
             break-before: page !important;
           }
-        }
       ` }} />
 
       {/* Control panel & print options (Hidden on Print) */}
-      <div className="no-print bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <Link 
-            href={`/projects/${projectId}`} 
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-100 transition-colors uppercase tracking-wider"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Volver al Proyecto</span>
-          </Link>
-
-          <div className="flex gap-3 flex-wrap w-full sm:w-auto">
-            <button 
-              onClick={handlePrint} 
-              className="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 font-semibold px-4 py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2"
+      <Card 
+        className="no-print" 
+        variant="outlined" 
+        sx={{ 
+          bgcolor: "var(--bg-card)", 
+          borderColor: "var(--border-light)", 
+          borderRadius: "8px", 
+          mb: 4,
+          boxShadow: "none"
+        }}
+      >
+        <CardContent sx={{ p: 3, "&:last-child": { pb: 3 } }}>
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "stretch", sm: "center" }, gap: 2, mb: 3 }}>
+            <Button
+              component={Link}
+              href={`/projects/${projectId}`}
+              startIcon={<ArrowLeft size={16} />}
+              sx={{
+                color: "var(--text-muted)",
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.85rem",
+                justifyContent: "flex-start",
+                "&:hover": { color: "var(--primary)" }
+              }}
             >
-              <Printer className="w-4 h-4" />
-              <span>Imprimir / Guardar PDF</span>
-            </button>
+              Volver al Proyecto
+            </Button>
 
-            {quote.status === "PENDING" && (
-              <>
-                <button
-                  onClick={() => handleUpdateStatus("APPROVED")}
-                  disabled={updating}
-                  className="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Aprobar Presupuesto</span>
-                </button>
-                <button
-                  onClick={() => handleUpdateStatus("REJECTED")}
-                  disabled={updating}
-                  className="flex-1 sm:flex-none bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold px-4 py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <XCircle className="w-4 h-4" />
-                  <span>Rechazar</span>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+            <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+              <Button
+                variant="outlined"
+                onClick={handlePrint}
+                startIcon={<Printer size={16} />}
+                sx={{
+                  borderColor: "var(--border-light)",
+                  color: "var(--text-main)",
+                  borderRadius: "6px",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  "&:hover": { borderColor: "var(--primary)", color: "var(--primary)" }
+                }}
+              >
+                Imprimir / Guardar PDF
+              </Button>
 
-        {/* Configuration checks for layout adjustments */}
-        <div className="pt-4 border-t border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wide">
-              Ajustes de Impresión / Salto de Página
-            </h4>
-            <div className="flex flex-col gap-2.5 text-xs text-slate-400 font-medium">
-              <label className="flex items-center gap-2 cursor-pointer hover:text-slate-200 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={breakBeforeFitting}
-                  onChange={(e) => setBreakBeforeFitting(e.target.checked)}
-                  className="rounded bg-slate-950 border-slate-850 text-amber-500 focus:ring-0 w-4 h-4"
-                />
-                <span>Forzar salto de página antes de &quot;Empotramiento&quot;</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer hover:text-slate-200 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={breakBeforeService}
-                  onChange={(e) => setBreakBeforeService(e.target.checked)}
-                  className="rounded bg-slate-950 border-slate-850 text-amber-500 focus:ring-0 w-4 h-4"
-                />
-                <span>Forzar salto de página antes de &quot;Servicio Técnico&quot;</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer hover:text-slate-200 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={breakBeforeTotals}
-                  onChange={(e) => setBreakBeforeTotals(e.target.checked)}
-                  className="rounded bg-slate-950 border-slate-850 text-amber-500 focus:ring-0 w-4 h-4"
-                />
-                <span>Forzar salto de página antes del plano y totales</span>
-              </label>
-            </div>
-          </div>
+              {(quote.status === "DRAFT" || quote.status === "SENT") && (
+                <>
+                  <Button
+                    variant="contained"
+                    onClick={() => handleUpdateStatus("APPROVED")}
+                    disabled={updating}
+                    startIcon={<Check size={16} />}
+                    sx={{
+                      bgcolor: "#28c76f",
+                      color: "#fff",
+                      borderRadius: "6px",
+                      textTransform: "none",
+                      fontWeight: 600,
+                      "&:hover": { bgcolor: "#20a157" }
+                    }}
+                  >
+                    Aprobar Presupuesto
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => handleUpdateStatus("REJECTED")}
+                    disabled={updating}
+                    startIcon={<XCircle size={16} />}
+                    sx={{
+                      borderRadius: "6px",
+                      textTransform: "none",
+                      fontWeight: 600
+                    }}
+                  >
+                    Rechazar
+                  </Button>
+                </>
+              )}
+            </Box>
+          </Box>
 
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wide">
-              Selección de Croquis o Plano
-            </h4>
-            {projectImagesList.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                <select
-                  value={selectedSurveyImageId || ""}
-                  onChange={(e) => setSelectedSurveyImageId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-300 focus:outline-none focus:border-amber-500 text-xs"
-                >
-                  {projectImagesList.map((img) => (
-                    <option key={img.id} value={img.id}>
-                      {img.fileName || `Imagen ${img.id.slice(0, 4)}`}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-slate-500 font-medium">
-                  Esta foto se imprimirá en el área de croquis del presupuesto.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2 text-xs">
-                <p className="text-slate-400 font-medium">
-                  No hay croquis subidos para este proyecto. Puedes subir uno directamente:
-                </p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="text-xs text-slate-400 file:bg-slate-850 file:border-0 file:text-slate-200 file:px-3 file:py-1 file:rounded-md file:mr-3 cursor-pointer"
-                  onChange={async (e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      const file = e.target.files[0];
-                      const formData = new FormData();
-                      formData.append("file", file);
-                      const token = localStorage.getItem("token");
-                      try {
-                        setUpdating(true);
-                        const res = await fetch(getApiUrl(`/images/project/${project.id}`), {
-                          method: "POST",
-                          headers: {
-                            ...(token ? { "Authorization": `Bearer ${token}` } : {})
-                          },
-                          body: formData
-                        });
-                        if (res.ok) {
-                          setSuccess("¡Plano cargado exitosamente!");
-                          window.location.reload();
-                        } else {
-                          setError("Error al subir el croquis.");
+          <Divider sx={{ my: 2.5, borderColor: "var(--border-light)" }} />
+
+          <Grid container spacing={4} sx={{ mt: 0.5 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-muted)", display: "block", mb: 1.5, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Ajustes de Impresión / Salto de Página
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={breakBeforeFitting}
+                      onChange={(e) => setBreakBeforeFitting(e.target.checked)}
+                      sx={{ color: "var(--border-light)", "&.Mui-checked": { color: "var(--primary)" } }}
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ color: "var(--text-main)", fontWeight: 500 }}>
+                      Forzar salto de página antes de "Empotramiento"
+                    </Typography>
+                  }
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={breakBeforeService}
+                      onChange={(e) => setBreakBeforeService(e.target.checked)}
+                      sx={{ color: "var(--border-light)", "&.Mui-checked": { color: "var(--primary)" } }}
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ color: "var(--text-main)", fontWeight: 500 }}>
+                      Forzar salto de página antes de "Servicio Técnico"
+                    </Typography>
+                  }
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={breakBeforeTotals}
+                      onChange={(e) => setBreakBeforeTotals(e.target.checked)}
+                      sx={{ color: "var(--border-light)", "&.Mui-checked": { color: "var(--primary)" } }}
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ color: "var(--text-main)", fontWeight: 500 }}>
+                      Forzar salto de página antes del plano y totales
+                    </Typography>
+                  }
+                />
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-muted)", display: "block", mb: 1.5, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Selección de Croquis o Plano
+              </Typography>
+              {projectImagesList.length > 0 ? (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <FormControl size="small" fullWidth sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "6px",
+                      "& fieldset": { borderColor: "var(--border-light)" },
+                      "&.Mui-focused fieldset": { borderColor: "var(--primary)" }
+                    },
+                    "& .MuiInputBase-input": { color: "var(--text-main)" }
+                  }}>
+                    <Select
+                      value={selectedSurveyImageId || ""}
+                      onChange={(e) => setSelectedSurveyImageId(e.target.value as string)}
+                    >
+                      {projectImagesList.map((img) => (
+                        <MenuItem key={img.id} value={img.id} sx={{ color: "var(--text-main)" }}>
+                          {img.fileName || `Imagen ${img.id.slice(0, 4)}`}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <Typography variant="caption" sx={{ color: "var(--text-muted)", mt: 0.5 }}>
+                    Esta foto se imprimirá en el área de croquis del presupuesto.
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <Typography variant="body2" sx={{ color: "var(--text-muted)", mb: 1 }}>
+                    No hay croquis subidos para este proyecto. Puedes subir uno directamente:
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<UploadCloud size={16} />}
+                    sx={{
+                      borderColor: "var(--border-light)",
+                      color: "var(--text-main)",
+                      borderRadius: "6px",
+                      textTransform: "none",
+                      "&:hover": { borderColor: "var(--primary)" }
+                    }}
+                  >
+                    Subir Croquis / Plano
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={async (e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          const formData = new FormData();
+                          formData.append("file", file);
+                          const token = localStorage.getItem("token");
+                          try {
+                            setUpdating(true);
+                            const res = await fetch(getApiUrl(`/images/project/${project.id}`), {
+                              method: "POST",
+                              headers: {
+                                ...(token ? { "Authorization": `Bearer ${token}` } : {})
+                              },
+                              body: formData
+                            });
+                            if (res.ok) {
+                              setSuccess("¡Plano cargado exitosamente!");
+                              window.location.reload();
+                            } else {
+                              setError("Error al subir el croquis.");
+                            }
+                          } catch (err) {
+                            console.error(err);
+                            setError("Error de red al intentar subir el croquis.");
+                          } finally {
+                            setUpdating(false);
+                          }
                         }
-                      } catch (err) {
-                        console.error(err);
-                        setError("Error de red al intentar subir el croquis.");
-                      } finally {
-                        setUpdating(false);
-                      }
-                    }
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+                      }}
+                    />
+                  </Button>
+                </Box>
+              )}
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
       {error && (
-        <div className="no-print bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-lg text-sm">
-          ⚠️ {error}
-        </div>
+        <Alert severity="error" className="no-print" sx={{ mb: 3, borderRadius: "6px" }}>
+          {error}
+        </Alert>
       )}
 
       {success && (
-        <div className="no-print bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-lg text-sm">
-          ✓ {success}
-        </div>
+        <Alert severity="success" className="no-print" sx={{ mb: 3, borderRadius: "6px" }}>
+          {success}
+        </Alert>
       )}
 
       {/* Printable template container */}

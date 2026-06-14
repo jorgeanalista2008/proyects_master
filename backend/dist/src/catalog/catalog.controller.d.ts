@@ -5,6 +5,13 @@ export declare class CatalogController {
     private readonly catalogService;
     constructor(catalogService: CatalogService);
     create(createCatalogDto: CreateCatalogDto): Promise<{
+        category: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            label: string;
+        };
         images: {
             id: string;
             fileName: string;
@@ -18,7 +25,7 @@ export declare class CatalogController {
         updatedAt: Date;
         isActive: boolean;
         sku: string;
-        category: import("@prisma/client").$Enums.ItemCategory;
+        categoryId: string;
         unitCost: import("@prisma/client-runtime-utils").Decimal;
         marginCash: import("@prisma/client-runtime-utils").Decimal;
         priceCash: import("@prisma/client-runtime-utils").Decimal;
@@ -28,6 +35,13 @@ export declare class CatalogController {
         pricePreferred: import("@prisma/client-runtime-utils").Decimal;
     }>;
     findAll(): Promise<({
+        category: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            label: string;
+        };
         images: {
             id: string;
             fileName: string;
@@ -41,7 +55,7 @@ export declare class CatalogController {
         updatedAt: Date;
         isActive: boolean;
         sku: string;
-        category: import("@prisma/client").$Enums.ItemCategory;
+        categoryId: string;
         unitCost: import("@prisma/client-runtime-utils").Decimal;
         marginCash: import("@prisma/client-runtime-utils").Decimal;
         priceCash: import("@prisma/client-runtime-utils").Decimal;
@@ -51,6 +65,13 @@ export declare class CatalogController {
         pricePreferred: import("@prisma/client-runtime-utils").Decimal;
     })[]>;
     findOne(id: string): Promise<{
+        category: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            label: string;
+        };
         images: {
             id: string;
             fileName: string;
@@ -64,7 +85,7 @@ export declare class CatalogController {
         updatedAt: Date;
         isActive: boolean;
         sku: string;
-        category: import("@prisma/client").$Enums.ItemCategory;
+        categoryId: string;
         unitCost: import("@prisma/client-runtime-utils").Decimal;
         marginCash: import("@prisma/client-runtime-utils").Decimal;
         priceCash: import("@prisma/client-runtime-utils").Decimal;
@@ -74,6 +95,13 @@ export declare class CatalogController {
         pricePreferred: import("@prisma/client-runtime-utils").Decimal;
     }>;
     update(id: string, updateCatalogDto: UpdateCatalogDto): Promise<{
+        category: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            updatedAt: Date;
+            label: string;
+        };
         images: {
             id: string;
             fileName: string;
@@ -87,7 +115,7 @@ export declare class CatalogController {
         updatedAt: Date;
         isActive: boolean;
         sku: string;
-        category: import("@prisma/client").$Enums.ItemCategory;
+        categoryId: string;
         unitCost: import("@prisma/client-runtime-utils").Decimal;
         marginCash: import("@prisma/client-runtime-utils").Decimal;
         priceCash: import("@prisma/client-runtime-utils").Decimal;

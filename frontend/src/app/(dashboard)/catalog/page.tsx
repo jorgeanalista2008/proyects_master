@@ -4,12 +4,34 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, getApiUrl } from "@/lib/api";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  MenuItem,
+  Card,
+  CardContent,
+  Grid,
+  CircularProgress,
+  Alert,
+  Divider,
+  Chip
+} from "@mui/material";
+import { Plus } from "lucide-react";
+
+interface Category {
+  id: string;
+  name: string;
+  label: string;
+}
 
 interface CatalogItem {
   id: string;
   name: string;
   sku: string;
-  category: string;
+  categoryId: string;
+  category: Category;
   unitCost: number;
   marginCash: number;
   priceCash: number;
@@ -23,30 +45,32 @@ interface CatalogItem {
 
 export default function CatalogPage() {
   const [items, setItems] = useState<CatalogItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
-  // Search & Filter state
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
 
   useEffect(() => {
-    async function fetchCatalog() {
+    async function loadData() {
       try {
         setLoading(true);
-        const data = await api.get<CatalogItem[]>("/catalog");
-        setItems(data);
+        const [catalogData, categoriesData] = await Promise.all([
+          api.get<CatalogItem[]>("/catalog"),
+          api.get<Category[]>("/settings/categories")
+        ]);
+        setItems(catalogData);
+        setCategories(categoriesData);
       } catch (err: any) {
-        console.error("Error fetching catalog:", err);
+        console.error("Error fetching catalog and categories:", err);
         setError("No se pudo cargar el catálogo de productos y servicios.");
       } finally {
         setLoading(false);
       }
     }
-    fetchCatalog();
+    loadData();
   }, []);
 
-  // Filter items based on search and category
   const filteredItems = items.filter((item) => {
     const matchesSearch = 
       item.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -54,13 +78,10 @@ export default function CatalogPage() {
     
     const matchesCategory = 
       categoryFilter === "ALL" || 
-      item.category.toUpperCase() === categoryFilter.toUpperCase();
+      item.categoryId === categoryFilter;
     
     return matchesSearch && matchesCategory;
   });
-
-  // Extract unique categories for filter dropdown
-  const categories = Array.from(new Set(items.map((item) => item.category.toUpperCase())));
 
   const formatUSD = (val: number) => {
     return new Intl.NumberFormat("es-ES", {
@@ -70,112 +91,128 @@ export default function CatalogPage() {
   };
 
   return (
-    <div className="fade-in">
-      <div className="card-header-flex" style={{ marginBottom: "2rem" }}>
-        <div>
-          <h1 className="title-primary" style={{ marginBottom: "0.25rem" }}>Catálogo de Equipos y Servicios</h1>
-          <p className="subtitle-secondary" style={{ marginBottom: 0 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Title & Action Bar */}
+      <Box sx={{ display: "flex", justifycontent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h5" sx={{ fontWeight: 750, color: "var(--text-main)" }}>
+            Catálogo de Equipos y Servicios
+          </Typography>
+          <Typography variant="body2" color="var(--text-muted)">
             Administra los componentes de seguridad, sensores y las tres tarifas de precios sugeridas.
-          </p>
-        </div>
-        <Link href="/catalog/new" className="btn btn-primary border-glow">
-          ➕ Crear Producto/Servicio
-        </Link>
-      </div>
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          href="/catalog/new"
+          variant="contained"
+          color="primary"
+          startIcon={<Plus className="w-4 h-4" />}
+          sx={{
+            borderRadius: "6px",
+            textTransform: "none",
+            bgcolor: "var(--primary)",
+            boxShadow: "0 4px 8px 0 rgba(115, 103, 240, 0.3)",
+            "&:hover": { bgcolor: "var(--primary-hover)" }
+          }}
+        >
+          Crear Producto/Servicio
+        </Button>
+      </Box>
 
       {error && (
-        <div style={{
-          background: "hsla(0, 84.2%, 60.2%, 0.15)",
-          border: "1px solid hsl(var(--danger))",
-          color: "#ff8888",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
-          ⚠️ {error}
-        </div>
+        <Alert severity="error" sx={{ borderRadius: "6px" }}>
+          {error}
+        </Alert>
       )}
 
-      {/* Filters Area */}
-      <div style={{
-        display: "flex",
-        gap: "1rem",
-        marginBottom: "2rem",
-        flexWrap: "wrap",
-        background: "hsla(var(--bg-secondary), 0.3)",
-        padding: "1rem",
-        borderRadius: "var(--radius-md)",
-        border: "1px solid hsl(var(--border-glass))"
-      }}>
-        <div style={{ flex: 1, minWidth: "250px" }}>
-          <input
-            type="text"
-            placeholder="Buscar por SKU o Nombre..."
-            className="input-field"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ padding: "0.75rem 1rem" }}
-          />
-        </div>
-        <div style={{ width: "200px" }}>
-          <select
-            className="input-field"
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            style={{ padding: "0.75rem 1rem", cursor: "pointer" }}
-          >
-            <option value="ALL">Todas las Categorías</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      {/* Filters Box */}
+      <Card sx={{ bgcolor: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: "6px", boxShadow: "var(--shadow-sm)" }}>
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 8 }}>
+              <TextField
+                fullWidth
+                variant="outlined"
+                size="small"
+                placeholder="Buscar por SKU o Nombre..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "6px",
+                    "& fieldset": { borderColor: "var(--border-light)" },
+                    "&.Mui-focused fieldset": { borderColor: "var(--primary)" }
+                  },
+                  "& .MuiInputBase-input": { color: "var(--text-main)" }
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <TextField
+                select
+                fullWidth
+                variant="outlined"
+                size="small"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "6px",
+                    "& fieldset": { borderColor: "var(--border-light)" },
+                    "&.Mui-focused fieldset": { borderColor: "var(--primary)" }
+                  },
+                  "& .MuiInputBase-input": { color: "var(--text-main)" }
+                }}
+              >
+                <MenuItem value="ALL">Todas las Categorías</MenuItem>
+                {categories.map((cat) => (
+                  <MenuItem key={cat.id} value={cat.id}>
+                    {cat.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
       {loading ? (
-        <div className="loader-container">
-          <div className="spinner" style={{ width: "2.5rem", height: "2.5rem" }} />
-          <p style={{ color: "hsl(var(--text-secondary))" }}>Cargando catálogo...</p>
-        </div>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 6, gap: 2 }}>
+          <CircularProgress sx={{ color: "var(--primary)" }} />
+          <Typography variant="body2" color="var(--text-muted)">Cargando catálogo...</Typography>
+        </Box>
       ) : filteredItems.length === 0 ? (
-        <div className="glass-card border-glow" style={{ textAlign: "center", padding: "4rem" }}>
-          <span style={{ fontSize: "3rem" }}>📦</span>
-          <h3 style={{ marginTop: "1rem", marginBottom: "0.5rem" }}>Catálogo Vacío</h3>
-          <p style={{ color: "hsl(var(--text-secondary))", marginBottom: "1.5rem" }}>
-            No se encontraron productos o servicios que coincidan con la búsqueda.
-          </p>
-          <Link href="/catalog/new" className="btn btn-secondary" style={{ margin: "0 auto" }}>
-            Crear el Primer Producto
-          </Link>
-        </div>
+        <Card sx={{ bgcolor: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: "6px", textAlign: "center", py: 8 }}>
+          <CardContent sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <Typography variant="h3">📦</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-main)" }}>Catálogo Vacío</Typography>
+            <Typography variant="body2" color="var(--text-muted)" sx={{ maxWidth: 360, mb: 1 }}>
+              No se encontraron productos o servicios que coincidan con la búsqueda.
+            </Typography>
+            <Button component={Link} href="/catalog/new" variant="outlined" sx={{ textTransform: "none", borderRadius: "6px", borderColor: "var(--primary)", color: "var(--primary)" }}>
+              Crear el Primer Producto
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="items-grid">
-          {filteredItems.map((item) => {
-            return (
-              <div key={item.id} className="glass-card border-glow" style={{
-                padding: "1.5rem",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                gap: "1.25rem",
-                height: "100%"
-              }}>
-                <div>
-                  {/* Thumbnail / Image container */}
-                  <div style={{
-                    width: "100%",
-                    height: "160px",
-                    background: "hsla(var(--bg-secondary), 0.7)",
-                    borderRadius: "var(--radius-sm)",
+        <Grid container spacing={3}>
+          {filteredItems.map((item) => (
+            <Grid key={item.id} size={{ xs: 12, sm: 6, md: 4 }}>
+              <Card sx={{ bgcolor: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: "6px", boxShadow: "var(--shadow-sm)", height: "100%", display: "flex", flexDirection: "column" }}>
+                <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
+                  {/* Thumbnail */}
+                  <Box sx={{ 
+                    position: "relative",
+                    width: "100%", 
+                    height: 160, 
+                    bgcolor: "rgba(115, 103, 240, 0.01)",
+                    borderRadius: "6px",
+                    overflow: "hidden",
+                    border: "1px solid var(--border-light)",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: "1rem",
-                    overflow: "hidden",
-                    border: "1px solid hsl(var(--border-glass))",
-                    position: "relative"
+                    justifyContent: "center"
                   }}>
                     {item.images && item.images.length > 0 ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
@@ -185,116 +222,77 @@ export default function CatalogPage() {
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />
                     ) : (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-                        <span style={{ fontSize: "2.5rem" }}>📷</span>
-                        <span style={{ fontSize: "0.75rem", color: "hsl(var(--text-muted))" }}>Sin Imagen</span>
-                      </div>
+                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                        <Typography variant="h4">📷</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>Sin Imagen</Typography>
+                      </Box>
                     )}
-                    <span style={{
-                      position: "absolute",
-                      top: "8px",
-                      right: "8px",
-                      background: "hsla(var(--bg-primary), 0.85)",
-                      border: "1px solid hsl(var(--border-glass))",
-                      fontSize: "0.75rem",
-                      padding: "0.2rem 0.5rem",
-                      borderRadius: "var(--radius-sm)",
-                      fontWeight: 600,
-                      color: "hsl(var(--primary-hover))"
-                    }}>
-                      {item.sku}
-                    </span>
-                  </div>
+                    <Chip 
+                      label={item.sku} 
+                      size="small" 
+                      sx={{ 
+                        position: "absolute", 
+                        top: 8, 
+                        right: 8, 
+                        bgcolor: "var(--bg-card)", 
+                        border: "1px solid var(--border-light)", 
+                        color: "var(--text-main)",
+                        fontWeight: 700 
+                      }} 
+                    />
+                  </Box>
 
-                  <span style={{
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    color: "hsl(var(--text-muted))",
-                    display: "block",
-                    marginBottom: "0.25rem"
-                  }}>
-                    {item.category}
-                  </span>
-                  
-                  <h3 style={{
-                    fontSize: "1.1rem",
-                    fontWeight: 700,
-                    marginBottom: "0.5rem",
-                    lineHeight: "1.3",
-                    height: "2.6rem",
-                    overflow: "hidden",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical"
-                  }}>
-                    {item.name}
-                  </h3>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="caption" sx={{ color: "var(--primary)", fontWeight: 700, textTransform: "uppercase", display: "block", mb: 0.5 }}>
+                      {item.category?.label || "Sin Categoría"}
+                    </Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--text-main)", lineClamp: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", height: 40, overflow: "hidden" }}>
+                      {item.name}
+                    </Typography>
+                    {item.description && (
+                      <Typography variant="body2" color="var(--text-muted)" sx={{ lineClamp: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", height: 36, overflow: "hidden", mt: 1 }}>
+                        {item.description}
+                      </Typography>
+                    )}
+                  </Box>
 
-                  {item.description && (
-                    <p style={{
-                      fontSize: "0.8rem",
-                      color: "hsl(var(--text-secondary))",
-                      marginBottom: "1rem",
-                      height: "2.4rem",
-                      overflow: "hidden",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical"
-                    }}>
-                      {item.description}
-                    </p>
-                  )}
-                </div>
+                  <Divider sx={{ borderColor: "var(--border-light)" }} />
 
-                <div>
-                  {/* Prices structure */}
-                  <div style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.5rem",
-                    background: "hsla(var(--bg-secondary), 0.4)",
-                    padding: "0.75rem",
-                    borderRadius: "var(--radius-sm)",
-                    marginBottom: "1rem",
-                    fontSize: "0.8rem",
-                    border: "1px solid hsl(var(--border-glass))"
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: "hsl(var(--text-muted))" }}>Costo Adquisición:</span>
-                      <strong style={{ fontFamily: "monospace" }}>{formatUSD(item.unitCost)}</strong>
-                    </div>
-                    <div style={{ borderTop: "1px solid hsl(var(--border-glass))", paddingTop: "0.5rem", marginTop: "0.25rem", display: "flex", flexDirection: "column", gap: "6px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "hsl(var(--text-muted))" }}>Contado (+{item.marginCash}%):</span>
-                        <strong className="text-glow-primary" style={{ color: "hsl(var(--primary))", fontFamily: "monospace" }}>
-                          {formatUSD(item.priceCash)}
-                        </strong>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "hsl(var(--text-muted))" }}>Crédito (+{item.marginCredit}%):</span>
-                        <strong style={{ color: "#fbbf24", fontFamily: "monospace" }}>
-                          {formatUSD(item.priceCredit)}
-                        </strong>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ color: "hsl(var(--text-muted))" }}>Preferente (+{item.marginPreferred}%):</span>
-                        <strong className="text-glow-accent" style={{ color: "hsl(var(--accent))", fontFamily: "monospace" }}>
-                          {formatUSD(item.pricePreferred)}
-                        </strong>
-                      </div>
-                    </div>
-                  </div>
+                  <Box sx={{ bgcolor: "rgba(115, 103, 240, 0.02)", p: 2, borderRadius: "6px", border: "1px solid var(--border-light)", display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="caption" color="var(--text-muted)">Costo Adquisición:</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-main)" }}>{formatUSD(item.unitCost)}</Typography>
+                    </Box>
+                    <Divider sx={{ my: 0.5, borderColor: "var(--border-light)" }} />
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="caption" color="var(--text-muted)">Contado (+{item.marginCash}%):</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--primary)" }}>{formatUSD(item.priceCash)}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="caption" color="var(--text-muted)">Crédito (+{item.marginCredit}%):</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: "#fbbf24" }}>{formatUSD(item.priceCredit)}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="caption" color="var(--text-muted)">Preferente (+{item.marginPreferred}%):</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--accent)" }}>{formatUSD(item.pricePreferred)}</Typography>
+                    </Box>
+                  </Box>
 
-                  <Link href={`/catalog/${item.id}`} className="btn btn-secondary btn-block btn-sm">
-                    ✏️ Editar Producto
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                  <Button
+                    component={Link}
+                    href={`/catalog/${item.id}`}
+                    variant="outlined"
+                    fullWidth
+                    sx={{ textTransform: "none", fontWeight: 600, borderColor: "var(--border-light)", color: "var(--text-muted)", "&:hover": { borderColor: "var(--primary)", color: "var(--primary)" } }}
+                  >
+                    Editar Producto
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       )}
-    </div>
+    </Box>
   );
 }

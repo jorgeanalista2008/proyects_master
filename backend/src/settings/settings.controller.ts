@@ -7,6 +7,8 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  Delete,
+  Param,
 } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { UpdateSettingDto } from './dto/update-setting.dto';
@@ -42,5 +44,26 @@ export class SettingsController {
   @ApiConsumes('multipart/form-data')
   uploadLogo(@UploadedFile() file: Express.Multer.File) {
     return this.settingsService.uploadLogo(file);
+  }
+
+  @Get('categories')
+  findCategories() {
+    return this.settingsService.getCategories();
+  }
+
+  @Post('categories')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('settings:write')
+  createCategory(@Body() body: { name: string; label: string }) {
+    return this.settingsService.createCategory(body.name, body.label);
+  }
+
+  @Delete('categories/:id')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('settings:write')
+  deleteCategory(@Param('id') id: string) {
+    return this.settingsService.deleteCategory(id);
   }
 }

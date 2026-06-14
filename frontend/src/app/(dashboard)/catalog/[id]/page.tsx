@@ -5,9 +5,31 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, getApiUrl } from "@/lib/api";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Card,
+  CardContent,
+  Grid,
+  Divider,
+  Alert,
+  CircularProgress,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl
+} from "@mui/material";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  label: string;
 }
 
 export default function CatalogItemForm({ params }: PageProps) {
@@ -18,7 +40,7 @@ export default function CatalogItemForm({ params }: PageProps) {
 
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
   
   // Cost and margins
@@ -39,38 +61,44 @@ export default function CatalogItemForm({ params }: PageProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(!isNew);
+  const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Fetch product data if editing
-  useEffect(() => {
-    if (isNew) return;
+  const [categories, setCategories] = useState<Category[]>([]);
 
-    async function loadItem() {
+  // Fetch product and categories data
+  useEffect(() => {
+    async function loadData() {
       try {
         setFetching(true);
-        const data = await api.get(`/catalog/${id}`);
-        setName(data.name || "");
-        setSku(data.sku || "");
-        setCategory(data.category || "");
-        setDescription(data.description || "");
-        setUnitCost(Number(data.unitCost) || 0);
-        setMarginCash(Number(data.marginCash) ?? 30);
-        setMarginCredit(Number(data.marginCredit) ?? 40);
-        setMarginPreferred(Number(data.marginPreferred) ?? 20);
-        setPriceCash(Number(data.priceCash) || 0);
-        setPriceCredit(Number(data.priceCredit) || 0);
-        setPricePreferred(Number(data.pricePreferred) || 0);
-        setImageId((data.images && data.images.length > 0) ? data.images[0].id : null);
+        // Load categories first
+        const categoriesData = await api.get<Category[]>("/settings/categories");
+        setCategories(categoriesData);
+
+        if (!isNew) {
+          const data = await api.get<any>(`/catalog/${id}`);
+          setName(data.name || "");
+          setSku(data.sku || "");
+          setCategoryId(data.categoryId || "");
+          setDescription(data.description || "");
+          setUnitCost(Number(data.unitCost) || 0);
+          setMarginCash(Number(data.marginCash) ?? 30);
+          setMarginCredit(Number(data.marginCredit) ?? 40);
+          setMarginPreferred(Number(data.marginPreferred) ?? 20);
+          setPriceCash(Number(data.priceCash) || 0);
+          setPriceCredit(Number(data.priceCredit) || 0);
+          setPricePreferred(Number(data.pricePreferred) || 0);
+          setImageId((data.images && data.images.length > 0) ? data.images[0].id : null);
+        }
       } catch (err: any) {
-        console.error("Error loading catalog item:", err);
-        setError("No se pudo cargar el producto o servicio solicitado.");
+        console.error("Error loading catalog details and categories:", err);
+        setError("No se pudo cargar la información del catálogo o las categorías.");
       } finally {
         setFetching(false);
       }
     }
-    loadItem();
+    loadData();
   }, [id, isNew]);
 
   // Recalculate suggested sale prices in real-time when unitCost or margins change
@@ -121,7 +149,7 @@ export default function CatalogItemForm({ params }: PageProps) {
     setSuccess("");
     setLoading(true);
 
-    if (!name || !sku || !category) {
+    if (!name || !sku || !categoryId) {
       setError("Nombre, SKU y Categoría son campos obligatorios.");
       setLoading(false);
       return;
@@ -131,7 +159,7 @@ export default function CatalogItemForm({ params }: PageProps) {
       const payload = {
         name,
         sku,
-        category,
+        categoryId,
         description,
         unitCost,
         marginCash,
@@ -171,314 +199,371 @@ export default function CatalogItemForm({ params }: PageProps) {
 
   if (fetching) {
     return (
-      <div className="loader-container">
-        <div className="spinner" style={{ width: "2.5rem", height: "2.5rem" }} />
-        <p>Cargando información del producto...</p>
-      </div>
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "300px", gap: 2 }}>
+        <CircularProgress size={40} sx={{ color: "var(--primary)" }} />
+        <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
+          Cargando información del producto...
+        </Typography>
+      </Box>
     );
   }
 
+  const fieldStyle = {
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "6px",
+      "& fieldset": { borderColor: "var(--border-light)" },
+      "&.Mui-focused fieldset": { borderColor: "var(--primary)" }
+    },
+    "& .MuiInputLabel-root": { color: "var(--text-muted)" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "var(--primary)" },
+    "& .MuiInputBase-input": { color: "var(--text-main)" }
+  };
+
   return (
-    <div className="fade-in" style={{ maxWidth: "850px", margin: "0 auto" }}>
-      <div style={{ marginBottom: "2rem" }}>
-        <Link href="/catalog" style={{
-          color: "hsl(var(--text-secondary))",
-          fontSize: "0.9rem",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          marginBottom: "1rem"
-        }}>
-          ⬅️ Volver al Catálogo
+    <Box sx={{ maxWidth: 900, mx: "auto", p: { xs: 1, sm: 3 } }}>
+      <Box sx={{ mb: 4 }}>
+        <Link href="/catalog" style={{ textDecoration: "none" }}>
+          <Button variant="text" size="small" sx={{ color: "var(--text-muted)", mb: 2, textTransform: "none", fontSize: "0.9rem" }}>
+            ← Volver al Catálogo
+          </Button>
         </Link>
-        <h1 className="title-primary">{isNew ? "Crear Nuevo Producto" : `Editar Producto: ${sku}`}</h1>
-        <p className="subtitle-secondary">
+        <Typography variant="h5" sx={{ fontWeight: 600, color: "var(--text-main)", mb: 0.5 }}>
+          {isNew ? "Crear Nuevo Producto" : `Editar Producto: ${sku}`}
+        </Typography>
+        <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
           {isNew ? "Ingresa la ficha técnica y configura los márgenes de venta sugeridos" : "Actualiza la información técnica y costos de este elemento."}
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <div className="glass-card border-glow">
-        {error && (
-          <div style={{
-            background: "hsla(0, 84.2%, 60.2%, 0.15)",
-            border: "1px solid hsl(var(--danger))",
-            color: "#ff8888",
-            padding: "1rem",
-            borderRadius: "var(--radius-md)",
-            marginBottom: "1.5rem"
-          }}>
-            ⚠️ {error}
-          </div>
-        )}
+      <Card sx={{ 
+        bgcolor: "var(--bg-card)", 
+        borderRadius: "6px", 
+        border: "1px solid var(--border-light)", 
+        boxShadow: "var(--shadow-sm)" 
+      }}>
+        <CardContent sx={{ p: 4 }}>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: "6px" }}>
+              {error}
+            </Alert>
+          )}
 
-        {success && (
-          <div style={{
-            background: "hsla(142.1, 70.6%, 45.3%, 0.15)",
-            border: "1px solid hsl(var(--success))",
-            color: "#a3e635",
-            padding: "1rem",
-            borderRadius: "var(--radius-md)",
-            marginBottom: "1.5rem"
-          }}>
-            ✓ {success}
-          </div>
-        )}
+          {success && (
+            <Alert severity="success" sx={{ mb: 3, borderRadius: "6px" }}>
+              {success}
+            </Alert>
+          )}
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-            <div className="input-group" style={{ marginBottom: 0 }}>
-              <label className="input-label" htmlFor="sku">SKU / Código Único</label>
-              <input
-                id="sku"
-                type="text"
-                placeholder="CAM-IP-001"
-                className="input-field"
-                value={sku}
-                onChange={(e) => setSku(e.target.value)}
-                disabled={loading}
-                required
-              />
-            </div>
-            
-            <div className="input-group" style={{ marginBottom: 0 }}>
-              <label className="input-label" htmlFor="category">Categoría</label>
-              <select
-                id="category"
-                className="input-field"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                disabled={loading}
-                required
-              >
-                <option value="">-- Selecciona Categoría --</option>
-                <option value="CAMERA">Cámara de Seguridad</option>
-                <option value="DVR_NVR">Grabador DVR / NVR</option>
-                <option value="CABLE">Cableado Estructurado</option>
-                <option value="TUBING">Tuberías y Canalización</option>
-                <option value="ACCESSORY">Accesorios / Anclajes</option>
-                <option value="LABOR">Mano de Obra</option>
-                <option value="SERVICE">Servicios / Viáticos</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="input-group">
-            <label className="input-label" htmlFor="name">Nombre del Producto / Servicio</label>
-            <input
-              id="name"
-              type="text"
-              placeholder="Cámara Domo IP 4MP Varifocal"
-              className="input-field"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={loading}
-              required
-            />
-          </div>
-
-          <div className="input-group">
-            <label className="input-label" htmlFor="description">Descripción</label>
-            <textarea
-              id="description"
-              placeholder="Ficha técnica detallada o alcance del servicio..."
-              className="input-field"
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={loading}
-              style={{ resize: "vertical", fontFamily: "inherit" }}
-            />
-          </div>
-
-          {/* Pricing Structure - 3 Tiers */}
-          <div style={{
-            background: "hsla(var(--bg-secondary), 0.5)",
-            border: "1px solid hsl(var(--border-glass))",
-            padding: "1.5rem",
-            borderRadius: "var(--radius-md)"
-          }}>
-            <h3 style={{ fontSize: "1.1rem", marginBottom: "1.25rem", color: "hsl(var(--primary))", fontWeight: 700 }}>
-              Estructura de Precios Multi-Tarifa (USD)
-            </h3>
-
-            {/* Cost Base Row */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1.5rem", marginBottom: "1.25rem", borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "1rem" }}>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="unitCost" style={{ fontWeight: "bold" }}>Costo Adquisición ($)</label>
-                <input
-                  id="unitCost"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  className="input-field"
-                  value={unitCost}
-                  onChange={(e) => setUnitCost(parseFloat(e.target.value) || 0)}
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="SKU / Código Único"
+                  placeholder="CAM-IP-001"
+                  value={sku}
+                  onChange={(e) => setSku(e.target.value)}
                   disabled={loading}
-                  style={{ borderLeft: "3px solid hsl(var(--accent))" }}
                   required
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-              <div style={{ display: "flex", alignItems: "center", fontSize: "0.8rem", color: "hsl(var(--text-muted))" }}>
-                <span>Ingresa el costo neto de importación o compra del equipo. Los tres precios de venta sugeridos se autocalcularán en base a este costo y el respectivo margen.</span>
-              </div>
-            </div>
+              </Grid>
 
-            {/* Pricing Tiers Inputs */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {/* Contado */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr 1.2fr", gap: "1rem", alignItems: "center" }}>
-                <strong style={{ fontSize: "0.85rem", color: "hsl(var(--primary))" }}>💵 Precio al Contado:</strong>
-                <div className="input-group" style={{ marginBottom: 0 }}>
-                  <label className="input-label" style={{ fontSize: "0.7rem" }}>Margen Contado (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    className="input-field"
-                    value={marginCash}
-                    onChange={(e) => setMarginCash(parseFloat(e.target.value) || 0)}
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FormControl fullWidth sx={fieldStyle}>
+                  <InputLabel shrink id="category-label">Categoría</InputLabel>
+                  <Select
+                    labelId="category-label"
+                    label="Categoría"
+                    notched
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
                     disabled={loading}
                     required
-                  />
-                </div>
-                <div className="input-group" style={{ marginBottom: 0 }}>
-                  <label className="input-label" style={{ fontSize: "0.7rem" }}>Precio Contado ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input-field"
-                    value={priceCash}
-                    onChange={(e) => setPriceCash(parseFloat(e.target.value) || 0)}
-                    disabled={loading}
-                    style={{ fontWeight: 700, borderColor: "hsla(var(--primary), 0.5)" }}
-                  />
-                </div>
-              </div>
+                    sx={{ borderRadius: "6px" }}
+                  >
+                    <MenuItem value="">-- Selecciona Categoría --</MenuItem>
+                    {categories.map((cat) => (
+                      <MenuItem key={cat.id} value={cat.id}>
+                        {cat.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
 
-              {/* Crédito */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr 1.2fr", gap: "1rem", alignItems: "center" }}>
-                <strong style={{ fontSize: "0.85rem", color: "#fbbf24" }}>💳 Precio a Crédito:</strong>
-                <div className="input-group" style={{ marginBottom: 0 }}>
-                  <label className="input-label" style={{ fontSize: "0.7rem" }}>Margen Crédito (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    className="input-field"
-                    value={marginCredit}
-                    onChange={(e) => setMarginCredit(parseFloat(e.target.value) || 0)}
-                    disabled={loading}
-                    required
-                  />
-                </div>
-                <div className="input-group" style={{ marginBottom: 0 }}>
-                  <label className="input-label" style={{ fontSize: "0.7rem" }}>Precio Crédito ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input-field"
-                    value={priceCredit}
-                    onChange={(e) => setPriceCredit(parseFloat(e.target.value) || 0)}
-                    disabled={loading}
-                    style={{ fontWeight: 700, borderColor: "rgba(251, 191, 36, 0.5)" }}
-                  />
-                </div>
-              </div>
-
-              {/* Preferencial */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr 1.2fr", gap: "1rem", alignItems: "center" }}>
-                <strong style={{ fontSize: "0.85rem", color: "hsl(var(--accent))" }}>⭐ Precio Preferencial:</strong>
-                <div className="input-group" style={{ marginBottom: 0 }}>
-                  <label className="input-label" style={{ fontSize: "0.7rem" }}>Margen Preferente (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    className="input-field"
-                    value={marginPreferred}
-                    onChange={(e) => setMarginPreferred(parseFloat(e.target.value) || 0)}
-                    disabled={loading}
-                    required
-                  />
-                </div>
-                <div className="input-group" style={{ marginBottom: 0 }}>
-                  <label className="input-label" style={{ fontSize: "0.7rem" }}>Precio Preferente ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input-field"
-                    value={pricePreferred}
-                    onChange={(e) => setPricePreferred(parseFloat(e.target.value) || 0)}
-                    disabled={loading}
-                    style={{ fontWeight: 700, borderColor: "hsla(var(--accent), 0.5)" }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Image Upload Area */}
-          <div style={{
-            background: "hsla(var(--bg-secondary), 0.3)",
-            border: "1px dashed hsl(var(--border-glass))",
-            padding: "1.5rem",
-            borderRadius: "var(--radius-md)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "1rem"
-          }}>
-            <h4 style={{ fontSize: "0.95rem" }}>Imagen del Producto</h4>
-            
-            {(imagePreview || imageId) && (
-              <div style={{
-                width: "200px",
-                height: "150px",
-                borderRadius: "var(--radius-sm)",
-                overflow: "hidden",
-                border: "1px solid hsl(var(--border-glass))",
-                background: "hsla(var(--bg-secondary), 0.6)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={imagePreview || getApiUrl(`/images/${imageId}`)}
-                  alt="Vista Previa"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  label="Nombre del Producto / Servicio"
+                  placeholder="Cámara Domo IP 4MP Varifocal"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={loading}
+                  required
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
                 />
-              </div>
-            )}
+              </Grid>
 
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <input
-                id="file-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                style={{ display: "none" }}
-              />
-              <label htmlFor="file-upload" className="btn btn-secondary btn-sm" style={{ cursor: "pointer" }}>
-                📷 {imagePreview || imageId ? "Cambiar Imagen" : "Subir Imagen"}
-              </label>
-              {imageFile && (
-                <span style={{ fontSize: "0.75rem", color: "hsl(var(--text-secondary))", marginTop: "0.5rem" }}>
-                  Archivo seleccionado: {imageFile.name}
-                </span>
-              )}
-            </div>
-          </div>
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Descripción"
+                  placeholder="Ficha técnica detallada o alcance del servicio..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={loading}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
+                />
+              </Grid>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "1rem" }}>
-            <Link href="/catalog" className="btn btn-secondary" style={{ pointerEvents: loading ? "none" : "auto" }}>
-              Cancelar
-            </Link>
-            <button type="submit" className="btn btn-primary border-glow" disabled={loading}>
-              {loading ? <span className="spinner" /> : null}
-              <span>{isNew ? "Guardar Producto" : "Guardar Cambios"}</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              {/* Pricing Structure Box */}
+              <Grid size={{ xs: 12 }}>
+                <Box sx={{ 
+                  bgcolor: "rgba(115, 103, 240, 0.04)", 
+                  border: "1px solid var(--border-light)", 
+                  p: 3, 
+                  borderRadius: "6px" 
+                }}>
+                  <Typography variant="subtitle2" sx={{ color: "var(--primary)", fontWeight: 700, mb: 3 }}>
+                    Estructura de Precios Multi-Tarifa (USD)
+                  </Typography>
+
+                  <Grid container spacing={3} sx={{ pb: 3, mb: 3, borderBottom: "1px solid var(--border-light)" }}>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <TextField
+                        fullWidth
+                        label="Costo Adquisición ($)"
+                        type="number"
+                        placeholder="0.00"
+                        value={unitCost}
+                        onChange={(e) => setUnitCost(parseFloat(e.target.value) || 0)}
+                        disabled={loading}
+                        required
+                        slotProps={{ 
+                          inputLabel: { shrink: true },
+                          htmlInput: { step: "0.01", min: "0" }
+                        }}
+                        sx={{
+                          ...fieldStyle,
+                          "& .MuiOutlinedInput-root": {
+                            ...fieldStyle["& .MuiOutlinedInput-root"],
+                            borderLeft: "3px solid var(--accent)"
+                          }
+                        }}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 8 }} sx={{ display: "flex", alignItems: "center" }}>
+                      <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>
+                        Ingresa el costo neto de importación o compra del equipo. Los tres precios de venta sugeridos se autocalcularán en base a este costo y el respectivo margen.
+                      </Typography>
+                    </Grid>
+                  </Grid>
+
+                  <Grid container spacing={3}>
+                    {/* Contado */}
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--primary)", mb: 1 }}>
+                        💵 Precio al Contado:
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        label="Margen Contado (%)"
+                        type="number"
+                        value={marginCash}
+                        onChange={(e) => setMarginCash(parseFloat(e.target.value) || 0)}
+                        disabled={loading}
+                        required
+                        slotProps={{ inputLabel: { shrink: true } }}
+                        sx={{ ...fieldStyle, mb: 2 }}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Precio Contado ($)"
+                        type="number"
+                        value={priceCash}
+                        onChange={(e) => setPriceCash(parseFloat(e.target.value) || 0)}
+                        disabled={loading}
+                        slotProps={{ 
+                          inputLabel: { shrink: true },
+                          htmlInput: { step: "0.01" }
+                        }}
+                        sx={fieldStyle}
+                      />
+                    </Grid>
+
+                    {/* Credito */}
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "#fbbf24", mb: 1 }}>
+                        💳 Precio a Crédito:
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        label="Margen Crédito (%)"
+                        type="number"
+                        value={marginCredit}
+                        onChange={(e) => setMarginCredit(parseFloat(e.target.value) || 0)}
+                        disabled={loading}
+                        required
+                        slotProps={{ inputLabel: { shrink: true } }}
+                        sx={{ ...fieldStyle, mb: 2 }}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Precio Crédito ($)"
+                        type="number"
+                        value={priceCredit}
+                        onChange={(e) => setPriceCredit(parseFloat(e.target.value) || 0)}
+                        disabled={loading}
+                        slotProps={{ 
+                          inputLabel: { shrink: true },
+                          htmlInput: { step: "0.01" }
+                        }}
+                        sx={fieldStyle}
+                      />
+                    </Grid>
+
+                    {/* Preferencial */}
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--accent)", mb: 1 }}>
+                        ⭐ Precio Preferencial:
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        label="Margen Preferente (%)"
+                        type="number"
+                        value={marginPreferred}
+                        onChange={(e) => setMarginPreferred(parseFloat(e.target.value) || 0)}
+                        disabled={loading}
+                        required
+                        slotProps={{ inputLabel: { shrink: true } }}
+                        sx={{ ...fieldStyle, mb: 2 }}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Precio Preferente ($)"
+                        type="number"
+                        value={pricePreferred}
+                        onChange={(e) => setPricePreferred(parseFloat(e.target.value) || 0)}
+                        disabled={loading}
+                        slotProps={{ 
+                          inputLabel: { shrink: true },
+                          htmlInput: { step: "0.01" }
+                        }}
+                        sx={fieldStyle}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Grid>
+
+              {/* Upload image preview box */}
+              <Grid size={{ xs: 12 }}>
+                <Box sx={{
+                  bgcolor: "rgba(115, 103, 240, 0.02)",
+                  border: "1px dashed var(--border-light)",
+                  p: 3,
+                  borderRadius: "6px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 2
+                }}>
+                  <Typography variant="subtitle2" sx={{ color: "var(--text-main)" }}>
+                    Imagen del Producto
+                  </Typography>
+
+                  {(imagePreview || imageId) && (
+                    <Box sx={{
+                      width: 200,
+                      height: 150,
+                      borderRadius: "4px",
+                      overflow: "hidden",
+                      border: "1px solid var(--border-light)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imagePreview || getApiUrl(`/images/${imageId}`)}
+                        alt="Vista Previa"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    </Box>
+                  )}
+
+                  <Button 
+                    variant="outlined" 
+                    component="label"
+                    size="small"
+                    sx={{ 
+                      borderRadius: "6px", 
+                      textTransform: "none", 
+                      borderColor: "var(--border-light)", 
+                      color: "var(--text-muted)",
+                      "&:hover": { borderColor: "var(--text-muted)", bgcolor: "var(--bg-app)" }
+                    }}
+                  >
+                    📷 {imagePreview || imageId ? "Cambiar Imagen" : "Subir Imagen"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      hidden
+                    />
+                  </Button>
+                  {imageFile && (
+                    <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>
+                      Archivo seleccionado: {imageFile.name}
+                    </Typography>
+                  )}
+                </Box>
+              </Grid>
+            </Grid>
+
+            <Divider sx={{ my: 4, borderColor: "var(--border-light)" }} />
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+              <Link href="/catalog" style={{ textDecoration: "none" }}>
+                <Button 
+                  variant="outlined" 
+                  disabled={loading}
+                  sx={{ 
+                    borderRadius: "6px", 
+                    textTransform: "none", 
+                    borderColor: "var(--border-light)", 
+                    color: "var(--text-muted)",
+                    "&:hover": { borderColor: "var(--text-muted)", bgcolor: "transparent" }
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </Link>
+              <Button 
+                type="submit" 
+                variant="contained" 
+                disabled={loading}
+                sx={{ 
+                  borderRadius: "6px", 
+                  textTransform: "none", 
+                  bgcolor: "var(--primary)",
+                  boxShadow: "0 4px 8px 0 rgba(115, 103, 240, 0.3)",
+                  "&:hover": { bgcolor: "var(--primary-hover)" }
+                }}
+              >
+                {loading ? <CircularProgress size={20} sx={{ mr: 1, color: "white" }} /> : null}
+                {isNew ? "Guardar Producto" : "Guardar Cambios"}
+              </Button>
+            </Box>
+          </form>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

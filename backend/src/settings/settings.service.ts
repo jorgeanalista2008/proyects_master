@@ -78,4 +78,25 @@ export class SettingsService {
       mimeType: newImage.mimeType,
     };
   }
+
+  async getCategories() {
+    return this.prisma.category.findMany({
+      orderBy: { label: 'asc' },
+    });
+  }
+
+  async createCategory(name: string, label: string) {
+    const formattedName = name.toUpperCase().replace(/\s/g, '_');
+    return this.prisma.category.upsert({
+      where: { name: formattedName },
+      update: { label },
+      create: { name: formattedName, label },
+    });
+  }
+
+  async deleteCategory(id: string) {
+    return this.prisma.category.delete({
+      where: { id },
+    });
+  }
 }

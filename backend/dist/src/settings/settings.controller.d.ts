@@ -34,4 +34,28 @@ export declare class SettingsController {
         fileName: string;
         mimeType: string;
     }>;
+    findCategories(): Promise<{
+        id: string;
+        name: string;
+        createdAt: Date;
+        updatedAt: Date;
+        label: string;
+    }[]>;
+    createCategory(body: {
+        name: string;
+        label: string;
+    }): Promise<{
+        id: string;
+        name: string;
+        createdAt: Date;
+        updatedAt: Date;
+        label: string;
+    }>;
+    deleteCategory(id: string): Promise<{
+        id: string;
+        name: string;
+        createdAt: Date;
+        updatedAt: Date;
+        label: string;
+    }>;
 }

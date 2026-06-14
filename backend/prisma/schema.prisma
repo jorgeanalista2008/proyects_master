@@ -98,14 +98,13 @@ model Client {
   updatedAt    DateTime  @updatedAt
 }
 
-enum ItemCategory {
-  CAMERA
-  DVR_NVR
-  CABLE
-  TUBING
-  ACCESSORY
-  LABOR       // Mano de obra (costo/precio fijo)
-  SERVICE     // Viáticos, diseño de planos, etc.
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique // e.g. "CAMERA", "LABOR", "DVR_NVR"
+  label     String    // e.g. "Cámaras", "Mano de Obra"
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Product {
@@ -113,7 +112,8 @@ model Product {
   sku          String        @unique // Código de inventario
   name         String
   description  String?       @db.Text
-  category     ItemCategory
+  categoryId   String
+  category     Category      @relation(fields: [categoryId], references: [id])
   unitCost         Decimal       @db.Decimal(12, 4) // Costo de adquisición sin IVA
   marginCash       Decimal       @db.Decimal(5, 2)  @default(30.00) // Margen al contado en %
   priceCash        Decimal       @db.Decimal(12, 4) @default(0.0000) // Precio al contado sin IVA

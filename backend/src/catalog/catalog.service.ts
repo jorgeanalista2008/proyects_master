@@ -8,7 +8,7 @@ export class CatalogService {
   constructor(private prisma: PrismaService) {}
 
   async create(createCatalogDto: CreateCatalogDto) {
-    const { sku, name, description, category, unitCost, marginCash, marginCredit, marginPreferred, isActive } = createCatalogDto;
+    const { sku, name, description, categoryId, unitCost, marginCash, marginCredit, marginPreferred, isActive } = createCatalogDto;
 
     // Verificar si el SKU ya existe
     const existingProduct = await this.prisma.product.findUnique({
@@ -29,7 +29,7 @@ export class CatalogService {
         sku,
         name,
         description,
-        category,
+        categoryId,
         unitCost,
         marginCash,
         priceCash,
@@ -40,6 +40,7 @@ export class CatalogService {
         isActive: isActive ?? true,
       },
       include: {
+        category: true,
         images: {
           select: {
             id: true,
@@ -54,6 +55,7 @@ export class CatalogService {
   async findAll() {
     return this.prisma.product.findMany({
       include: {
+        category: true,
         images: {
           select: {
             id: true,
@@ -69,6 +71,7 @@ export class CatalogService {
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
+        category: true,
         images: {
           select: {
             id: true,
@@ -119,6 +122,7 @@ export class CatalogService {
       where: { id },
       data: updateData,
       include: {
+        category: true,
         images: {
           select: {
             id: true,

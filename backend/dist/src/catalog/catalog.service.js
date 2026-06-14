@@ -18,7 +18,7 @@ let CatalogService = class CatalogService {
         this.prisma = prisma;
     }
     async create(createCatalogDto) {
-        const { sku, name, description, category, unitCost, marginCash, marginCredit, marginPreferred, isActive } = createCatalogDto;
+        const { sku, name, description, categoryId, unitCost, marginCash, marginCredit, marginPreferred, isActive } = createCatalogDto;
         const existingProduct = await this.prisma.product.findUnique({
             where: { sku },
         });
@@ -33,7 +33,7 @@ let CatalogService = class CatalogService {
                 sku,
                 name,
                 description,
-                category,
+                categoryId,
                 unitCost,
                 marginCash,
                 priceCash,
@@ -44,6 +44,7 @@ let CatalogService = class CatalogService {
                 isActive: isActive ?? true,
             },
             include: {
+                category: true,
                 images: {
                     select: {
                         id: true,
@@ -57,6 +58,7 @@ let CatalogService = class CatalogService {
     async findAll() {
         return this.prisma.product.findMany({
             include: {
+                category: true,
                 images: {
                     select: {
                         id: true,
@@ -71,6 +73,7 @@ let CatalogService = class CatalogService {
         const product = await this.prisma.product.findUnique({
             where: { id },
             include: {
+                category: true,
                 images: {
                     select: {
                         id: true,
@@ -112,6 +115,7 @@ let CatalogService = class CatalogService {
             where: { id },
             data: updateData,
             include: {
+                category: true,
                 images: {
                     select: {
                         id: true,

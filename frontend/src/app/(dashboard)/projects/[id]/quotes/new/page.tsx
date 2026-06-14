@@ -1,30 +1,50 @@
+// d:\github\proyects_master\frontend\src\app\(dashboard)\projects\[id]\quotes\new\page.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, getApiUrl } from "@/lib/api";
-import { 
-  ArrowLeft, 
-  Package, 
-  Image as ImageIcon, 
-  UploadCloud, 
-  Trash2, 
-  DollarSign, 
-  Loader2, 
-  Plus, 
-  Search,
-  AlertTriangle,
-  CheckCircle,
-  Calendar,
-  FileText
-} from "lucide-react";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Card,
+  CardContent,
+  Grid,
+  Divider,
+  Alert,
+  CircularProgress,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  Tabs,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton
+} from "@mui/material";
+import { Trash2, Search } from "lucide-react";
+
+interface Category {
+  id: string;
+  name: string;
+  label: string;
+}
 
 interface CatalogItem {
   id: string;
   name: string;
   sku: string;
-  category: string;
+  categoryId: string;
+  category: Category;
   unitCost: number;
   priceCash: number;
   priceCredit: number;
@@ -70,17 +90,6 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-const CATEGORIES = [
-  { key: "ALL", label: "Todo" },
-  { key: "CAMERA", label: "Cámaras" },
-  { key: "DVR_NVR", label: "Grabadores" },
-  { key: "CABLE", label: "Cableado" },
-  { key: "TUBING", label: "Canalización" },
-  { key: "ACCESSORY", label: "Accesorios" },
-  { key: "LABOR", label: "Mano de Obra" },
-  { key: "SERVICE", label: "Servicios" }
-];
-
 export default function NewQuoteBuilder({ params }: PageProps) {
   const router = useRouter();
   const resolvedParams = React.use(params);
@@ -91,6 +100,7 @@ export default function NewQuoteBuilder({ params }: PageProps) {
   // Core Data states
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [project, setProject] = useState<Project | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Navigation & Tabs states
   const [leftTab, setLeftTab] = useState<"catalog" | "photos">("catalog");
@@ -117,17 +127,19 @@ export default function NewQuoteBuilder({ params }: PageProps) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Load catalog items and project details
+  // Load catalog items, categories, and project details
   useEffect(() => {
     async function loadData() {
       try {
         setFetching(true);
-        const [catalogData, projectData] = await Promise.all([
+        const [catalogData, projectData, categoriesData] = await Promise.all([
           api.get<CatalogItem[]>("/catalog"),
-          api.get<Project>(`/projects/${projectId}`)
+          api.get<Project>(`/projects/${projectId}`),
+          api.get<Category[]>("/settings/categories")
         ]);
         setCatalog(catalogData);
         setProject(projectData);
+        setCategories(categoriesData);
 
         // Pre-fill validUntil to 15 days from now
         const futureDate = new Date();
@@ -159,7 +171,7 @@ export default function NewQuoteBuilder({ params }: PageProps) {
       item.sku.toLowerCase().includes(searchQuery.toLowerCase());
     
     if (selectedCategory === "ALL") return matchesSearch;
-    return matchesSearch && item.category === selectedCategory;
+    return matchesSearch && item.categoryId === selectedCategory;
   });
 
   // Add item to quote list
@@ -276,11 +288,10 @@ export default function NewQuoteBuilder({ params }: PageProps) {
   const profit = taxableAmount - costTotal;
   const profitMarginPercent = taxableAmount > 0 ? (profit / taxableAmount) * 100 : 0;
 
-  // Margin categorization for UI color
-  const getMarginBgClass = () => {
-    if (profitMarginPercent < 20) return "bg-red-500/10 border-red-500/30 text-red-400 shadow-md shadow-red-500/5";
-    if (profitMarginPercent < 35) return "bg-amber-500/10 border-amber-500/30 text-amber-500 shadow-md shadow-amber-500/5";
-    return "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-md shadow-emerald-500/5";
+  const getMarginColors = () => {
+    if (profitMarginPercent < 20) return { bg: "rgba(234, 84, 85, 0.1)", border: "#ea5455", text: "#ea5455" };
+    if (profitMarginPercent < 35) return { bg: "rgba(255, 159, 67, 0.1)", border: "#ff9f43", text: "#ff9f43" };
+    return { bg: "rgba(40, 199, 111, 0.1)", border: "#28c76f", text: "#28c76f" };
   };
 
   const getMarginText = () => {
@@ -347,453 +358,571 @@ export default function NewQuoteBuilder({ params }: PageProps) {
 
   if (fetching) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-2" />
-        <p className="text-sm font-medium">Cargando catálogo y levantamiento del proyecto...</p>
-      </div>
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "300px", gap: 2 }}>
+        <CircularProgress size={40} sx={{ color: "var(--primary)" }} />
+        <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
+          Cargando catálogo y levantamiento del proyecto...
+        </Typography>
+      </Box>
     );
   }
 
+  const fieldStyle = {
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "6px",
+      "& fieldset": { borderColor: "var(--border-light)" },
+      "&.Mui-focused fieldset": { borderColor: "var(--primary)" }
+    },
+    "& .MuiInputLabel-root": { color: "var(--text-muted)" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "var(--primary)" },
+    "& .MuiInputBase-input": { color: "var(--text-main)" }
+  };
+
+  const marginInfo = getMarginColors();
+
   return (
-    <div className="space-y-6">
+    <Box sx={{ p: { xs: 1, sm: 3 } }}>
       {/* Header breadcrumb */}
-      <div>
-        <Link 
-          href={`/projects/${projectId}`} 
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-100 transition-colors uppercase tracking-wider mb-3"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Volver al Proyecto</span>
+      <Box sx={{ mb: 4 }}>
+        <Link href={`/projects/${projectId}`} style={{ textDecoration: "none" }}>
+          <Button variant="text" size="small" sx={{ color: "var(--text-muted)", mb: 2, textTransform: "none", fontSize: "0.9rem" }}>
+            ← Volver al Proyecto
+          </Button>
         </Link>
-        <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Constructor de Cotizaciones</h1>
-        <p className="text-xs text-slate-400 mt-1">
-          Proyecto: <span className="text-amber-500 font-bold">{project?.name}</span> | Cliente: <span className="font-semibold text-slate-300">{project?.client?.name}</span>
-        </p>
-      </div>
+        <Typography variant="h5" sx={{ fontWeight: 650, color: "var(--text-main)", mb: 0.5 }}>
+          Constructor de Cotizaciones
+        </Typography>
+        <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
+          Proyecto: <Box component="span" sx={{ color: "var(--primary)", fontWeight: "bold" }}>{project?.name}</Box> | Cliente: <Box component="span" sx={{ fontWeight: 600, color: "var(--text-main)" }}>{project?.client?.name}</Box>
+        </Typography>
+      </Box>
 
-      {/* Status Toasts */}
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-lg text-sm flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
-      )}
+      {/* Status Alerts */}
+      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: "6px" }}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ mb: 3, borderRadius: "6px" }}>{success}</Alert>}
 
-      {success && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-lg text-sm flex items-start gap-3">
-          <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <span>{success}</span>
-        </div>
-      )}
-
-      {/* Main Split-Panel Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* ========================================== */}
-        {/* LEFT PANEL: CATALOG & PHOTOS WORKSPACE      */}
-        {/* ========================================== */}
-        <div className="lg:col-span-6 space-y-6">
-          {/* Tab Selector */}
-          <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1">
-            <button
-              onClick={() => setLeftTab("catalog")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${
-                leftTab === "catalog" 
-                  ? "bg-amber-500 text-slate-950 shadow" 
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              <Package className="w-4 h-4" />
-              <span>Catálogo de Equipos</span>
-            </button>
-            <button
-              onClick={() => setLeftTab("photos")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${
-                leftTab === "photos" 
-                  ? "bg-amber-500 text-slate-950 shadow" 
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              <ImageIcon className="w-4 h-4" />
-              <span>Fotos de Levantamiento</span>
-            </button>
-          </div>
-
-          {/* TAB CONTENT: CATALOG */}
-          {leftTab === "catalog" && (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-sm font-bold text-slate-200">Catálogo de Equipos y Servicios</h2>
-                <span className="text-xs text-slate-500 font-medium">{filteredCatalog.length} ítems</span>
-              </div>
-
-              {/* Category selector row */}
-              <div className="flex gap-2 overflow-x-auto pb-2 border-b border-slate-800/60 scrollbar-thin">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat.key}
-                    onClick={() => setSelectedCategory(cat.key)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors border ${
-                      selectedCategory === cat.key 
-                        ? "bg-amber-500/10 border-amber-500 text-amber-500" 
-                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  placeholder="Buscar SKU o nombre de artículo..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 pl-9 pr-4 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 text-sm"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
-              {/* Catalog Scrollable Cards */}
-              <div className="max-h-[420px] overflow-y-auto space-y-3 pr-1">
-                {filteredCatalog.length === 0 ? (
-                  <p className="text-slate-500 text-center py-12 text-xs font-medium">
-                    No se encontraron artículos que coincidan con la búsqueda.
-                  </p>
-                ) : (
-                  filteredCatalog.map((item) => (
-                    <div
-                      key={item.id}
-                      className="bg-slate-950 border border-slate-800/80 hover:border-amber-500/40 rounded-lg p-3 flex justify-between items-center transition-all group"
-                    >
-                      <div className="space-y-1">
-                        <span className="block font-bold text-slate-200 text-xs group-hover:text-slate-100 transition-colors">
-                          {item.name}
-                        </span>
-                        <span className="block text-[10px] text-slate-500 font-medium">
-                          SKU: <code className="text-amber-500/80 font-mono">{item.sku}</code> | {item.category}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono font-bold text-amber-500 text-xs">
-                          {new Intl.NumberFormat("es-ES", { style: "currency", currency: "USD" }).format(item.priceCash)}
-                        </span>
-                        <button
-                          onClick={() => addItemToQuote(item)}
-                          className="bg-slate-900 border border-slate-800 hover:border-amber-500 hover:text-slate-950 hover:bg-amber-500 text-slate-300 font-bold px-3 py-1 rounded text-[10px] uppercase tracking-wider transition-all"
-                        >
-                          Añadir
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* TAB CONTENT: PHOTOS */}
-          {leftTab === "photos" && (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-sm font-bold text-slate-200">Fotos de Levantamiento Técnico</h2>
-                <span className="text-xs text-slate-500 font-medium">{(project?.images || []).length} fotos</span>
-              </div>
-
-              {/* Upload Dropzone */}
-              <div
-                onClick={triggerFileInput}
-                className="border-2 border-dashed border-slate-800 hover:border-amber-500/50 bg-slate-950/40 hover:bg-amber-500/[0.02] rounded-lg p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center group"
+      <Grid container spacing={4}>
+        {/* LEFT PANEL: CATALOG & PHOTOS WORKSPACE */}
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Card sx={{ 
+            bgcolor: "var(--bg-card)", 
+            borderRadius: "6px", 
+            border: "1px solid var(--border-light)", 
+            boxShadow: "var(--shadow-sm)",
+            mb: 4
+          }}>
+            <Box sx={{ borderBottom: 1, borderColor: "var(--border-light)" }}>
+              <Tabs 
+                value={leftTab} 
+                onChange={(_, newValue) => setLeftTab(newValue)} 
+                sx={{
+                  "& .MuiTab-root": { textTransform: "none", fontWeight: 600, fontSize: "0.9rem", py: 1.5 },
+                  "& .Mui-selected": { color: "var(--primary) !important" },
+                  "& .MuiTabs-indicator": { bgcolor: "var(--primary)" }
+                }}
               >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/*"
-                  className="hidden"
-                />
-                {uploadingImage ? (
-                  <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-2" />
-                ) : (
-                  <UploadCloud className="w-8 h-8 text-slate-500 group-hover:text-amber-500 transition-colors mb-2" />
-                )}
-                <span className="block text-xs font-bold text-slate-400 group-hover:text-slate-300 transition-colors">
-                  {uploadingImage ? "Subiendo archivo..." : "Haz clic para subir foto del levantamiento"}
-                </span>
-                <span className="block text-[10px] text-slate-600 mt-1">
-                  JPG, PNG o WEBP (Máx 5MB)
-                </span>
-              </div>
+                <Tab label="Catálogo de Equipos" value="catalog" />
+                <Tab label="Fotos de Levantamiento" value="photos" />
+              </Tabs>
+            </Box>
 
-              {/* Images Grid */}
-              <div className="max-h-[350px] overflow-y-auto grid grid-cols-2 gap-4 pr-1">
-                {(project?.images || []).length === 0 ? (
-                  <div className="col-span-2 text-center py-12 text-xs text-slate-500 font-medium">
-                    No hay imágenes cargadas en este proyecto.
-                  </div>
-                ) : (
-                  (project?.images || []).map((img) => (
-                    <div
-                      key={img.id}
-                      className="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden flex flex-col"
+            <CardContent sx={{ p: 3 }}>
+              {leftTab === "catalog" && (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--text-main)" }}>
+                      Catálogo de Equipos y Servicios
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "var(--text-muted)", fontWeight: 500 }}>
+                      {filteredCatalog.length} ítems
+                    </Typography>
+                  </Box>
+
+                  {/* Category buttons row */}
+                  <Box sx={{ display: "flex", gap: 1, overflowX: "auto", pb: 1, borderBottom: "1px solid var(--border-light)" }}>
+                    <Button
+                      variant={selectedCategory === "ALL" ? "contained" : "outlined"}
+                      size="small"
+                      onClick={() => setSelectedCategory("ALL")}
+                      sx={{
+                        borderRadius: "20px",
+                        textTransform: "none",
+                        fontSize: "0.75rem",
+                        whiteSpace: "nowrap",
+                        px: 2,
+                        bgcolor: selectedCategory === "ALL" ? "var(--primary)" : "transparent",
+                        borderColor: selectedCategory === "ALL" ? "var(--primary)" : "var(--border-light)",
+                        color: selectedCategory === "ALL" ? "#fff" : "var(--text-muted)",
+                        "&:hover": {
+                          bgcolor: selectedCategory === "ALL" ? "var(--primary-hover)" : "var(--primary-light)",
+                          borderColor: "var(--primary)"
+                        }
+                      }}
                     >
-                      <div className="h-28 w-full overflow-hidden bg-slate-950 relative flex items-center justify-center">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={getImageUrl(img.id)}
-                          alt={img.fileName}
-                          className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      <div className="p-2 text-[10px] flex flex-col gap-0.5 border-t border-slate-800/60 bg-slate-900/60">
-                        <span className="font-bold text-slate-300 truncate" title={img.fileName}>
-                          {img.fileName}
-                        </span>
-                        <span className="text-slate-500">
-                          {new Date(img.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+                      Todo
+                    </Button>
+                    {categories.map((cat) => (
+                      <Button
+                        key={cat.id}
+                        variant={selectedCategory === cat.id ? "contained" : "outlined"}
+                        size="small"
+                        onClick={() => setSelectedCategory(cat.id)}
+                        sx={{
+                          borderRadius: "20px",
+                          textTransform: "none",
+                          fontSize: "0.75rem",
+                          whiteSpace: "nowrap",
+                          px: 2,
+                          bgcolor: selectedCategory === cat.id ? "var(--primary)" : "transparent",
+                          borderColor: selectedCategory === cat.id ? "var(--primary)" : "var(--border-light)",
+                          color: selectedCategory === cat.id ? "#fff" : "var(--text-muted)",
+                          "&:hover": {
+                            bgcolor: selectedCategory === cat.id ? "var(--primary-hover)" : "var(--primary-light)",
+                            borderColor: "var(--primary)"
+                          }
+                        }}
+                      >
+                        {cat.label}
+                      </Button>
+                    ))}
+                  </Box>
 
-        {/* ========================================== */}
-        {/* RIGHT PANEL: LIVE QUOTE SHEET               */}
-        {/* ========================================== */}
-        <div className="lg:col-span-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6">
-            <h2 className="text-sm font-bold text-slate-200 border-b border-slate-800 pb-3 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-amber-500" />
-              <span>Hoja de Presupuesto</span>
-            </h2>
+                  {/* Search input */}
+                  <TextField
+                    fullWidth
+                    placeholder="Buscar equipos por SKU o Nombre..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    slotProps={{
+                      input: {
+                        startAdornment: <Search size={16} style={{ marginRight: 8, color: "var(--text-muted)" }} />
+                      }
+                    }}
+                    sx={fieldStyle}
+                  />
 
-            {selectedItems.length === 0 ? (
-              <div className="text-center py-24 flex flex-col items-center justify-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-600">
-                  <Package className="w-6 h-6" />
-                </div>
-                <p className="text-slate-500 text-xs max-w-xs leading-relaxed font-medium">
-                  Tu cotización está vacía. Añade elementos del catálogo para estructurar la cotización.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Table items list */}
-                <div className="max-h-[350px] overflow-y-auto border border-slate-800 rounded-lg overflow-hidden bg-slate-950">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-slate-900 text-slate-400 font-bold border-b border-slate-800">
-                        <th className="p-3">Artículo</th>
-                        <th className="p-3 w-28">Tarifa</th>
-                        <th className="p-3 w-28">Cant.</th>
-                        <th className="p-3 text-right">Subtotal</th>
-                        <th className="p-3 text-center w-12">Quitar</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/40">
-                      {selectedItems.map((item, index) => {
-                        const activePrice = getActiveUnitPrice(item);
-                        const itemSubtotal = activePrice * item.quantity * exchangeRate;
-                        return (
-                          <tr key={item.catalogItemId} className="hover:bg-slate-900/20">
-                            <td className="p-3">
-                              <span className="block font-bold text-slate-200">{item.name}</span>
-                              <span className="block text-[9px] text-slate-500 mt-0.5">SKU: {item.sku}</span>
-                            </td>
-                            <td className="p-3">
-                              <select
-                                className="w-full bg-slate-900 border border-slate-800 rounded py-1 px-1.5 text-slate-300 focus:outline-none focus:border-amber-500 text-[11px] cursor-pointer"
-                                value={item.priceType}
-                                onChange={(e) => updatePriceType(index, e.target.value as any)}
-                              >
-                                <option value="CASH">Contado</option>
-                                <option value="CREDIT">Crédito</option>
-                                <option value="PREFERRED">Preferente</option>
-                              </select>
-                            </td>
-                            <td className="p-3">
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => updateQuantity(index, item.quantity - 1)}
-                                  className="w-5 h-5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 font-bold transition-all"
+                  {/* Catalog items list scrollable */}
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, maxHeight: 360, overflowY: "auto", pr: 1 }}>
+                    {filteredCatalog.length === 0 ? (
+                      <Typography variant="body2" align="center" sx={{ color: "var(--text-muted)", py: 6 }}>
+                        No se encontraron artículos que coincidan con la búsqueda.
+                      </Typography>
+                    ) : (
+                      filteredCatalog.map((item) => (
+                        <Box 
+                          key={item.id}
+                          sx={{ 
+                            display: "flex", 
+                            justifyContent: "space-between", 
+                            alignItems: "center", 
+                            p: 2, 
+                            borderRadius: "6px",
+                            bgcolor: "rgba(115, 103, 240, 0.02)",
+                            border: "1px solid var(--border-light)",
+                            "&:hover": { borderColor: "rgba(115, 103, 240, 0.4)" }
+                          }}
+                        >
+                          <Box sx={{ minWidth: 0, pr: 2 }}>
+                            <Typography variant="caption" sx={{ display: "block", fontWeight: 700, color: "var(--text-main)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                              {item.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>
+                              SKU: <Box component="span" sx={{ color: "var(--primary)", fontWeight: "bold", fontFamily: "monospace" }}>{item.sku}</Box> | {item.category?.label || "Sin Categoría"}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                            <Typography variant="caption" sx={{ fontFamily: "monospace", fontWeight: 700, color: "var(--primary)" }}>
+                              {formattedValue(item.priceCash)}
+                            </Typography>
+                            <Button 
+                              variant="outlined" 
+                              size="small"
+                              onClick={() => addItemToQuote(item)}
+                              sx={{ 
+                                textTransform: "none", 
+                                borderRadius: "4px", 
+                                fontSize: "0.7rem", 
+                                py: 0.5,
+                                borderColor: "var(--primary)",
+                                color: "var(--primary)",
+                                "&:hover": { bgcolor: "var(--primary)", color: "#fff" }
+                              }}
+                            >
+                              Añadir
+                            </Button>
+                          </Box>
+                        </Box>
+                      ))
+                    )}
+                  </Box>
+                </Box>
+              )}
+
+              {leftTab === "photos" && (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--text-main)" }}>
+                    Galería de Fotos Levantamiento
+                  </Typography>
+
+                  <Box 
+                    onClick={triggerFileInput}
+                    sx={{ 
+                      border: "2px dashed var(--border-light)", 
+                      bgcolor: "rgba(115, 103, 240, 0.01)", 
+                      p: 4, 
+                      borderRadius: "6px", 
+                      textAlign: "center", 
+                      cursor: "pointer",
+                      "&:hover": { bgcolor: "var(--primary-light)", borderColor: "var(--primary)" }
+                    }}
+                  >
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFileChange} 
+                      hidden
+                      accept="image/*"
+                    />
+                    {uploadingImage ? (
+                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                        <CircularProgress size={24} sx={{ color: "var(--primary)" }} />
+                        <Typography variant="caption" sx={{ color: "var(--text-muted)", fontWeight: 500 }}>Subiendo archivo...</Typography>
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                        <Typography variant="h5" sx={{ mb: 1 }}>📤</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-main)" }}>Haz clic o arrastra fotos</Typography>
+                        <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>Soporta JPG, PNG, GIF de instalación</Typography>
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* Images Grid */}
+                  <Grid container spacing={2} sx={{ maxHeight: 350, overflowY: "auto", pr: 1 }}>
+                    {(project?.images || []).length === 0 ? (
+                      <Grid size={{ xs: 12 }}>
+                        <Typography variant="body2" align="center" sx={{ color: "var(--text-muted)", py: 6 }}>
+                          No hay imágenes cargadas en este proyecto.
+                        </Typography>
+                      </Grid>
+                    ) : (
+                      (project?.images || []).map((img) => (
+                        <Grid size={{ xs: 6 }} key={img.id}>
+                          <Card sx={{ 
+                            borderRadius: "6px", 
+                            border: "1px solid var(--border-light)", 
+                            bgcolor: "var(--bg-card)",
+                            overflow: "hidden" 
+                          }}>
+                            <Box sx={{ height: 110, bgcolor: "var(--bg-app)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={getImageUrl(img.id)}
+                                alt={img.fileName}
+                                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                              />
+                            </Box>
+                            <Box sx={{ p: 1, bgcolor: "rgba(115, 103, 240, 0.02)" }}>
+                              <Typography variant="caption" sx={{ display: "block", fontWeight: 700, color: "var(--text-main)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }} title={img.fileName}>
+                                {img.fileName}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: "var(--text-muted)", fontSize: "0.65rem" }}>
+                                {new Date(img.createdAt).toLocaleDateString()}
+                              </Typography>
+                            </Box>
+                          </Card>
+                        </Grid>
+                      ))
+                    )}
+                  </Grid>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* RIGHT PANEL: LIVE QUOTE SHEET */}
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Card sx={{ 
+            bgcolor: "var(--bg-card)", 
+            borderRadius: "6px", 
+            border: "1px solid var(--border-light)", 
+            boxShadow: "var(--shadow-sm)" 
+          }}>
+            <CardContent sx={{ p: 4, display: "flex", flexDirection: "column", gap: 3 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--text-main)" }}>
+                Presupuesto de Materiales Cotizados
+              </Typography>
+
+              {selectedItems.length === 0 ? (
+                <Box sx={{ 
+                  display: "flex", 
+                  flexDirection: "column", 
+                  alignItems: "center", 
+                  justifyContent: "center", 
+                  gap: 2, 
+                  py: 12, 
+                  border: "1px dashed var(--border-light)", 
+                  borderRadius: "6px",
+                  bgcolor: "rgba(115, 103, 240, 0.01)"
+                }}>
+                  <Box sx={{ p: 2, borderRadius: "6px", border: "1px solid var(--border-light)", bgcolor: "var(--bg-card)", color: "var(--text-muted)" }}>
+                    📦
+                  </Box>
+                  <Typography variant="body2" align="center" sx={{ color: "var(--text-muted)", maxWidth: 280 }}>
+                    Tu cotización está vacía. Añade elementos del catálogo para estructurar la cotización.
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  
+                  {/* Table View */}
+                  <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "6px", borderColor: "var(--border-light)", bgcolor: "transparent" }}>
+                    <Table size="small">
+                      <TableHead sx={{ bgcolor: "rgba(115, 103, 240, 0.02)" }}>
+                        <TableRow>
+                          <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700, fontSize: "0.75rem" }}>Artículo</TableCell>
+                          <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700, fontSize: "0.75rem" }}>Tarifa</TableCell>
+                          <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700, fontSize: "0.75rem" }}>Cant.</TableCell>
+                          <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700, fontSize: "0.75rem" }} align="right">Subtotal</TableCell>
+                          <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700, fontSize: "0.75rem" }} align="center"></TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {selectedItems.map((item, index) => {
+                          const activePrice = getActiveUnitPrice(item);
+                          const itemSubtotal = activePrice * item.quantity * exchangeRate;
+                          return (
+                            <TableRow key={item.catalogItemId} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+                              <TableCell sx={{ py: 1.5 }}>
+                                <Typography variant="caption" sx={{ display: "block", fontWeight: 700, color: "var(--text-main)" }}>
+                                  {item.name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: "var(--text-muted)", fontFamily: "monospace", fontSize: "0.65rem", fontWeight: "bold" }}>
+                                  SKU: {item.sku}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  size="small"
+                                  value={item.priceType}
+                                  onChange={(e) => updatePriceType(index, e.target.value as any)}
+                                  sx={{ 
+                                    borderRadius: "4px", 
+                                    fontSize: "0.75rem", 
+                                    height: 30,
+                                    "& fieldset": { borderColor: "var(--border-light)" } 
+                                  }}
                                 >
-                                  -
-                                </button>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  className="w-8 bg-slate-900 border border-slate-800 rounded py-0.5 text-center text-slate-200 focus:outline-none text-[11px]"
-                                  value={item.quantity}
-                                  onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 1)}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => updateQuantity(index, item.quantity + 1)}
-                                  className="w-5 h-5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 flex items-center justify-center text-slate-300 font-bold transition-all"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </td>
-                            <td className="p-3 text-right font-mono font-bold text-slate-300">
-                              {formattedValue(itemSubtotal)}
-                            </td>
-                            <td className="p-3 text-center">
-                              <button
-                                type="button"
-                                onClick={() => removeItemFromQuote(index)}
-                                className="text-red-400 hover:text-red-300 transition-colors p-1"
-                                title="Eliminar"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                                  <MenuItem value="CASH">Contado</MenuItem>
+                                  <MenuItem value="CREDIT">Crédito</MenuItem>
+                                  <MenuItem value="PREFERRED">Preferente</MenuItem>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                  <Button 
+                                    size="small"
+                                    onClick={() => updateQuantity(index, item.quantity - 1)}
+                                    sx={{ minWidth: 22, height: 22, p: 0, bgcolor: "var(--primary-light)", color: "var(--primary)" }}
+                                  >
+                                    -
+                                  </Button>
+                                  <Typography variant="caption" sx={{ width: 20, textAlign: "center", color: "var(--text-main)", fontWeight: "bold" }}>
+                                    {item.quantity}
+                                  </Typography>
+                                  <Button 
+                                    size="small"
+                                    onClick={() => updateQuantity(index, item.quantity + 1)}
+                                    sx={{ minWidth: 22, height: 22, p: 0, bgcolor: "var(--primary-light)", color: "var(--primary)" }}
+                                  >
+                                    +
+                                  </Button>
+                                </Box>
+                              </TableCell>
+                              <TableCell align="right" sx={{ fontFamily: "monospace", fontWeight: 700, color: "var(--text-main)", fontSize: "0.8rem" }}>
+                                {formattedValue(itemSubtotal)}
+                              </TableCell>
+                              <TableCell align="center">
+                                <IconButton size="small" onClick={() => removeItemFromQuote(index)} sx={{ color: "#ea5455" }}>
+                                  <Trash2 size={16} />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
 
-                {/* Currency & Tax Config Row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Moneda Base</label>
-                    <select
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-300 focus:outline-none focus:border-amber-500 text-xs"
-                      value={currency}
-                      onChange={(e) => setCurrency(e.target.value)}
-                    >
-                      <option value="USD">USD ($)</option>
-                      <option value="CLP">CLP (Ch$)</option>
-                      <option value="MXN">MXN ($)</option>
-                      <option value="COP">COP ($)</option>
-                      <option value="EUR">EUR (€)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">IVA / Impuestos (%)</label>
-                    <input
-                      type="number"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-100 focus:outline-none focus:border-amber-500 text-xs"
-                      value={taxRate}
-                      onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
-                </div>
+                  {/* Financial Configuration Inputs */}
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 6, md: 4 }}>
+                      <FormControl fullWidth sx={fieldStyle}>
+                        <InputLabel shrink id="currency-label">Moneda Base</InputLabel>
+                        <Select
+                          labelId="currency-label"
+                          label="Moneda Base"
+                          notched
+                          value={currency}
+                          onChange={(e) => setCurrency(e.target.value)}
+                          sx={{ borderRadius: "6px" }}
+                        >
+                          <MenuItem value="USD">USD ($)</MenuItem>
+                          <MenuItem value="CLP">CLP ($)</MenuItem>
+                          <MenuItem value="MXN">MXN ($)</MenuItem>
+                          <MenuItem value="COP">COP ($)</MenuItem>
+                          <MenuItem value="EUR">EUR (€)</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid size={{ xs: 6, md: 4 }}>
+                      <TextField
+                        fullWidth
+                        label="Tasa Cambio"
+                        type="number"
+                        value={exchangeRate}
+                        onChange={(e) => setExchangeRate(Number(e.target.value))}
+                        slotProps={{ 
+                          inputLabel: { shrink: true },
+                          htmlInput: { step: "0.01" }
+                        }}
+                        sx={fieldStyle}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <TextField
+                        fullWidth
+                        label="Impuesto (IVA %)"
+                        type="number"
+                        value={taxRate}
+                        onChange={(e) => setTaxRate(Number(e.target.value))}
+                        slotProps={{ inputLabel: { shrink: true } }}
+                        sx={fieldStyle}
+                      />
+                    </Grid>
+                  </Grid>
 
-                {currency !== "USD" && (
-                  <div className="mt-1">
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tasa de Cambio (1 USD = )</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-100 focus:outline-none focus:border-amber-500 text-xs"
-                      value={exchangeRate}
-                      onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 1)}
-                    />
-                  </div>
-                )}
+                  {/* Summary Box */}
+                  <Box sx={{ 
+                    bgcolor: "rgba(115, 103, 240, 0.02)", 
+                    border: "1px solid var(--border-light)", 
+                    p: 2.5, 
+                    borderRadius: "6px", 
+                    display: "flex", 
+                    flexDirection: "column", 
+                    gap: 1.5 
+                  }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>Subtotal Neto:</Typography>
+                      <Typography variant="caption" sx={{ fontFamily: "monospace", fontWeight: 700, color: "var(--text-main)" }}>
+                        {formattedValue(subtotal)}
+                      </Typography>
+                    </Box>
 
-                {/* Financial Summary */}
-                <div className="bg-slate-950/60 border border-slate-800/40 rounded-xl p-4 space-y-3 text-xs">
-                  <div className="flex justify-between text-slate-400">
-                    <span>Subtotal Neto:</span>
-                    <span className="font-mono font-bold text-slate-300">{formattedValue(subtotal)}</span>
-                  </div>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>
+                        Descuento Aplicado ({currency})
+                      </Typography>
+                      <TextField
+                        size="small"
+                        type="number"
+                        value={discount}
+                        onChange={(e) => setDiscount(Number(e.target.value))}
+                        slotProps={{ htmlInput: { style: { textAlign: "right", fontFamily: "monospace" } } }}
+                        sx={{ ...fieldStyle, width: 120 }}
+                      />
+                    </Box>
 
-                  <div className="flex justify-between items-center text-slate-400">
-                    <span>Descuento Directo ({currency}):</span>
-                    <input
-                      type="number"
-                      className="w-24 bg-slate-950 border border-slate-800 rounded py-1 px-2 text-right text-slate-200 focus:outline-none focus:border-amber-500 font-mono text-xs"
-                      value={discount}
-                      onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
+                    <Divider sx={{ my: 1, borderColor: "var(--border-light)" }} />
 
-                  <div className="flex justify-between text-slate-400">
-                    <span>IVA ({taxRate}%):</span>
-                    <span className="font-mono font-bold text-slate-300">{formattedValue(tax)}</span>
-                  </div>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--text-main)" }}>
+                        TOTAL PRESUPUESTADO
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontFamily: "monospace", fontWeight: 750, color: "var(--primary)" }}>
+                        {formattedValue(total)}
+                      </Typography>
+                    </Box>
+                  </Box>
 
-                  <div className="flex justify-between border-t border-slate-800 pt-3 text-sm font-bold">
-                    <span className="text-slate-100">Total Final:</span>
-                    <span className="font-mono text-amber-500">{formattedValue(total)}</span>
-                  </div>
-                </div>
+                  {/* Rentabilidad Box */}
+                  <Box sx={{ 
+                    bgcolor: marginInfo.bg, 
+                    border: `1px solid ${marginInfo.border}`, 
+                    color: marginInfo.text, 
+                    p: 2.5, 
+                    borderRadius: "6px" 
+                  }}>
+                    <Typography variant="caption" sx={{ display: "block", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem", opacity: 0.8 }}>
+                      Rentabilidad de Cotización
+                    </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", mt: 1 }}>
+                      <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace" }}>
+                        {Math.round(profitMarginPercent * 10) / 10}%
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                        Utilidad: {formattedValue(profit)}
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ display: "block", mt: 1, fontWeight: 600, fontSize: "0.7rem" }}>
+                      {getMarginText()}
+                    </Typography>
+                  </Box>
 
-                {/* Margen Consolidado Estimado */}
-                <div className={`border rounded-lg p-4 transition-all ${getMarginBgClass()}`}>
-                  <span className="block text-[10px] uppercase font-bold tracking-wide opacity-80">
-                    Rentabilidad de Cotización
-                  </span>
-                  <div className="flex justify-between items-baseline mt-1.5">
-                    <span className="text-xl font-black font-mono">
-                      {Math.round(profitMarginPercent * 10) / 10}%
-                    </span>
-                    <span className="text-xs font-semibold">
-                      Utilidad: {formattedValue(profit)}
-                    </span>
-                  </div>
-                  <span className="block text-[10px] mt-2 font-medium">
-                    {getMarginText()}
-                  </span>
-                </div>
-
-                {/* Terms and date config */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5" htmlFor="expire">Vencimiento</label>
-                    <div className="relative">
-                      <input
-                        id="expire"
+                  {/* Date and terms */}
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        label="Vencimiento Cotización"
                         type="date"
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-slate-300 focus:outline-none focus:border-amber-500 text-xs"
                         value={validUntil}
                         onChange={(e) => setValidUntil(e.target.value)}
-                        required
+                        slotProps={{ inputLabel: { shrink: true } }}
+                        sx={fieldStyle}
                       />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5" htmlFor="terms">Términos y Notas</label>
-                    <textarea
-                      id="terms"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-3 text-slate-300 focus:outline-none focus:border-amber-500 text-xs"
-                      rows={2}
-                      value={terms}
-                      onChange={(e) => setTerms(e.target.value)}
-                    />
-                  </div>
-                </div>
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={2}
+                        label="Términos de Pago y Condiciones"
+                        value={terms}
+                        onChange={(e) => setTerms(e.target.value)}
+                        slotProps={{ inputLabel: { shrink: true } }}
+                        sx={fieldStyle}
+                      />
+                    </Grid>
+                  </Grid>
 
-                {/* Save Quote Action */}
-                <button
-                  onClick={handleSaveQuote}
-                  disabled={loading}
-                  className="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 text-slate-950 font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-lg shadow-amber-500/10"
-                >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <span>💾</span>
-                      <span>Guardar Presupuesto</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    disabled={loading}
+                    onClick={handleSaveQuote}
+                    sx={{
+                      borderRadius: "6px",
+                      py: 1.5,
+                      fontWeight: 700,
+                      bgcolor: "var(--primary)",
+                      boxShadow: "0 4px 8px 0 rgba(115, 103, 240, 0.3)",
+                      "&:hover": { bgcolor: "var(--primary-hover)" }
+                    }}
+                  >
+                    {loading ? (
+                      <CircularProgress size={24} sx={{ color: "white" }} />
+                    ) : (
+                      "💾 Guardar Presupuesto"
+                    )}
+                  </Button>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }

@@ -1,10 +1,31 @@
-// d:\github\proyects_master\frontend\src\app\(dashboard)\projects\[id]\page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, getApiUrl } from "@/lib/api";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  MenuItem,
+  Card,
+  CardHeader,
+  CardContent,
+  Grid,
+  Divider,
+  Alert,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip
+} from "@mui/material";
 
 interface Client {
   id: string;
@@ -31,7 +52,7 @@ interface Quote {
   version: number;
   total: number;
   currency: string;
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  status: "DRAFT" | "SENT" | "APPROVED" | "REJECTED" | "EXPIRED";
   createdAt: string;
 }
 
@@ -57,25 +78,20 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
   const { id } = resolvedParams;
   const isNew = id === "new";
 
-  // Form states (Create)
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [clientId, setClientId] = useState("");
   const [managerId, setManagerId] = useState("");
 
-  // Details states (View)
   const [project, setProject] = useState<Project | null>(null);
   const [projectStatus, setProjectStatus] = useState<string>("");
 
-  // Directory lists
   const [clients, setClients] = useState<Client[]>([]);
   const [users, setUsers] = useState<User[]>([]);
 
-  // Image upload
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  // General states
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
@@ -91,7 +107,6 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
           const usersData = await api.get<User[]>("/users");
           setUsers(usersData);
         } catch {
-          // If /users fails or doesn't exist, we fallback to empty list
           console.warn("Could not load users directory");
         }
       } catch (err) {
@@ -161,7 +176,6 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
       await api.patch(`/projects/${project.id}`, { status: newStatus });
       setProjectStatus(newStatus);
       setSuccess("Estado del proyecto actualizado.");
-      // Reload project to sync
       const updated = await api.get<Project>(`/projects/${id}`);
       setProject(updated);
     } catch (err: any) {
@@ -202,8 +216,6 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
 
       setSuccess("Foto del levantamiento cargada con éxito.");
       setSelectedFile(null);
-      
-      // Reload project details to show new image in gallery
       const data = await api.get<Project>(`/projects/${id}`);
       setProject(data);
     } catch (err: any) {
@@ -216,144 +228,114 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
 
   if (fetching) {
     return (
-      <div className="loader-container">
-        <div className="spinner" style={{ width: "2.5rem", height: "2.5rem" }} />
-        <p>Cargando información...</p>
-      </div>
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "50vh", gap: 2 }}>
+        <CircularProgress color="primary" />
+        <Typography variant="body2" color="text.secondary">Cargando información...</Typography>
+      </Box>
     );
   }
 
   // --- RENDERING CREATION FORM ---
   if (isNew) {
     return (
-      <div className="fade-in" style={{ maxWidth: "600px", margin: "0 auto" }}>
-        <div style={{ marginBottom: "2rem" }}>
-          <Link href="/projects" style={{
-            color: "hsl(var(--text-secondary))",
-            fontSize: "0.9rem",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            marginBottom: "1rem"
-          }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3, maxWidth: 600, mx: "auto" }}>
+        <Box>
+          <Button component={Link} href="/projects" color="secondary" sx={{ textTransform: "none", mb: 1, p: 0, justifyContent: "flex-start" }}>
             ⬅️ Volver a Proyectos
-          </Link>
-          <h1 className="title-primary">Registrar Nuevo Proyecto</h1>
-          <p className="subtitle-secondary">
+          </Button>
+          <Typography variant="h5" sx={{ fontWeight: 750 }}>Registrar Nuevo Proyecto</Typography>
+          <Typography variant="body2" color="text.secondary">
             Crea la ficha de un nuevo proyecto, asócialo a un cliente y asigna el personal técnico de soporte.
-          </p>
-        </div>
+          </Typography>
+        </Box>
 
-        <div className="glass-card">
-          {error && (
-            <div style={{
-              background: "hsla(0, 84.2%, 60.2%, 0.15)",
-              border: "1px solid hsl(var(--danger))",
-              color: "#ff8888",
-              padding: "1rem",
-              borderRadius: "var(--radius-md)",
-              marginBottom: "1.5rem"
-            }}>
-              ⚠️ {error}
-            </div>
-          )}
+        <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+          <CardContent sx={{ p: 3 }}>
+            {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 1.5 }}>{error}</Alert>}
+            {success && <Alert severity="success" sx={{ mb: 3, borderRadius: 1.5 }}>{success}</Alert>}
 
-          {success && (
-            <div style={{
-              background: "hsla(142.1, 70.6%, 45.3%, 0.15)",
-              border: "1px solid hsl(var(--success))",
-              color: "#a3e635",
-              padding: "1rem",
-              borderRadius: "var(--radius-md)",
-              marginBottom: "1.5rem"
-            }}>
-              ✓ {success}
-            </div>
-          )}
-
-          <form onSubmit={handleCreateProject} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-            <div className="input-group">
-              <label className="input-label" htmlFor="pname">Nombre del Proyecto</label>
-              <input
-                id="pname"
-                type="text"
+            <Box component="form" onSubmit={handleCreateProject} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <TextField
+                label="Nombre del Proyecto"
+                fullWidth
+                variant="outlined"
+                size="small"
                 placeholder="Ej. Instalación CCTV Bodega Central"
-                className="input-field"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={loading}
                 required
               />
-            </div>
 
-            <div className="input-group">
-              <label className="input-label" htmlFor="pdesc">Descripción y Objetivos</label>
-              <textarea
-                id="pdesc"
-                placeholder="Detalla el alcance del proyecto de seguridad, cámaras deseadas, sensores..."
-                className="input-field"
+              <TextField
+                label="Descripción y Objetivos"
+                fullWidth
+                variant="outlined"
+                size="small"
+                multiline
                 rows={3}
+                placeholder="Detalla el alcance del proyecto de seguridad, cámaras deseadas, sensores..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={loading}
-                style={{ resize: "vertical", fontFamily: "inherit" }}
               />
-            </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="pclient">Cliente Asociado</label>
-                <select
-                  id="pclient"
-                  className="input-field"
-                  value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
-                  disabled={loading}
-                  required
-                  style={{ cursor: "pointer" }}
-                >
-                  <option value="">Selecciona un Cliente...</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    select
+                    label="Cliente Asociado"
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    value={clientId}
+                    onChange={(e) => setClientId(e.target.value)}
+                    disabled={loading}
+                    required
+                  >
+                    <MenuItem value="">Selecciona un Cliente...</MenuItem>
+                    {clients.map((c) => (
+                      <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
 
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label" htmlFor="pmanager">Technical Manager / Técnico</label>
-                <select
-                  id="pmanager"
-                  className="input-field"
-                  value={managerId}
-                  onChange={(e) => setManagerId(e.target.value)}
-                  disabled={loading}
-                  style={{ cursor: "pointer" }}
-                >
-                  <option value="">Selecciona un Manager (Opcional)...</option>
-                  {users.map((u) => {
-                    const roleLabel = typeof u.role === "object" ? u.role.name : u.role;
-                    return (
-                      <option key={u.id} value={u.id}>
-                        {u.firstName} {u.lastName} ({roleLabel})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-            </div>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    select
+                    label="Technical Manager / Técnico"
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    value={managerId}
+                    onChange={(e) => setManagerId(e.target.value)}
+                    disabled={loading}
+                  >
+                    <MenuItem value="">Selecciona un Manager (Opcional)...</MenuItem>
+                    {users.map((u) => {
+                      const roleLabel = typeof u.role === "object" ? u.role.name : u.role;
+                      return (
+                        <MenuItem key={u.id} value={u.id}>
+                          {u.firstName} {u.lastName} ({roleLabel})
+                        </MenuItem>
+                      );
+                    })}
+                  </TextField>
+                </Grid>
+              </Grid>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "1rem" }}>
-              <Link href="/projects" className="btn btn-secondary" style={{ pointerEvents: loading ? "none" : "auto" }}>
-                Cancelar
-              </Link>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? <span className="spinner" /> : null}
-                <span>Registrar Proyecto</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5, mt: 1 }}>
+                <Button component={Link} href="/projects" variant="outlined" color="secondary" disabled={loading}>
+                  Cancelar
+                </Button>
+                <Button type="submit" variant="contained" color="primary" disabled={loading} startIcon={loading && <CircularProgress size={20} color="inherit" />}>
+                  Registrar Proyecto
+                </Button>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
     );
   }
 
@@ -361,274 +343,257 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
   if (!project) return null;
 
   return (
-    <div className="fade-in">
-      <div style={{ marginBottom: "2rem" }}>
-        <Link href="/projects" style={{
-          color: "hsl(var(--text-secondary))",
-          fontSize: "0.9rem",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          marginBottom: "1rem"
-        }}>
-          ⬅️ Volver a Proyectos
-        </Link>
-        
-        <div className="card-header-flex">
-          <div>
-            <h1 className="title-primary" style={{ marginBottom: "0.25rem" }}>{project.name}</h1>
-            <p className="subtitle-secondary" style={{ marginBottom: 0 }}>
-              Ficha de control técnico, cotizaciones generadas e imágenes de levantamiento.
-            </p>
-          </div>
-          
-          {/* Status updater */}
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <span style={{ fontSize: "0.85rem", color: "hsl(var(--text-secondary))", fontWeight: 600 }}>Estado:</span>
-            <select
-              className="input-field"
-              value={projectStatus}
-              onChange={(e) => handleStatusChange(e.target.value)}
-              style={{
-                width: "180px",
-                padding: "0.5rem 1rem",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid hsla(var(--primary), 0.3)",
-                background: "hsla(var(--bg-secondary), 0.8)",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                cursor: "pointer"
-              }}
-            >
-              <option value="PENDING">Levantamiento</option>
-              <option value="QUOTED">Cotizado</option>
-              <option value="APPROVED">Aprobado</option>
-              <option value="IN_PROGRESS">Instalación</option>
-              <option value="COMPLETED">Completado</option>
-              <option value="CANCELLED">Cancelado</option>
-            </select>
-          </div>
-        </div>
-      </div>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Header and status selector */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <Box>
+          <Button component={Link} href="/projects" color="secondary" sx={{ textTransform: "none", mb: 1, p: 0, justifyContent: "flex-start" }}>
+            ⬅️ Volver a Proyectos
+          </Button>
+          <Typography variant="h5" sx={{ fontWeight: 750, color: "text.primary" }}>{project.name}</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Ficha de control técnico, cotizaciones generadas e imágenes de levantamiento.
+          </Typography>
+        </Box>
 
-      {error && (
-        <div style={{
-          background: "hsla(0, 84.2%, 60.2%, 0.15)",
-          border: "1px solid hsl(var(--danger))",
-          color: "#ff8888",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
-          ⚠️ {error}
-        </div>
-      )}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Estado:</Typography>
+          <TextField
+            select
+            variant="outlined"
+            size="small"
+            value={projectStatus}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            sx={{ width: 180 }}
+          >
+            <MenuItem value="PENDING">Levantamiento</MenuItem>
+            <MenuItem value="QUOTED">Cotizado</MenuItem>
+            <MenuItem value="APPROVED">Aprobado</MenuItem>
+            <MenuItem value="IN_PROGRESS">Instalación</MenuItem>
+            <MenuItem value="COMPLETED">Completado</MenuItem>
+            <MenuItem value="CANCELLED">Cancelado</MenuItem>
+          </TextField>
+        </Box>
+      </Box>
 
-      {success && (
-        <div style={{
-          background: "hsla(142.1, 70.6%, 45.3%, 0.15)",
-          border: "1px solid hsl(var(--success))",
-          color: "#a3e635",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
-          ✓ {success}
-        </div>
-      )}
+      {error && <Alert severity="error" sx={{ borderRadius: 1.5 }}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ borderRadius: 1.5 }}>{success}</Alert>}
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1.2fr 1.8fr",
-        gap: "2rem",
-        alignItems: "start"
-      }}>
-        {/* Left Column: Tech Info & survey photo gallery */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-          
+      <Grid container spacing={3}>
+        {/* Left Column: Tech Info & Survey Gallery */}
+        <Grid size={{ xs: 12, md: 5 }} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {/* Card: Ficha Técnica */}
-          <div className="glass-card" style={{ padding: "1.75rem" }}>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1.25rem", borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "0.5rem" }}>
-              Ficha Técnica
-            </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", fontSize: "0.9rem" }}>
-              <div>
-                <span style={{ color: "hsl(var(--text-muted))", display: "block", fontSize: "0.75rem", textTransform: "uppercase" }}>Cliente</span>
-                <strong>{project.client?.name}</strong>
-              </div>
-              <div>
-                <span style={{ color: "hsl(var(--text-muted))", display: "block", fontSize: "0.75rem", textTransform: "uppercase" }}>Asignado A (Technical Manager)</span>
-                <strong>
-                  {project.manager 
-                    ? `${project.manager.firstName} ${project.manager.lastName}` 
-                    : "Ninguno"}
-                </strong>
-              </div>
-              <div>
-                <span style={{ color: "hsl(var(--text-muted))", display: "block", fontSize: "0.75rem", textTransform: "uppercase" }}>Fecha Creación</span>
-                <span>{new Date(project.createdAt).toLocaleString("es-ES")}</span>
-              </div>
+          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardHeader title="Ficha Técnica" titleTypographyProps={{ variant: "subtitle1", sx: { fontWeight: 700 } }} />
+            <Divider />
+            <CardContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700, display: "block" }}>Cliente</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{project.client?.name}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700, display: "block" }}>Asignado A</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  {project.manager ? `${project.manager.firstName} ${project.manager.lastName}` : "Ninguno"}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700, display: "block" }}>Fecha Creación</Typography>
+                <Typography variant="subtitle2">{new Date(project.createdAt).toLocaleString("es-ES")}</Typography>
+              </Box>
               {project.description && (
-                <div>
-                  <span style={{ color: "hsl(var(--text-muted))", display: "block", fontSize: "0.75rem", textTransform: "uppercase" }}>Descripción</span>
-                  <p style={{ color: "hsl(var(--text-secondary))", marginTop: "0.25rem" }}>{project.description}</p>
-                </div>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 700, display: "block" }}>Descripción</Typography>
+                  <Typography variant="body2" color="text.secondary">{project.description}</Typography>
+                </Box>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Card: Survey Photos Gallery */}
-          <div className="glass-card" style={{ padding: "1.75rem" }}>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1.25rem", borderBottom: "1px solid hsl(var(--border-glass))", paddingBottom: "0.5rem" }}>
-              Fotos del Levantamiento
-            </h2>
-
-            {/* Gallery list */}
-            {!project.images || project.images.length === 0 ? (
-              <p style={{ fontSize: "0.85rem", color: "hsl(var(--text-muted))", margin: "1.5rem 0", textAlign: "center" }}>
-                Aún no hay fotos registradas para este proyecto.
-              </p>
-            ) : (
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "1rem",
-                marginBottom: "1.5rem"
-              }}>
-                {project.images.map((img) => (
-                  <div key={img.id} style={{
-                    borderRadius: "var(--radius-sm)",
-                    overflow: "hidden",
-                    border: "1px solid hsl(var(--border-glass))",
-                    height: "110px",
-                    background: "hsla(var(--bg-secondary), 0.5)"
-                  }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getApiUrl(`/images/${img.id}`)}
-                      alt="Levantamiento"
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Upload Area */}
-            <div style={{
-              background: "hsla(var(--bg-secondary), 0.3)",
-              border: "1px dashed hsl(var(--border-glass))",
-              padding: "1rem",
-              borderRadius: "var(--radius-md)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "0.5rem"
-            }}>
-              <input
-                id="proj-img-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                style={{ display: "none" }}
-              />
-              <label htmlFor="proj-img-upload" className="btn btn-secondary btn-sm" style={{ cursor: "pointer", display: "inline-flex" }}>
-                📷 {selectedFile ? "Cambiar Imagen" : "Elegir Foto"}
-              </label>
-              {selectedFile && (
-                <>
-                  <span style={{ fontSize: "0.75rem", color: "hsl(var(--text-secondary))" }}>
-                    {selectedFile.name}
-                  </span>
-                  <button
-                    onClick={handleImageUpload}
-                    disabled={uploadingImage}
-                    className="btn btn-primary btn-sm"
-                    style={{ marginTop: "0.25rem", width: "100%" }}
-                  >
-                    {uploadingImage ? "Subiendo..." : "Subir Foto"}
-                  </button>
-                </>
+          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardHeader title="Fotos del Levantamiento" titleTypographyProps={{ variant: "subtitle1", sx: { fontWeight: 700 } }} />
+            <Divider />
+            <CardContent sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              {!project.images || project.images.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 2 }}>
+                  Aún no hay fotos registradas para este proyecto.
+                </Typography>
+              ) : (
+                <Grid container spacing={2}>
+                  {project.images.map((img) => (
+                    <Grid size={{ xs: 6 }} key={img.id}>
+                      <Box sx={{
+                        borderRadius: 1,
+                        overflow: "hidden",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        height: 110,
+                        bgcolor: "background.default"
+                      }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={getApiUrl(`/images/${img.id}`)}
+                          alt="Levantamiento"
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
               )}
-            </div>
-          </div>
-        </div>
 
-        {/* Right Column: Associated Quotes / Presupuestos */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-          
-          <div className="glass-card" style={{ padding: "1.75rem" }}>
-            <div className="card-header-flex" style={{ marginBottom: "1.5rem" }}>
-              <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0 }}>Cotizaciones Asociadas</h2>
-              <Link href={`/projects/${project.id}/quotes/new`} className="btn btn-primary btn-sm">
-                ➕ Crear Nueva Cotización
-              </Link>
-            </div>
-
-            {!project.quotes || project.quotes.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "3rem 0" }}>
-                <span style={{ fontSize: "2.5rem" }}>📄</span>
-                <p style={{ marginTop: "0.5rem", color: "hsl(var(--text-secondary))" }}>
-                  No hay cotizaciones para este proyecto.
-                </p>
-                <Link
-                  href={`/projects/${project.id}/quotes/new`}
-                  className="btn btn-secondary btn-sm"
-                  style={{ marginTop: "1rem", marginInline: "auto" }}
+              {/* Upload Form Box */}
+              <Box sx={{
+                bgcolor: "background.default",
+                border: "1px dashed",
+                borderColor: "divider",
+                p: 2,
+                borderRadius: 1.5,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1.5
+              }}>
+                <input
+                  id="proj-img-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  style={{ display: "none" }}
+                />
+                <Button 
+                  component="label" 
+                  htmlFor="proj-img-upload" 
+                  variant="outlined" 
+                  color="secondary" 
+                  size="small"
+                  sx={{ textTransform: "none", fontWeight: 600 }}
                 >
-                  Crear la primera cotización
-                </Link>
-              </div>
-            ) : (
-              <div className="table-responsive">
-                <table className="custom-table">
-                  <thead>
-                    <tr>
-                      <th>Versión</th>
-                      <th>Fecha</th>
-                      <th>Estado</th>
-                      <th>Total</th>
-                      <th style={{ textAlign: "right" }}>Detalle</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {project.quotes.map((q) => {
-                      const totalFormatted = new Intl.NumberFormat("es-ES", {
-                        style: "currency",
-                        currency: q.currency
-                      }).format(q.total);
+                  📷 {selectedFile ? "Cambiar Imagen" : "Elegir Foto"}
+                </Button>
+                {selectedFile && (
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1, width: "100%", alignItems: "center" }}>
+                    <Typography variant="caption" color="text.secondary">{selectedFile.name}</Typography>
+                    <Button
+                      onClick={handleImageUpload}
+                      disabled={uploadingImage}
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      fullWidth
+                    >
+                      {uploadingImage ? "Subiendo..." : "Subir Foto"}
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-                      return (
-                        <tr key={q.id}>
-                          <td>
-                            <strong>v{q.version}</strong>
-                          </td>
-                          <td>{new Date(q.createdAt).toLocaleDateString("es-ES")}</td>
-                          <td>
-                            <span className={`status-badge status-${q.status.toLowerCase()}`}>
-                              {q.status === "PENDING" && "Borrador"}
-                              {q.status === "APPROVED" && "Aprobado"}
-                              {q.status === "REJECTED" && "Rechazado"}
-                            </span>
-                          </td>
-                          <td>
-                            <span style={{ fontWeight: 700, color: "hsl(var(--primary-hover))" }}>{totalFormatted}</span>
-                          </td>
-                          <td style={{ textAlign: "right" }}>
-                            <Link href={`/projects/${project.id}/quotes/${q.id}`} className="link-action" style={{ fontWeight: 600 }}>
-                              Ver / Editar →
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+        {/* Right Column: Quotes List */}
+        <Grid size={{ xs: 12, md: 7 }}>
+          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardHeader
+              title="Cotizaciones Asociadas"
+              titleTypographyProps={{ variant: "subtitle1", sx: { fontWeight: 700 } }}
+              action={
+                <Button
+                  component={Link}
+                  href={`/projects/${project.id}/quotes/new`}
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                >
+                  Crear Nueva Cotización
+                </Button>
+              }
+            />
+            <Divider />
+            <CardContent sx={{ pt: 1 }}>
+              {!project.quotes || project.quotes.length === 0 ? (
+                <Box sx={{ textAlign: "center", py: 6, display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+                  <Typography variant="h4">📄</Typography>
+                  <Typography variant="body2" color="text.secondary">No hay cotizaciones para este proyecto.</Typography>
+                  <Button component={Link} href={`/projects/${project.id}/quotes/new`} variant="outlined" color="primary" size="small">
+                    Crear la primera cotización
+                  </Button>
+                </Box>
+              ) : (
+                <TableContainer component={Paper} sx={{ boxShadow: "none", border: "1px solid", borderColor: "divider", borderRadius: 1.5 }}>
+                  <Table size="small">
+                    <TableHead sx={{ bgcolor: "background.default" }}>
+                      <TableRow>
+                        <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Versión</Typography></TableCell>
+                        <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Fecha</Typography></TableCell>
+                        <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Estado</Typography></TableCell>
+                        <TableCell><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Total</Typography></TableCell>
+                        <TableCell align="right"><Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>Detalle</Typography></TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {project.quotes.map((q) => {
+                        const totalFormatted = new Intl.NumberFormat("es-ES", {
+                          style: "currency",
+                          currency: q.currency
+                        }).format(q.total);
+
+                        return (
+                          <TableRow key={q.id} hover>
+                            <TableCell><Typography variant="body2" sx={{ fontWeight: 700 }}>v{q.version}</Typography></TableCell>
+                            <TableCell><Typography variant="body2">{new Date(q.createdAt).toLocaleDateString("es-ES")}</Typography></TableCell>
+                            <TableCell>
+                              <Chip 
+                                label={
+                                  q.status === "DRAFT" 
+                                    ? "Borrador" 
+                                    : q.status === "SENT" 
+                                    ? "Enviado" 
+                                    : q.status === "APPROVED" 
+                                    ? "Aprobado" 
+                                    : q.status === "REJECTED" 
+                                    ? "Rechazado" 
+                                    : "Expirado"
+                                } 
+                                color={
+                                  q.status === "APPROVED" 
+                                    ? "success" 
+                                    : q.status === "DRAFT" 
+                                    ? "default" 
+                                    : q.status === "SENT" 
+                                    ? "warning" 
+                                    : "error"
+                                }
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontWeight: 650 }}
+                              />
+                            </TableCell>
+                            <TableCell><Typography variant="subtitle2" sx={{ fontWeight: 700, color: "primary.main" }}>{totalFormatted}</Typography></TableCell>
+                            <TableCell align="right">
+                              <Button
+                                component={Link}
+                                href={`/projects/${project.id}/quotes/${q.id}`}
+                                variant="text"
+                                color="primary"
+                                size="small"
+                                sx={{ fontWeight: 700, textTransform: "none" }}
+                              >
+                                Ver / Editar →
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }

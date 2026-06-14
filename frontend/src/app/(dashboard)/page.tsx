@@ -5,18 +5,33 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { 
+  Box, 
+  Grid, 
+  Card, 
+  CardHeader, 
+  CardContent, 
+  Typography, 
+  Button, 
+  Tab, 
+  Tabs, 
+  List, 
+  ListItem, 
+  ListItemText,
+  Divider,
+  LinearProgress,
+  CircularProgress,
+  Alert
+} from "@mui/material";
+import { 
   Truck, 
   AlertTriangle, 
   XOctagon, 
   Clock, 
   TrendingUp, 
   DollarSign, 
-  Activity, 
-  CheckCircle2, 
-  FolderKanban, 
-  Loader2, 
   Plus, 
-  Calendar 
+  Calendar,
+  CheckCircle2
 } from "lucide-react";
 
 interface DashboardStats {
@@ -65,10 +80,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Tabs state for Row 3 Client list
-  const [activeTab, setActiveTab] = useState<"PENDING" | "IN_PROGRESS" | "COMPLETED">("IN_PROGRESS");
-
-  // Hover states for the shipment combo chart
+  const [activeTab, setActiveTab] = useState<string>("IN_PROGRESS");
   const [hoveredData, setHoveredData] = useState<{
     month: string;
     revenue: number;
@@ -83,26 +95,41 @@ export default function DashboardPage() {
     async function loadDashboardData() {
       try {
         setLoading(true);
-        const [statsRes, historyRes, projectsRes] = await Promise.all([
-          api.get<DashboardStats>("/analytics/summary").catch((err) => {
-            console.error("Failed to load stats, using simulated default stats", err);
-            return null;
-          }),
-          api.get<MonthlyHistory[]>("/analytics/history").catch(() => {
-            return [
-              { month: "2026-01", revenue: 15000, cost: 9000 },
-              { month: "2026-02", revenue: 22000, cost: 13000 },
-              { month: "2026-03", revenue: 18000, cost: 11000 },
-              { month: "2026-04", revenue: 29000, cost: 17500 },
-              { month: "2026-05", revenue: 35000, cost: 20000 },
-              { month: "2026-06", revenue: 42000, cost: 23000 },
-            ];
-          }),
+        setError("");
+        
+        const isStaff = user?.role === "ADMIN" || user?.role === "SELLER";
+        const promises: Promise<any>[] = [
           api.get<ProjectSummary[]>("/projects").catch(() => [])
-        ]);
+        ];
+        
+        if (isStaff) {
+          promises.push(
+            api.get<DashboardStats>("/analytics/summary").catch((err) => {
+              console.error("Failed to load stats", err);
+              return null;
+            })
+          );
+          promises.push(
+            api.get<MonthlyHistory[]>("/analytics/history").catch(() => {
+              return [
+                { month: "2026-01", revenue: 15000, cost: 9000 },
+                { month: "2026-02", revenue: 22000, cost: 13000 },
+                { month: "2026-03", revenue: 18000, cost: 11000 },
+                { month: "2026-04", revenue: 29000, cost: 17500 },
+                { month: "2026-05", revenue: 35000, cost: 20000 },
+                { month: "2026-06", revenue: 42000, cost: 23000 },
+              ];
+            })
+          );
+        }
+
+        const results = await Promise.all(promises);
+        const projectsRes = results[0];
+        const statsRes = isStaff ? results[1] : null;
+        const historyRes = isStaff ? results[2] : [];
 
         setStats(statsRes);
-        setHistory(historyRes);
+        setHistory(historyRes || []);
         setProjects(projectsRes || []);
       } catch (err: any) {
         console.error("Error loading dashboard data:", err);
@@ -119,16 +146,32 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-400">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-2" />
-        <p className="text-sm font-medium">Cargando panel de operaciones...</p>
-      </div>
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "50vh", gap: 2 }}>
+        <CircularProgress color="primary" />
+        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+          Cargando panel de operaciones...
+        </Typography>
+      </Box>
     );
   }
 
-  // Fallback defaults
   const defaultStats: DashboardStats = stats || {
     projects: { total: 0, PENDING: 0, QUOTED: 0, APPROVED: 0, IN_PROGRESS: 0, COMPLETED: 0, CANCELLED: 0 },
+    quotes: { total: 0, APPROVED: 0, REJECTED: 0 },
+    financialsUSD: { revenue: 0, cost: 0, profit: 0, marginPercent: 0 }
+  };
+
+  const isStaff = user?.role === "ADMIN" || user?.role === "SELLER";
+  const dynamicStats: DashboardStats = isStaff ? defaultStats : {
+    projects: {
+      total: projects.length,
+      PENDING: projects.filter(p => p.status === "PENDING" || p.status === "QUOTED").length,
+      QUOTED: projects.filter(p => p.status === "QUOTED").length,
+      APPROVED: projects.filter(p => p.status === "APPROVED").length,
+      IN_PROGRESS: projects.filter(p => p.status === "IN_PROGRESS").length,
+      COMPLETED: projects.filter(p => p.status === "COMPLETED").length,
+      CANCELLED: projects.filter(p => p.status === "CANCELLED").length
+    },
     quotes: { total: 0, APPROVED: 0, REJECTED: 0 },
     financialsUSD: { revenue: 0, cost: 0, profit: 0, marginPercent: 0 }
   };
@@ -149,22 +192,29 @@ export default function DashboardPage() {
     }).format(val);
   };
 
-  // Stacked progress computations
-  const totalProj = defaultStats.projects.total || 1;
-  const inProgressPct = Math.round((defaultStats.projects.IN_PROGRESS / totalProj) * 100);
-  const approvedPct = Math.round((defaultStats.projects.APPROVED / totalProj) * 100);
-  const pendingPct = Math.round((defaultStats.projects.PENDING / totalProj) * 100);
-  const completedPct = Math.round((defaultStats.projects.COMPLETED / totalProj) * 100);
+  const totalProj = dynamicStats.projects.total || 1;
+  const inProgressPct = Math.round((dynamicStats.projects.IN_PROGRESS / totalProj) * 100);
+  const approvedPct = Math.round((dynamicStats.projects.APPROVED / totalProj) * 100);
+  const pendingPct = Math.round((dynamicStats.projects.PENDING / totalProj) * 100);
+  const completedPct = Math.round((dynamicStats.projects.COMPLETED / totalProj) * 100);
 
-  // Exceptions progress gauge
-  const completedRate = defaultStats.projects.total > 0
-    ? Math.round((defaultStats.projects.COMPLETED / defaultStats.projects.total) * 100)
+  const completedRate = dynamicStats.projects.total > 0
+    ? Math.round((dynamicStats.projects.COMPLETED / dynamicStats.projects.total) * 100)
     : 0;
 
-  const marginPercent = defaultStats.financialsUSD.marginPercent || 0;
+  const marginPercent = dynamicStats.financialsUSD.marginPercent || 0;
 
-  // SVG configurations for Combined Chart (Shipment Statistics style)
-  const maxVal = Math.max(...history.map((h) => Math.max(h.revenue, h.cost)), 1000);
+  const isDemoHistory = history.length === 0;
+  const chartHistoryData = !isDemoHistory ? history : [
+    { month: "2026-01", revenue: 15000, cost: 9000 },
+    { month: "2026-02", revenue: 22000, cost: 13000 },
+    { month: "2026-03", revenue: 18000, cost: 11000 },
+    { month: "2026-04", revenue: 29000, cost: 17500 },
+    { month: "2026-05", revenue: 35000, cost: 20000 },
+    { month: "2026-06", revenue: 42000, cost: 23000 },
+  ];
+
+  const maxVal = Math.max(...chartHistoryData.map((h) => Math.max(h.revenue, h.cost)), 1000);
   const chartHeight = 220;
   const chartWidth = 520;
   const paddingLeft = 35;
@@ -194,420 +244,521 @@ export default function DashboardPage() {
     setHoveredData(null);
   };
 
-  // Filter projects based on the selected tab in Row 3
   const filteredProjects = projects.filter((p) => p.status === activeTab).slice(0, 3);
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Bar Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Monitoreo Operativo</h1>
-          <p className="text-xs text-slate-400 mt-1">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Header Welcome Bar */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 750, color: "text.primary" }}>
+            Monitoreo Operativo
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             Estatus de instalaciones de infraestructura de seguridad electrónica y facturación.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Link 
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+          <Button 
+            component={Link} 
             href="/projects" 
-            className="flex-1 sm:flex-none bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold px-4 py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-1.5"
+            variant="contained" 
+            color="primary" 
+            startIcon={<Plus className="w-4 h-4" />}
           >
-            <Plus className="w-4 h-4" />
-            <span>Nuevo Proyecto</span>
-          </Link>
-          <div className="bg-slate-900 border border-slate-800 text-slate-400 px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-amber-500" />
-            <span>
+            Nuevo Proyecto
+          </Button>
+          <Box sx={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: 1, 
+            px: 2, 
+            py: 1, 
+            bgcolor: "background.paper", 
+            border: "1px solid", 
+            borderColor: "divider", 
+            borderRadius: 1.5 
+          }}>
+            <Calendar className="w-4 h-4" style={{ color: "var(--primary)" }} />
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "text.primary" }}>
               {new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" })}
-            </span>
-          </div>
-        </div>
-      </div>
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-lg text-sm">
+        <Alert severity="error" sx={{ borderRadius: 1.5 }}>
           {error}
-        </div>
+        </Alert>
       )}
 
-      {/* Row 1: 4 Logistics Header Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Card 1: In Progress */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
-            <Truck className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="block text-2xl font-bold text-slate-100">{defaultStats.projects.IN_PROGRESS}</span>
-            <span className="block text-xs text-slate-400 mt-0.5 font-medium">Obras en Instalación</span>
-            <span className="block text-[10px] text-emerald-500 mt-1 font-semibold">+18.2% vs semana ant.</span>
-          </div>
-        </div>
+      {/* Grid: 4 KPI Cards */}
+      <Grid container spacing={3}>
+        {(isStaff ? [
+          {
+            title: "Obras en Instalación",
+            val: dynamicStats.projects.IN_PROGRESS,
+            icon: <Truck className="w-5 h-5" />,
+            color: "primary",
+            trend: "+18.2% vs semana ant.",
+            trendUp: true
+          },
+          {
+            title: "Levantamientos Campo",
+            val: dynamicStats.projects.PENDING,
+            icon: <AlertTriangle className="w-5 h-5" />,
+            color: "warning",
+            trend: "-8.7% vs semana ant.",
+            trendUp: false
+          },
+          {
+            title: "Presupuestos Rechazados",
+            val: dynamicStats.quotes.REJECTED,
+            icon: <XOctagon className="w-5 h-5" />,
+            color: "error",
+            trend: "+4.3% vs semana ant.",
+            trendUp: false
+          },
+          {
+            title: "Obras por Iniciar",
+            val: dynamicStats.projects.APPROVED,
+            icon: <Clock className="w-5 h-5" />,
+            color: "info",
+            trend: "+2.5% vs semana ant.",
+            trendUp: true
+          }
+        ] : [
+          {
+            title: "Obras en Instalación",
+            val: dynamicStats.projects.IN_PROGRESS,
+            icon: <Truck className="w-5 h-5" />,
+            color: "primary",
+            trend: "En proceso activo",
+            trendUp: true
+          },
+          {
+            title: "Levantamientos Campo",
+            val: dynamicStats.projects.PENDING,
+            icon: <AlertTriangle className="w-5 h-5" />,
+            color: "warning",
+            trend: "Evaluaciones técnicas",
+            trendUp: true
+          },
+          {
+            title: "Obras por Iniciar",
+            val: dynamicStats.projects.APPROVED,
+            icon: <Clock className="w-5 h-5" />,
+            color: "info",
+            trend: "Por comenzar",
+            trendUp: true
+          },
+          {
+            title: "Proyectos Entregados",
+            val: dynamicStats.projects.COMPLETED,
+            icon: <CheckCircle2 className="w-5 h-5" />,
+            color: "success",
+            trend: "Entregados con éxito",
+            trendUp: true
+          }
+        ]).map((kpi, idx) => (
+          <Grid key={idx} size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+              <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5, p: 3 }}>
+                <Box sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "50%",
+                  bgcolor: `${kpi.color}.light`,
+                  color: `${kpi.color}.main`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: 0.85
+                }}>
+                  {kpi.icon}
+                </Box>
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
+                    {kpi.val}
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontWeight: 500, my: 0.25 }}>
+                    {kpi.title}
+                  </Typography>
+                  <Typography variant="caption" sx={{ 
+                    fontWeight: 600, 
+                    color: kpi.trendUp ? "success.main" : "error.main" 
+                  }}>
+                    {kpi.trend}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
 
-        {/* Card 2: Pending */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/20">
-            <AlertTriangle className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="block text-2xl font-bold text-slate-100">{defaultStats.projects.PENDING}</span>
-            <span className="block text-xs text-slate-400 mt-0.5 font-medium">Levantamientos Campo</span>
-            <span className="block text-[10px] text-emerald-500 mt-1 font-semibold">-8.7% vs semana ant.</span>
-          </div>
-        </div>
+      {/* Row 2: Charts and Distribution */}
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: isStaff ? 6 : 12 }}>
+          <Card sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardHeader 
+              title="Resumen de Instalaciones" 
+              subheader={isStaff ? "Distribución porcentual de proyectos activos" : "Distribución de tus proyectos de instalación"}
+              titleTypographyProps={{ variant: "h6", sx: { fontWeight: 600 } }}
+              subheaderTypographyProps={{ variant: "caption" }}
+            />
+            <CardContent sx={{ pt: 0, display: "flex", flexDirection: "column", gap: 3.5 }}>
+              <Box sx={{ display: "flex", height: 8, borderRadius: 999, overflow: "hidden", bgcolor: "divider" }}>
+                <Box sx={{ width: `${inProgressPct}%`, bgcolor: "primary.main" }} title={`Instalación: ${inProgressPct}%`} />
+                <Box sx={{ width: `${approvedPct}%`, bgcolor: "info.main" }} title={`Aprobado: ${approvedPct}%`} />
+                <Box sx={{ width: `${pendingPct}%`, bgcolor: "warning.main" }} title={`Levantamiento: ${pendingPct}%`} />
+                <Box sx={{ width: `${completedPct}%`, bgcolor: "success.main" }} title={`Finalizados: ${completedPct}%`} />
+              </Box>
 
-        {/* Card 3: Rejected */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 border border-red-500/20">
-            <XOctagon className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="block text-2xl font-bold text-slate-100">{defaultStats.quotes.REJECTED}</span>
-            <span className="block text-xs text-slate-400 mt-0.5 font-medium">Presupuestos Rechazados</span>
-            <span className="block text-[10px] text-red-500 mt-1 font-semibold">+4.3% vs semana ant.</span>
-          </div>
-        </div>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {[
+                  { label: "En Instalación", count: defaultStats.projects.IN_PROGRESS, pct: inProgressPct, color: "primary.main" },
+                  { label: "Aprobado (Por Iniciar)", count: defaultStats.projects.APPROVED, pct: approvedPct, color: "info.main" },
+                  { label: "Levantamiento Campo", count: defaultStats.projects.PENDING, pct: pendingPct, color: "warning.main" },
+                  { label: "Finalizados (Entregados)", count: defaultStats.projects.COMPLETED, pct: completedPct, color: "success.main" }
+                ].map((item, idx) => (
+                  <Box key={idx} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color }} />
+                      <Typography variant="body2" sx={{ fontWeight: 550, color: "text.primary" }}>
+                        {item.label}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                      {item.count} Proyectos
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                      {item.pct}%
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        {/* Card 4: Approved */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 border border-cyan-500/20">
-            <Clock className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="block text-2xl font-bold text-slate-100">{defaultStats.projects.APPROVED}</span>
-            <span className="block text-xs text-slate-400 mt-0.5 font-medium">Obras por Iniciar</span>
-            <span className="block text-[10px] text-emerald-500 mt-1 font-semibold">+2.5% vs semana ant.</span>
-          </div>
-        </div>
-      </div>
 
-      {/* Row 2: Vehicle Overview & Shipment Statistics (Combo Chart) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Widget: Resumen de Obras */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
-          <div>
-            <h2 className="text-base font-bold text-slate-100">Resumen de Instalaciones</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Distribución porcentual de proyectos activos</p>
-          </div>
+        {isStaff && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card ref={chartContainerRef} sx={{ border: "1px solid", borderColor: "divider", position: "relative" }}>
+            <CardHeader
+              title="Estadísticas de Presupuestos"
+              subheader="Historial de cotizaciones versus costos operativos"
+              titleTypographyProps={{ variant: "h6", sx: { fontWeight: 600 } }}
+              subheaderTypographyProps={{ variant: "caption" }}
+              action={
+                <Box sx={{ display: "flex", gap: 2, pr: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "primary.main" }} />
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Ventas</Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "text.secondary" }} />
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Costos</Typography>
+                  </Box>
+                </Box>
+              }
+            />
+            <CardContent sx={{ pt: 0 }}>
+              <Box sx={{ width: "100%", height: 220, position: "relative" }}>
+                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} width="100%" height="100%" className={`overflow-visible transition-all duration-300 ${isDemoHistory ? "opacity-20 blur-[0.5px] pointer-events-none" : ""}`}>
+                  {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+                    const y = paddingTop + (chartHeight - paddingTop - paddingBottom) * ratio;
+                    const gridVal = maxVal * (1 - ratio);
+                    return (
+                      <g key={idx}>
+                        <line x1={paddingLeft} y1={y} x2={chartWidth - paddingRight} y2={y} stroke="var(--border-light)" strokeWidth="1" strokeDasharray="3 3" />
+                        <text x={paddingLeft - 8} y={y + 3} fill="#64748b" style={{ fontSize: "9px", fontFamily: "monospace" }} textAnchor="end">
+                          {gridVal >= 1000 ? `${Math.round(gridVal / 1000)}k` : Math.round(gridVal)}
+                        </text>
+                      </g>
+                    );
+                  })}
 
-          {/* Stacked progress bar */}
-          <div className="w-full h-8 bg-slate-950 rounded-lg overflow-hidden flex mt-6">
-            <div 
-              style={{ width: `${inProgressPct}%` }} 
-              className="bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white transition-all"
-              title={`Instalación: ${inProgressPct}%`}
-            >
-              {inProgressPct > 10 && `${inProgressPct}%`}
-            </div>
-            <div 
-              style={{ width: `${approvedPct}%` }} 
-              className="bg-cyan-500 flex items-center justify-center text-[10px] font-bold text-slate-950 transition-all"
-              title={`Aprobado: ${approvedPct}%`}
-            >
-              {approvedPct > 10 && `${approvedPct}%`}
-            </div>
-            <div 
-              style={{ width: `${pendingPct}%` }} 
-              className="bg-amber-500 flex items-center justify-center text-[10px] font-bold text-slate-950 transition-all"
-              title={`Levantamiento: ${pendingPct}%`}
-            >
-              {pendingPct > 10 && `${pendingPct}%`}
-            </div>
-            <div 
-              style={{ width: `${completedPct}%` }} 
-              className="bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-slate-950 transition-all"
-              title={`Finalizados: ${completedPct}%`}
-            >
-              {completedPct > 10 && `${completedPct}%`}
-            </div>
-          </div>
+                  {chartHistoryData.map((item, idx) => {
+                    const usableWidth = chartWidth - paddingLeft - paddingRight;
+                    const barSpacing = usableWidth / chartHistoryData.length;
+                    const barWidth = barSpacing * 0.35;
+                    const xBase = paddingLeft + idx * barSpacing + (barSpacing - barWidth) / 2;
 
-          {/* List breakdown */}
-          <div className="space-y-3 mt-6">
-            <div className="flex items-center justify-between text-xs border-b border-slate-800/60 pb-2.5">
-              <span className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded bg-indigo-500 block" />
-                <span className="text-slate-300">En Instalación</span>
-              </span>
-              <span className="text-slate-400">{defaultStats.projects.IN_PROGRESS} Proyectos</span>
-              <strong className="text-slate-200">{inProgressPct}%</strong>
-            </div>
+                    const heightRatio = chartHeight - paddingTop - paddingBottom;
+                    const salesHeight = (item.revenue / maxVal) * heightRatio;
+                    const salesY = chartHeight - paddingBottom - salesHeight;
 
-            <div className="flex items-center justify-between text-xs border-b border-slate-800/60 pb-2.5">
-              <span className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded bg-cyan-500 block" />
-                <span className="text-slate-300">Aprobado (Por Iniciar)</span>
-              </span>
-              <span className="text-slate-400">{defaultStats.projects.APPROVED} Obras</span>
-              <strong className="text-slate-200">{approvedPct}%</strong>
-            </div>
+                    return (
+                      <g key={idx} style={{ cursor: "pointer" }} onMouseMove={(e) => handleChartMouseMove(e, idx, item)} onMouseLeave={handleChartMouseLeave}>
+                        <rect x={xBase - 6} y={paddingTop} width={barWidth + 12} height={heightRatio} fill="transparent" />
+                        <rect x={xBase} y={salesY} width={barWidth} height={Math.max(salesHeight, 3)} rx="1" fill="var(--primary)" style={{ opacity: 0.9 }} />
+                        <text x={paddingLeft + idx * barSpacing + barSpacing / 2} y={chartHeight - 10} fill="#94a3b8" style={{ fontSize: "9px", fontWeight: 600 }} textAnchor="middle">
+                          {getMonthName(item.month)}
+                        </text>
+                      </g>
+                    );
+                  })}
 
-            <div className="flex items-center justify-between text-xs border-b border-slate-800/60 pb-2.5">
-              <span className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded bg-amber-500 block" />
-                <span className="text-slate-300">Levantamiento Campo</span>
-              </span>
-              <span className="text-slate-400">{defaultStats.projects.PENDING} Visitas</span>
-              <strong className="text-slate-200">{pendingPct}%</strong>
-            </div>
+                  {(() => {
+                    const usableWidth = chartWidth - paddingLeft - paddingRight;
+                    const barSpacing = usableWidth / chartHistoryData.length;
+                    const points = chartHistoryData.map((item, idx) => {
+                      const x = paddingLeft + idx * barSpacing + barSpacing / 2;
+                      const heightRatio = chartHeight - paddingTop - paddingBottom;
+                      const costHeight = (item.cost / maxVal) * heightRatio;
+                      const y = chartHeight - paddingBottom - costHeight;
+                      return { x, y };
+                    });
 
-            <div className="flex items-center justify-between text-xs pb-1">
-              <span className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded bg-emerald-500 block" />
-                <span className="text-slate-300">Finalizados (Entregados)</span>
-              </span>
-              <span className="text-slate-400">{defaultStats.projects.COMPLETED} Entregas</span>
-              <strong className="text-slate-200">{completedPct}%</strong>
-            </div>
-          </div>
-        </div>
+                    const pathD = points.reduce((acc, p, idx) => {
+                      return idx === 0 ? `M${p.x},${p.y}` : `${acc} L${p.x},${p.y}`;
+                    }, "");
 
-        {/* Widget: Combined Chart */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between relative" ref={chartContainerRef}>
-          <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-base font-bold text-slate-100">Estadísticas de Presupuestos</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Historial de cotizaciones versus costos operativos</p>
-            </div>
-            <div className="flex gap-3 text-[10px] font-semibold">
-              <span className="flex items-center gap-1 text-slate-400">
-                <span className="w-2 h-2 bg-amber-500 rounded-sm" />
-                <span>Ventas</span>
-              </span>
-              <span className="flex items-center gap-1 text-slate-400">
-                <span className="w-2 h-2 bg-indigo-500 rounded-full" />
-                <span>Costos</span>
-              </span>
-            </div>
-          </div>
+                    return (
+                      <g>
+                        <path d={pathD} fill="none" stroke="var(--text-muted)" strokeWidth="2.5" strokeLinecap="round" />
+                        {points.map((p, i) => (
+                          <circle key={i} cx={p.x} cy={p.y} r="4" fill="var(--bg-card)" stroke="var(--text-muted)" strokeWidth="2" />
+                        ))}
+                      </g>
+                    );
+                  })()}
+                </svg>
 
-          {/* SVG Chart */}
-          <div className="w-full aspect-[21/9] min-h-[200px] mt-6">
-            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} width="100%" height="100%" className="overflow-visible">
-              {/* Horizontal Grid lines */}
-              {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
-                const y = paddingTop + (chartHeight - paddingTop - paddingBottom) * ratio;
-                const gridVal = maxVal * (1 - ratio);
-                return (
-                  <g key={idx}>
-                    <line x1={paddingLeft} y1={y} x2={chartWidth - paddingRight} y2={y} className="stroke-slate-800" strokeWidth="1" strokeDasharray="3 3" />
-                    <text x={paddingLeft - 8} y={y + 3} fill="#64748b" className="text-[9px] font-mono" textAnchor="end">
-                      {gridVal >= 1000 ? `${Math.round(gridVal / 1000)}k` : Math.round(gridVal)}
-                    </text>
-                  </g>
-                );
-              })}
+                {hoveredData && !isDemoHistory && (
+                  <Box 
+                    sx={{ 
+                      position: "absolute",
+                      zIndex: 10,
+                      bgcolor: "background.paper",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      p: 1.5,
+                      borderRadius: 1,
+                      boxShadow: 2,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 0.5,
+                      pointerEvents: "none"
+                    }} 
+                    style={{ left: `${hoveredData.x}px`, top: `${hoveredData.y}px` }}
+                  >
+                    <Typography variant="caption" sx={{ fontWeight: 700, borderBottom: "1px solid", borderColor: "divider", pb: 0.5, mb: 0.5, display: "block", textAlign: "center" }}>
+                      {hoveredData.month}
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 3, justifyContent: "space-between" }}>
+                      <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600 }}>Ventas:</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700 }}>{formattedUSD(hoveredData.revenue)}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 3, justifyContent: "space-between" }}>
+                      <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>Costos:</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700 }}>{formattedUSD(hoveredData.cost)}</Typography>
+                    </Box>
+                  </Box>
+                )}
 
-              {/* Bars Rendering (Ventas - Orange) */}
-              {history.map((item, idx) => {
-                const usableWidth = chartWidth - paddingLeft - paddingRight;
-                const barSpacing = usableWidth / history.length;
-                const barWidth = barSpacing * 0.35;
-                const xBase = paddingLeft + idx * barSpacing + (barSpacing - barWidth) / 2;
+                {isDemoHistory && (
+                  <Box sx={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 2 }}>
+                    <Card sx={{ maxWidth: 320, p: 2.5, textAlign: "center", border: "1px solid", borderColor: "divider", bgcolor: "background.paper" }}>
+                      <TrendingUp className="w-6 h-6 mx-auto mb-2 opacity-80" style={{ color: "var(--primary)" }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Gráfico de Demostración</Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", mt: 1, display: "block" }}>
+                        No hay cotizaciones aprobadas registradas. Una vez que apruebes presupuestos, verás las estadísticas reales aquí.
+                      </Typography>
+                    </Card>
+                  </Box>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+          </Grid>
+        )}
+      </Grid>
 
-                const heightRatio = chartHeight - paddingTop - paddingBottom;
-                const salesHeight = (item.revenue / maxVal) * heightRatio;
-                const salesY = chartHeight - paddingBottom - salesHeight;
-
-                return (
-                  <g key={idx} className="cursor-pointer group" onMouseMove={(e) => handleChartMouseMove(e, idx, item)} onMouseLeave={handleChartMouseLeave}>
-                    {/* Invisible hover capsule */}
-                    <rect x={xBase - 6} y={paddingTop} width={barWidth + 12} height={heightRatio} fill="transparent" />
-                    {/* Orange Bar */}
-                    <rect x={xBase} y={salesY} width={barWidth} height={Math.max(salesHeight, 3)} rx="2" className="fill-amber-500 opacity-80 group-hover:opacity-100 transition-opacity" />
-                    {/* Month label */}
-                    <text x={paddingLeft + idx * barSpacing + barSpacing / 2} y={chartHeight - 10} fill="#94a3b8" className="text-[9px] font-semibold" textAnchor="middle">
-                      {getMonthName(item.month)}
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* Line Path Rendering (Costos - Indigo) */}
-              {(() => {
-                const usableWidth = chartWidth - paddingLeft - paddingRight;
-                const barSpacing = usableWidth / history.length;
-                const points = history.map((item, idx) => {
-                  const x = paddingLeft + idx * barSpacing + barSpacing / 2;
-                  const heightRatio = chartHeight - paddingTop - paddingBottom;
-                  const costHeight = (item.cost / maxVal) * heightRatio;
-                  const y = chartHeight - paddingBottom - costHeight;
-                  return { x, y };
-                });
-
-                const pathD = points.reduce((acc, p, idx) => {
-                  return idx === 0 ? `M${p.x},${p.y}` : `${acc} L${p.x},${p.y}`;
-                }, "");
-
-                return (
-                  <g>
-                    <path d={pathD} fill="none" stroke="#6366f1" strokeWidth="3.5" strokeLinecap="round" />
-                    {points.map((p, i) => (
-                      <circle key={i} cx={p.x} cy={p.y} r="4.5" fill="#0f172a" stroke="#6366f1" strokeWidth="2.5" />
-                    ))}
-                  </g>
-                );
-              })()}
-            </svg>
-
-            {/* Tooltip Overlay */}
-            {hoveredData && (
-              <div 
-                className="absolute z-10 bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs shadow-2xl flex flex-col space-y-1 text-slate-300 pointer-events-none" 
-                style={{ left: `${hoveredData.x}px`, top: `${hoveredData.y}px` }}
-              >
-                <strong className="block text-slate-200 border-b border-slate-800 pb-1 mb-1 font-bold text-center uppercase tracking-wider text-[10px]">
-                  {hoveredData.month}
-                </strong>
-                <span className="flex justify-between items-center gap-6">
-                  <span className="text-amber-500 font-semibold">Ventas:</span>
-                  <strong className="text-slate-100">{formattedUSD(hoveredData.revenue)}</strong>
-                </span>
-                <span className="flex justify-between items-center gap-6">
-                  <span className="text-indigo-400 font-semibold">Costos:</span>
-                  <strong className="text-slate-100">{formattedUSD(hoveredData.cost)}</strong>
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Row 3: Rentabilidad Comercial, Avance de Obras, Proyectos por Clientes */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Card: Rentabilidad Comercial */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
-          <div>
-            <h2 className="text-base font-bold text-slate-100">Rentabilidad Comercial</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Márgenes netos del mes</p>
-          </div>
-          
-          <div className="space-y-4 mt-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                  <TrendingUp className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="block text-xs font-semibold text-slate-300">Margen Promedio</span>
-                  <span className="block text-[10px] text-slate-500">Ponderado de obras</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="block text-sm font-bold text-slate-200">{marginPercent}%</span>
-                <span className="block text-[9px] font-bold text-emerald-500">+25.8%</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">
-                  <DollarSign className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="block text-xs font-semibold text-slate-300">Ganancia Bruta</span>
-                  <span className="block text-[10px] text-slate-500">Proyectada en USD</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="block text-sm font-bold text-slate-200">{formattedUSD(defaultStats.financialsUSD.profit)}</span>
-                <span className="block text-[9px] font-bold text-emerald-500">+4.3%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card: Avance de Obras */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between items-center text-center">
-          <div className="w-full text-left">
-            <h2 className="text-base font-bold text-slate-100">Avance de Obras</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Entregas culminadas</p>
-          </div>
-          
-          <div className="relative w-36 h-36 mt-4 flex items-center justify-center">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" fill="transparent" stroke="#1e293b" strokeWidth="6" />
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                fill="transparent"
-                stroke="#10b981"
-                strokeWidth="6"
-                strokeDasharray={2 * Math.PI * 40}
-                strokeDashoffset={(2 * Math.PI * 40) - ((2 * Math.PI * 40) * completedRate) / 100}
-                strokeLinecap="round"
-                className="transition-all duration-1000 ease-in-out"
+      {/* Row 3: Profitability, Radial Progress, and Tabs */}
+      <Grid container spacing={3}>
+        {isStaff && (
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%" }}>
+              <CardHeader 
+                title="Rentabilidad Comercial" 
+                subheader="Márgenes netos del mes"
+                titleTypographyProps={{ variant: "h6", sx: { fontWeight: 600 } }}
+                subheaderTypographyProps={{ variant: "caption" }}
               />
-            </svg>
-            <div className="absolute flex flex-col items-center justify-center">
-              <span className="text-2xl font-bold text-slate-100">{completedRate}%</span>
-              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Obras</span>
-            </div>
-          </div>
+              <CardContent sx={{ pt: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Box sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "50%",
+                      bgcolor: "success.light",
+                      color: "success.main",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}>
+                      <TrendingUp className="w-5 h-5" />
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Margen Promedio</Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>Ponderado de obras</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{marginPercent}%</Typography>
+                    <Typography variant="caption" sx={{ color: "success.main", fontWeight: 700 }}>+25.8%</Typography>
+                  </Box>
+                </Box>
 
-          <span className="text-xs text-slate-400 mt-4 font-medium">
-            {defaultStats.projects.COMPLETED} de {defaultStats.projects.total} proyectos entregados
-          </span>
-        </div>
+                <Divider />
 
-        {/* Card: Proyectos por Clientes */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
-          <div>
-            <h2 className="text-base font-bold text-slate-100">Proyectos por Clientes</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Últimas órdenes en curso</p>
-          </div>
-          
-          {/* Tabs */}
-          <div className="grid grid-cols-3 bg-slate-950 p-1 rounded-lg border border-slate-800/80 mt-4 text-[10px] font-semibold text-center uppercase tracking-wider">
-            <button 
-              className={`py-1.5 rounded-md transition-colors ${activeTab === "PENDING" ? "bg-amber-500 text-slate-950 font-bold" : "text-slate-400 hover:text-slate-200"}`}
-              onClick={() => setActiveTab("PENDING")}
-            >
-              Nuevos
-            </button>
-            <button 
-              className={`py-1.5 rounded-md transition-colors ${activeTab === "IN_PROGRESS" ? "bg-amber-500 text-slate-950 font-bold" : "text-slate-400 hover:text-slate-200"}`}
-              onClick={() => setActiveTab("IN_PROGRESS")}
-            >
-              Ejecución
-            </button>
-            <button 
-              className={`py-1.5 rounded-md transition-colors ${activeTab === "COMPLETED" ? "bg-amber-500 text-slate-950 font-bold" : "text-slate-400 hover:text-slate-200"}`}
-              onClick={() => setActiveTab("COMPLETED")}
-            >
-              Entregas
-            </button>
-          </div>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Box sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "50%",
+                      bgcolor: "primary.light",
+                      color: "primary.main",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}>
+                      <DollarSign className="w-5 h-5" />
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Ganancia Bruta</Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>Proyectada en USD</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{formattedUSD(defaultStats.financialsUSD.profit)}</Typography>
+                    <Typography variant="caption" sx={{ color: "success.main", fontWeight: 700 }}>+4.3%</Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
 
-          {/* List panel */}
-          <div className="flex-1 space-y-3 mt-4 flex flex-col justify-center min-h-[120px]">
-            {filteredProjects.length === 0 ? (
-              <p className="text-center text-xs text-slate-500 py-6 font-medium">
-                No hay proyectos en esta fase.
-              </p>
-            ) : (
-              filteredProjects.map((project) => (
-                <div key={project.id} className="bg-slate-950 border border-slate-800/50 rounded-lg p-3 flex flex-col gap-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-200 truncate pr-2">{project.name}</span>
-                    <span className="text-[9px] text-amber-500 font-mono font-semibold flex-shrink-0 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                      {project.client?.rutOrId || "RUT"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] text-slate-400">
-                    <span>Cli: {project.client?.name}</span>
-                    <span className="text-slate-500">
-                      {project.manager ? `${project.manager.firstName} ${project.manager.lastName[0]}.` : "Sin manager"}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+        <Grid size={{ xs: 12, md: isStaff ? 4 : 6 }}>
+          <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%", display: "flex", flexDirection: "column" }}>
+            <CardHeader
+              title="Avance de Obras"
+              subheader="Entregas culminadas"
+              titleTypographyProps={{ variant: "h6", sx: { fontWeight: 600 } }}
+              subheaderTypographyProps={{ variant: "caption" }}
+            />
+            <CardContent sx={{ pt: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 2 }}>
+              <Box sx={{ position: "relative", width: 110, height: 110 }}>
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" fill="transparent" stroke="var(--border-light)" strokeWidth="6" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="transparent"
+                    stroke="#10b981"
+                    strokeWidth="6"
+                    strokeDasharray={2 * Math.PI * 40}
+                    strokeDashoffset={(2 * Math.PI * 40) - ((2 * Math.PI * 40) * completedRate) / 100}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <Box sx={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  lineHeight: 1
+                }}>
+                  <Typography variant="h5" sx={{ fontWeight: 800 }}>{completedRate}%</Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>Obras</Typography>
+                </Box>
+              </Box>
+              <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
+                {defaultStats.projects.COMPLETED} de {defaultStats.projects.total} proyectos entregados
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: isStaff ? 4 : 6 }}>
+          <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%" }}>
+            <CardHeader
+              title="Proyectos por Clientes"
+              subheader="Últimas órdenes en curso"
+              titleTypographyProps={{ variant: "h6", sx: { fontWeight: 600 } }}
+              subheaderTypographyProps={{ variant: "caption" }}
+            />
+            <CardContent sx={{ pt: 0 }}>
+              <Tabs 
+                value={activeTab} 
+                onChange={(e, newTab) => setActiveTab(newTab)} 
+                variant="fullWidth" 
+                sx={{ minHeight: 36, mb: 2 }}
+              >
+                <Tab label="Nuevos" value="PENDING" sx={{ minHeight: 36, py: 0.5, textTransform: "none", fontWeight: 600 }} />
+                <Tab label="Ejecución" value="IN_PROGRESS" sx={{ minHeight: 36, py: 0.5, textTransform: "none", fontWeight: 600 }} />
+                <Tab label="Entregas" value="COMPLETED" sx={{ minHeight: 36, py: 0.5, textTransform: "none", fontWeight: 600 }} />
+              </Tabs>
+
+              <List disablePadding>
+                {filteredProjects.length === 0 ? (
+                  <Typography variant="body2" sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
+                    No hay proyectos en esta fase.
+                  </Typography>
+                ) : (
+                  filteredProjects.map((project, idx) => (
+                    <React.Fragment key={project.id}>
+                      <ListItem disableGutters sx={{ py: 1 }}>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
+                                {project.name}
+                              </Typography>
+                              <Box sx={{ 
+                                bgcolor: "primary.light", 
+                                color: "primary.main", 
+                                px: 1, 
+                                py: 0.2, 
+                                borderRadius: 1,
+                                fontSize: "10px",
+                                fontWeight: 700
+                              }}>
+                                {project.client?.rutOrId || "RUT"}
+                              </Box>
+                            </Box>
+                          }
+                          secondary={
+                            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
+                              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                Cli: {project.client?.name}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                {project.manager ? `${project.manager.firstName} ${project.manager.lastName[0]}.` : "Sin manager"}
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                      {idx < filteredProjects.length - 1 && <Divider />}
+                    </React.Fragment>
+                  ))
+                )}
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }

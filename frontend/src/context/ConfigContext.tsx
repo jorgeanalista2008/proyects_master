@@ -94,18 +94,29 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
         const accentHsl = hexToHslSpace(config.accentColor);
         document.documentElement.style.setProperty("--primary", primaryHsl);
         document.documentElement.style.setProperty("--accent", accentHsl);
+        
+        // Dynamically update document title
+        const appName = config.appName || "Nexxos.pro";
+        if (typeof document !== "undefined") {
+          document.title = `${appName} - Plataforma de Gestión e Instalaciones`;
+        }
       } catch (err) {
         console.error("Error setting custom CSS variables:", err);
+      }
+    } else {
+      // Default initial title
+      if (typeof document !== "undefined") {
+        document.title = "Nexxos.pro - Plataforma de Gestión e Instalaciones";
       }
     }
   }, [config]);
 
   // Apply theme class to html/document
   useEffect(() => {
-    if (theme === "light") {
-      document.documentElement.classList.add("light-theme");
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove("light-theme");
+      document.documentElement.classList.remove("dark");
     }
     localStorage.setItem("theme", theme);
   }, [theme]);

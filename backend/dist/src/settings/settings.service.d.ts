@@ -34,4 +34,25 @@ export declare class SettingsService {
         fileName: string;
         mimeType: string;
     }>;
+    getCategories(): Promise<{
+        id: string;
+        name: string;
+        createdAt: Date;
+        updatedAt: Date;
+        label: string;
+    }[]>;
+    createCategory(name: string, label: string): Promise<{
+        id: string;
+        name: string;
+        createdAt: Date;
+        updatedAt: Date;
+        label: string;
+    }>;
+    deleteCategory(id: string): Promise<{
+        id: string;
+        name: string;
+        createdAt: Date;
+        updatedAt: Date;
+        label: string;
+    }>;
 }

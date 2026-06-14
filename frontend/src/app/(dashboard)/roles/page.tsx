@@ -1,8 +1,44 @@
+// d:\github\proyects_master\frontend\src\app\(dashboard)\roles\page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Card,
+  CardContent,
+  Grid,
+  Divider,
+  Alert,
+  CircularProgress,
+  Tabs,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControlLabel,
+  Checkbox,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  IconButton,
+  InputAdornment
+} from "@mui/material";
+import { Trash2 } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 interface Role {
   id: string;
@@ -18,7 +54,7 @@ interface Permission {
   description: string | null;
 }
 
-interface MenuItem {
+interface MenuItemData {
   id: string;
   label: string;
   route: string;
@@ -50,7 +86,7 @@ export default function AdministrationPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [menus, setMenus] = useState<MenuItem[]>([]);
+  const [menus, setMenus] = useState<MenuItemData[]>([]);
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,11 +100,70 @@ export default function AdministrationPage() {
   const [selectedMenus, setSelectedMenus] = useState<string[]>([]);
 
   const [menuModalOpen, setMenuModalOpen] = useState(false);
-  const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
+  const [editingMenu, setEditingMenu] = useState<MenuItemData | null>(null);
   const [menuLabel, setMenuLabel] = useState("");
   const [menuRoute, setMenuRoute] = useState("");
   const [menuIcon, setMenuIcon] = useState("");
   const [menuOrder, setMenuOrder] = useState<number>(0);
+
+  // Icon Selector states
+  const [iconSelectorOpen, setIconSelectorOpen] = useState(false);
+  const [iconSearchQuery, setIconSearchQuery] = useState("");
+  const [iconSearchResults, setIconSearchResults] = useState<string[]>([]);
+  const [iconSearching, setIconSearching] = useState(false);
+
+  const POPULAR_ICONS = [
+    "mdi:view-dashboard", "mdi:view-dashboard-outline",
+    "mdi:briefcase", "mdi:briefcase-outline",
+    "mdi:account-group", "mdi:account-group-outline",
+    "mdi:account-wrench", "mdi:account-wrench-outline",
+    "mdi:cctv", "mdi:shield-key", "mdi:shield-key-outline",
+    "mdi:settings", "mdi:settings-outline",
+    "mdi:database", "mdi:database-outline",
+    "mdi:archive", "mdi:archive-outline",
+    "mdi:chart-bar", "mdi:chart-line",
+    "mdi:currency-usd", "mdi:wallet",
+    "mdi:bell", "mdi:bell-outline",
+    "mdi:book-open", "mdi:book-open-outline",
+    "mdi:key", "mdi:key-outline",
+    "mdi:home", "mdi:home-outline",
+    "mdi:email", "mdi:email-outline",
+    "mdi:phone", "mdi:wrench",
+    "mdi:cog", "mdi:alert-circle",
+    "mdi:check-circle", "mdi:clock-outline",
+    "mdi:file-document", "mdi:file-document-outline"
+  ];
+
+  const handleSearchIcons = async (query: string) => {
+    if (!query.trim()) {
+      setIconSearchResults([]);
+      return;
+    }
+    setIconSearching(true);
+    try {
+      const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(query)}&prefix=mdi&limit=60`);
+      if (res.ok) {
+        const data = await res.json();
+        setIconSearchResults(data.icons || []);
+      }
+    } catch (err) {
+      console.error("Error searching icons:", err);
+    } finally {
+      setIconSearching(false);
+    }
+  };
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (iconSearchQuery) {
+        handleSearchIcons(iconSearchQuery);
+      } else {
+        setIconSearchResults([]);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [iconSearchQuery]);
 
   // Fetch all initial data
   const fetchData = async () => {
@@ -80,7 +175,7 @@ export default function AdministrationPage() {
         api.get<User[]>("/users"),
         api.get<Role[]>("/roles"),
         api.get<Permission[]>("/roles/permissions"),
-        api.get<MenuItem[]>("/roles/menus"),
+        api.get<MenuItemData[]>("/roles/menus"),
       ]);
 
       setUsers(usersData);
@@ -104,12 +199,16 @@ export default function AdministrationPage() {
   // Deny access if not admin
   if (currentUser && currentUser.role !== "ADMIN") {
     return (
-      <div className="glass-card" style={{ textAlign: "center", padding: "4rem" }}>
-        <h3 style={{ color: "hsl(var(--danger))" }}>Acceso Denegado</h3>
-        <p style={{ marginTop: "1rem", color: "hsl(var(--text-secondary))" }}>
-          Solo los administradores del sistema pueden gestionar usuarios, perfiles y permisos.
-        </p>
-      </div>
+      <Box sx={{ maxWidth: 600, mx: "auto", mt: 6 }}>
+        <Card sx={{ bgcolor: "var(--bg-card)", border: "1px solid var(--border-light)", p: 4, borderRadius: "6px", textAlign: "center" }}>
+          <Typography variant="h5" sx={{ color: "#ea5455", fontWeight: 600, mb: 2 }}>
+            Acceso Denegado
+          </Typography>
+          <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
+            Solo los administradores del sistema pueden gestionar usuarios, perfiles y permisos.
+          </Typography>
+        </Card>
+      </Box>
     );
   }
 
@@ -203,7 +302,7 @@ export default function AdministrationPage() {
   };
 
   // --- ACTIONS: MENUS ---
-  const handleOpenMenuModal = (menu: MenuItem | null = null) => {
+  const handleOpenMenuModal = (menu: MenuItemData | null = null) => {
     if (menu) {
       setEditingMenu(menu);
       setMenuLabel(menu.label);
@@ -271,498 +370,704 @@ export default function AdministrationPage() {
     u.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const fieldStyle = {
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "6px",
+      "& fieldset": { borderColor: "var(--border-light)" },
+      "&.Mui-focused fieldset": { borderColor: "var(--primary)" }
+    },
+    "& .MuiInputLabel-root": { color: "var(--text-muted)" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "var(--primary)" },
+    "& .MuiInputBase-input": { color: "var(--text-main)" }
+  };
+
   return (
-    <div className="fade-in">
+    <Box sx={{ p: { xs: 1, sm: 3 } }}>
       {/* Header */}
-      <div style={{ marginBottom: "2rem" }}>
-        <h1 className="title-primary">Administración del Sistema</h1>
-        <p className="subtitle-secondary">
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h5" sx={{ fontWeight: 650, color: "var(--text-main)", mb: 0.5 }}>
+          Administración del Sistema
+        </Typography>
+        <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
           Gestiona los usuarios de la plataforma, crea perfiles (roles) personalizados, asigna permisos del sistema y configura menús dinámicos.
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
       {/* Notifications */}
-      {error && (
-        <div style={{
-          background: "hsla(359, 80%, 63%, 0.15)",
-          border: "1px solid hsl(var(--danger))",
-          color: "hsl(var(--danger))",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
-          ⚠️ {error}
-        </div>
-      )}
+      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: "6px" }}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ mb: 3, borderRadius: "6px" }}>{success}</Alert>}
 
-      {success && (
-        <div style={{
-          background: "hsla(147, 66%, 47%, 0.15)",
-          border: "1px solid hsl(var(--success))",
-          color: "hsl(var(--success))",
-          padding: "1rem",
-          borderRadius: "var(--radius-md)",
-          marginBottom: "1.5rem"
-        }}>
-          ✓ {success}
-        </div>
-      )}
-
-      {/* Tabs Vuexy Style */}
-      <div style={{
-        display: "flex",
-        gap: "1.5rem",
-        borderBottom: "1px solid hsl(var(--border-glass))",
-        marginBottom: "2rem",
-        overflowX: "auto"
-      }}>
-        <button
-          onClick={() => { setActiveTab("users"); setSearchQuery(""); }}
-          style={{
-            padding: "0.8rem 1rem",
-            background: "transparent",
-            color: activeTab === "users" ? "hsl(var(--primary))" : "hsl(var(--text-secondary))",
-            border: "none",
-            borderBottom: activeTab === "users" ? "2px solid hsl(var(--primary))" : "2px solid transparent",
-            fontWeight: activeTab === "users" ? 600 : 500,
-            fontSize: "0.95rem",
-            cursor: "pointer",
-            transition: "all var(--transition-fast)"
+      {/* Tabs Layout */}
+      <Box sx={{ borderBottom: 1, borderColor: "var(--border-light)", mb: 4 }}>
+        <Tabs 
+          value={activeTab} 
+          onChange={(_, val) => { setActiveTab(val); setSearchQuery(""); }}
+          sx={{
+            "& .MuiTab-root": { textTransform: "none", fontWeight: 600, fontSize: "0.95rem", px: 3 },
+            "& .Mui-selected": { color: "var(--primary) !important" },
+            "& .MuiTabs-indicator": { bgcolor: "var(--primary)" }
           }}
         >
-          👥 Usuarios y Roles
-        </button>
-
-        <button
-          onClick={() => { setActiveTab("roles"); setSearchQuery(""); }}
-          style={{
-            padding: "0.8rem 1rem",
-            background: "transparent",
-            color: activeTab === "roles" ? "hsl(var(--primary))" : "hsl(var(--text-secondary))",
-            border: "none",
-            borderBottom: activeTab === "roles" ? "2px solid hsl(var(--primary))" : "2px solid transparent",
-            fontWeight: activeTab === "roles" ? 600 : 500,
-            fontSize: "0.95rem",
-            cursor: "pointer",
-            transition: "all var(--transition-fast)"
-          }}
-        >
-          🔑 Perfiles y Permisos
-        </button>
-
-        <button
-          onClick={() => { setActiveTab("menus"); setSearchQuery(""); }}
-          style={{
-            padding: "0.8rem 1rem",
-            background: "transparent",
-            color: activeTab === "menus" ? "hsl(var(--primary))" : "hsl(var(--text-secondary))",
-            border: "none",
-            borderBottom: activeTab === "menus" ? "2px solid hsl(var(--primary))" : "2px solid transparent",
-            fontWeight: activeTab === "menus" ? 600 : 500,
-            fontSize: "0.95rem",
-            cursor: "pointer",
-            transition: "all var(--transition-fast)"
-          }}
-        >
-          📂 Menús de Navegación
-        </button>
-      </div>
+          <Tab label="👥 Usuarios y Roles" value="users" />
+          <Tab label="🔑 Perfiles y Permisos" value="roles" />
+          <Tab label="📂 Menús de Navegación" value="menus" />
+        </Tabs>
+      </Box>
 
       {loading ? (
-        <div className="loader-container">
-          <div className="spinner" />
-          <p style={{ color: "hsl(var(--text-secondary))" }}>Cargando datos del sistema...</p>
-        </div>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 8, gap: 2 }}>
+          <CircularProgress size={40} sx={{ color: "var(--primary)" }} />
+          <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>Cargando datos del sistema...</Typography>
+        </Box>
       ) : (
-        <>
+        <Box>
           {/* TAB 1: USERS */}
           {activeTab === "users" && (
-            <div>
-              <div style={{ marginBottom: "1.5rem" }}>
-                <input
-                  type="text"
+            <Box>
+              <Box sx={{ mb: 3, maxWidth: 450 }}>
+                <TextField
+                  fullWidth
                   placeholder="Buscar usuario por nombre o correo electrónico..."
-                  className="input-field"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{ maxWidth: "450px" }}
+                  sx={fieldStyle}
                 />
-              </div>
+              </Box>
 
-              <div className="table-responsive">
-                <table className="custom-table">
-                  <thead>
-                    <tr>
-                      <th>Usuario</th>
-                      <th>Email</th>
-                      <th>Estado</th>
-                      <th>Asignar Perfil / Rol</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "6px", borderColor: "var(--border-light)", bgcolor: "var(--bg-card)" }}>
+                <Table>
+                  <TableHead sx={{ bgcolor: "rgba(115, 103, 240, 0.02)" }}>
+                    <TableRow>
+                      <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700 }}>Usuario</TableCell>
+                      <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700 }}>Email</TableCell>
+                      <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700 }}>Estado</TableCell>
+                      <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700 }}>Asignar Perfil / Rol</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
                     {filteredUsers.map((u) => (
-                      <tr key={u.id} style={{ opacity: u.isActive ? 1 : 0.6 }}>
-                        <td>
-                          <div style={{ fontWeight: 600, color: "hsl(var(--text-primary))" }}>
-                            {u.firstName} {u.lastName}
-                          </div>
-                        </td>
-                        <td>{u.email}</td>
-                        <td>
-                          <span style={{
-                            padding: "0.25rem 0.5rem",
-                            borderRadius: "var(--radius-sm)",
+                      <TableRow key={u.id} sx={{ opacity: u.isActive ? 1 : 0.6 }}>
+                        <TableCell sx={{ fontWeight: 600, color: "var(--text-main)" }}>
+                          {u.firstName} {u.lastName}
+                        </TableCell>
+                        <TableCell sx={{ color: "var(--text-main)" }}>{u.email}</TableCell>
+                        <TableCell>
+                          <Box sx={{
+                            display: "inline-block",
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: "4px",
                             fontSize: "0.75rem",
                             fontWeight: 600,
-                            background: u.isActive ? "hsla(147, 66%, 47%, 0.15)" : "hsla(359, 80%, 63%, 0.15)",
-                            color: u.isActive ? "hsl(var(--success))" : "hsl(var(--danger))"
+                            bgcolor: u.isActive ? "rgba(40, 199, 111, 0.15)" : "rgba(234, 84, 85, 0.15)",
+                            color: u.isActive ? "#28c76f" : "#ea5455"
                           }}>
                             {u.isActive ? "Activo" : "Inactivo"}
-                          </span>
-                        </td>
-                        <td>
-                          <select
-                            value={u.role.name}
-                            onChange={(e) => handleUserRoleChange(u.id, e.target.value)}
-                            className="input-field"
-                            style={{ width: "200px", padding: "0.4rem 0.8rem", fontSize: "0.85rem" }}
-                            disabled={u.email === "admin@securitysystem.com"} // Protege cuenta inicial
-                          >
-                            {roles.map((r) => (
-                              <option key={r.id} value={r.name}>
-                                {r.name}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <FormControl size="small" sx={{ width: 200, ...fieldStyle }}>
+                            <Select
+                              value={u.role.name}
+                              onChange={(e) => handleUserRoleChange(u.id, e.target.value)}
+                              disabled={u.email === "admin@securitysystem.com"}
+                              sx={{ borderRadius: "6px" }}
+                            >
+                              {roles.map((r) => (
+                                <MenuItem key={r.id} value={r.name}>
+                                  {r.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
           )}
 
           {/* TAB 2: ROLES */}
           {activeTab === "roles" && (
-            <div>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
-                <button onClick={() => handleOpenRoleModal()} className="btn btn-primary">
+            <Box>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
+                <Button 
+                  variant="contained" 
+                  onClick={() => handleOpenRoleModal()}
+                  sx={{ 
+                    textTransform: "none", 
+                    borderRadius: "6px", 
+                    bgcolor: "var(--primary)",
+                    "&:hover": { bgcolor: "var(--primary-hover)" }
+                  }}
+                >
                   ➕ Crear Perfil Personalizado
-                </button>
-              </div>
+                </Button>
+              </Box>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1.5rem" }}>
+              <Grid container spacing={3}>
                 {roles.map((r) => (
-                  <div key={r.id} className="glass-card" style={{ padding: "1.75rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "0.75rem" }}>
-                        <h3 style={{ fontSize: "1.2rem", fontWeight: 700, color: "hsl(var(--primary))" }}>{r.name}</h3>
-                        <span style={{ fontSize: "0.75rem", color: "hsl(var(--text-muted))" }}>
-                          {r.permissions.length} permisos
-                        </span>
-                      </div>
-                      <p style={{ fontSize: "0.85rem", color: "hsl(var(--text-secondary))", marginBottom: "1rem", minHeight: "40px" }}>
-                        {r.description || "Sin descripción de perfil."}
-                      </p>
+                  <Grid size={{ xs: 12, md: 6, lg: 4 }} key={r.id}>
+                    <Card sx={{ 
+                      bgcolor: "var(--bg-card)", 
+                      borderRadius: "6px", 
+                      border: "1px solid var(--border-light)", 
+                      boxShadow: "var(--shadow-sm)",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between"
+                    }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "start", mb: 1.5 }}>
+                          <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--primary)" }}>
+                            {r.name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: "var(--text-muted)", fontWeight: 500 }}>
+                            {r.permissions.length} permisos
+                          </Typography>
+                        </Box>
+                        
+                        <Typography variant="body2" sx={{ color: "var(--text-muted)", minHeight: 48, mb: 3 }}>
+                          {r.description || "Sin descripción de perfil."}
+                        </Typography>
 
-                      <div style={{ marginBottom: "1.5rem" }}>
-                        <h4 style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "hsl(var(--text-muted))", marginBottom: "0.5rem", fontWeight: 600 }}>
-                          Accesos de Menú
-                        </h4>
-                        <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
-                          {r.menus.map((rm) => (
-                            <span key={rm.menuItem.id} style={{
-                              fontSize: "0.7rem",
-                              padding: "0.2rem 0.4rem",
-                              borderRadius: "var(--radius-sm)",
-                              background: "hsla(var(--primary), 0.08)",
-                              color: "hsl(var(--primary))",
-                              border: "1px solid hsla(var(--primary), 0.15)"
-                            }}>
-                              {rm.menuItem.label}
-                            </span>
-                          ))}
-                          {r.menus.length === 0 && <span style={{ fontSize: "0.8rem", color: "hsl(var(--text-muted))" }}>Ninguno</span>}
-                        </div>
-                      </div>
-                    </div>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="caption" sx={{ display: "block", textTransform: "uppercase", fontWeight: 700, color: "var(--text-muted)", mb: 1 }}>
+                            Accesos de Menú
+                          </Typography>
+                          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                            {r.menus.map((rm) => (
+                              <Box 
+                                key={rm.menuItem.id} 
+                                sx={{
+                                  fontSize: "0.7rem",
+                                  px: 1,
+                                  py: 0.3,
+                                  borderRadius: "4px",
+                                  bgcolor: "rgba(115, 103, 240, 0.08)",
+                                  color: "var(--primary)",
+                                  border: "1px solid rgba(115, 103, 240, 0.15)"
+                                }}
+                              >
+                                {rm.menuItem.label}
+                              </Box>
+                            ))}
+                            {r.menus.length === 0 && <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>Ninguno</Typography>}
+                          </Box>
+                        </Box>
+                      </CardContent>
 
-                    <div style={{ display: "flex", gap: "0.75rem", borderTop: "1px solid hsl(var(--border-glass))", paddingTop: "1rem" }}>
-                      <button onClick={() => handleOpenRoleModal(r)} className="btn btn-secondary btn-sm" style={{ flex: 1 }}>
-                        ✏️ Editar Accesos
-                      </button>
-                      {r.name !== "ADMIN" && (
-                        <button onClick={() => handleDeleteRole(r.id, r.name)} className="btn btn-danger btn-sm" style={{ background: "transparent", color: "hsl(var(--danger))", border: "1px solid hsl(var(--danger))", flex: 0.3 }}>
-                          🗑️
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                      <Box sx={{ p: 2, borderTop: "1px solid var(--border-light)", display: "flex", gap: 1 }}>
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          fullWidth 
+                          onClick={() => handleOpenRoleModal(r)}
+                          sx={{ 
+                            textTransform: "none", 
+                            borderRadius: "6px",
+                            borderColor: "var(--border-light)",
+                            color: "var(--text-muted)"
+                          }}
+                        >
+                          ✏️ Editar Accesos
+                        </Button>
+                        {r.name !== "ADMIN" && (
+                          <IconButton 
+                            onClick={() => handleDeleteRole(r.id, r.name)} 
+                            sx={{ 
+                              color: "#ea5455", 
+                              border: "1px solid rgba(234, 84, 85, 0.2)", 
+                              borderRadius: "6px" 
+                            }}
+                          >
+                            <Trash2 size={16} />
+                          </IconButton>
+                        )}
+                      </Box>
+                    </Card>
+                  </Grid>
                 ))}
-              </div>
-            </div>
+              </Grid>
+            </Box>
           )}
 
           {/* TAB 3: MENUS */}
           {activeTab === "menus" && (
-            <div>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
-                <button onClick={() => handleOpenMenuModal()} className="btn btn-primary">
+            <Box>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
+                <Button 
+                  variant="contained" 
+                  onClick={() => handleOpenMenuModal()}
+                  sx={{ 
+                    textTransform: "none", 
+                    borderRadius: "6px", 
+                    bgcolor: "var(--primary)",
+                    "&:hover": { bgcolor: "var(--primary-hover)" }
+                  }}
+                >
                   ➕ Crear Nuevo Menú
-                </button>
-              </div>
+                </Button>
+              </Box>
 
-              <div className="table-responsive">
-                <table className="custom-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: "80px" }}>Orden</th>
-                      <th>Menú</th>
-                      <th>Ruta / Link</th>
-                      <th style={{ textAlign: "right" }}>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: "6px", borderColor: "var(--border-light)", bgcolor: "var(--bg-card)" }}>
+                <Table size="small">
+                  <TableHead sx={{ bgcolor: "rgba(115, 103, 240, 0.02)" }}>
+                    <TableRow>
+                      <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700 }}>Orden</TableCell>
+                      <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700 }}>Menú</TableCell>
+                      <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700 }}>Ruta / Link</TableCell>
+                      <TableCell sx={{ color: "var(--text-muted)", fontWeight: 700 }} align="right">Acciones</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
                     {menus.map((m) => (
-                      <tr key={m.id}>
-                        <td style={{ fontWeight: 600, color: "hsl(var(--text-muted))" }}>{m.order}</td>
-                        <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 600 }}>
-                            <span style={{ fontSize: "1.2rem" }}>{m.icon}</span>
-                            <span>{m.label}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <code style={{ background: "hsla(0, 0%, 100%, 0.05)", padding: "0.2rem 0.4rem", borderRadius: "4px" }}>
-                            {m.route}
-                          </code>
-                        </td>
-                        <td style={{ textAlign: "right" }}>
-                          <div style={{ display: "inline-flex", gap: "0.5rem" }}>
-                            <button onClick={() => handleOpenMenuModal(m)} className="btn btn-secondary btn-sm" style={{ padding: "0.4rem 0.6rem" }}>
+                      <TableRow key={m.id}>
+                        <TableCell sx={{ fontWeight: 600, color: "var(--text-muted)" }}>{m.order}</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: "var(--text-main)" }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Box sx={{ color: "var(--primary)", display: "flex", alignItems: "center" }}>
+                              <Icon icon={m.icon.includes(":") ? m.icon : `mdi:${m.icon}`} width="20" height="20" />
+                            </Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{m.label}</Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ fontFamily: "monospace", color: "var(--text-main)" }}>
+                          {m.route}
+                        </TableCell>
+                        <TableCell align="right">
+                          <Box sx={{ display: "inline-flex", gap: 1 }}>
+                            <Button 
+                              variant="outlined" 
+                              size="small" 
+                              onClick={() => handleOpenMenuModal(m)}
+                              sx={{ minWidth: 32, p: 0.5, borderColor: "var(--border-light)", color: "var(--text-muted)" }}
+                            >
                               ✏️
-                            </button>
-                            <button onClick={() => handleDeleteMenu(m.id, m.label)} className="btn btn-danger btn-sm" style={{ padding: "0.4rem 0.6rem" }}>
+                            </Button>
+                            <Button 
+                              variant="outlined" 
+                              size="small" 
+                              onClick={() => handleDeleteMenu(m.id, m.label)}
+                              sx={{ minWidth: 32, p: 0.5, borderColor: "rgba(234, 84, 85, 0.2)", color: "#ea5455" }}
+                            >
                               🗑️
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                            </Button>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
           )}
-        </>
+        </Box>
       )}
 
       {/* ROLE MODAL */}
-      {roleModalOpen && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0, 0, 0, 0.6)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-          padding: "1rem"
-        }}>
-          <div className="glass-card" style={{
-            width: "100%",
-            maxWidth: "650px",
-            maxHeight: "90vh",
-            overflowY: "auto",
-            padding: "2rem"
-          }}>
-            <h2 style={{ marginBottom: "1.5rem", color: "hsl(var(--primary))" }}>
-              {editingRole ? `Editar Perfil: ${roleName}` : "Crear Nuevo Perfil de Acceso"}
-            </h2>
-            <form onSubmit={handleSaveRole}>
-              <div className="input-group">
-                <label className="input-label">Nombre del Perfil (Mayúsculas sin espacios)</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={roleName}
-                  onChange={(e) => setRoleName(e.target.value.toUpperCase().replace(/\s/g, ""))}
-                  placeholder="E.g. SUPERVISOR"
-                  disabled={editingRole?.name === "ADMIN"}
-                  required
-                />
-              </div>
+      <Dialog 
+        open={roleModalOpen} 
+        onClose={() => setRoleModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: { bgcolor: "var(--bg-card)", borderRadius: "6px", border: "1px solid var(--border-light)", p: 2 }
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: "var(--primary)", fontWeight: 700 }}>
+          {editingRole ? `Editar Perfil: ${roleName}` : "Crear Nuevo Perfil de Acceso"}
+        </DialogTitle>
+        <form onSubmit={handleSaveRole}>
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <TextField
+              fullWidth
+              label="Nombre del Perfil (Mayúsculas sin espacios)"
+              placeholder="E.g. SUPERVISOR"
+              value={roleName}
+              onChange={(e) => setRoleName(e.target.value.toUpperCase().replace(/\s/g, ""))}
+              disabled={editingRole?.name === "ADMIN"}
+              required
+              slotProps={{ inputLabel: { shrink: true } }}
+              sx={fieldStyle}
+            />
 
-              <div className="input-group">
-                <label className="input-label">Descripción del Rol</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={roleDescription}
-                  onChange={(e) => setRoleDescription(e.target.value)}
-                  placeholder="E.g. Supervisor de instaladores y proyectos técnicos"
-                />
-              </div>
+            <TextField
+              fullWidth
+              label="Descripción del Rol"
+              placeholder="E.g. Supervisor de instaladores y proyectos técnicos"
+              value={roleDescription}
+              onChange={(e) => setRoleDescription(e.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              sx={fieldStyle}
+            />
 
-              {/* Menus Checklist */}
-              <div style={{ marginBottom: "1.5rem" }}>
-                <label className="input-label" style={{ marginBottom: "0.5rem", display: "block" }}>
-                  Menús autorizados a visualizar en barra lateral
-                </label>
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "0.5rem",
-                  background: "hsla(0, 0%, 100%, 0.02)",
-                  border: "1px solid hsl(var(--border-glass))",
-                  padding: "1rem",
-                  borderRadius: "var(--radius-md)"
-                }}>
-                  {menus.map((m) => (
-                    <label key={m.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.85rem" }}>
-                      <input
-                        type="checkbox"
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-muted)", display: "block", mb: 1 }}>
+                Menús autorizados a visualizar en barra lateral
+              </Typography>
+              <Box sx={{ 
+                display: "grid", 
+                gridTemplateColumns: "repeat(2, 1fr)", 
+                gap: 1, 
+                p: 2, 
+                borderRadius: "6px", 
+                border: "1px solid var(--border-light)",
+                bgcolor: "rgba(115, 103, 240, 0.01)" 
+              }}>
+                {menus.map((m) => (
+                  <FormControlLabel
+                    key={m.id}
+                    control={
+                      <Checkbox
                         checked={selectedMenus.includes(m.id)}
                         onChange={() => toggleMenuSelection(m.id)}
-                        style={{ width: "16px", height: "16px" }}
+                        sx={{ color: "var(--border-light)", "&.Mui-checked": { color: "var(--primary)" } }}
                       />
-                      <span>{m.icon} {m.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+                    }
+                    label={
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box sx={{ color: "var(--primary)", display: "flex", alignItems: "center" }}>
+                          <Icon icon={m.icon.includes(":") ? m.icon : `mdi:${m.icon}`} width="18" height="18" />
+                        </Box>
+                        <Typography variant="body2" sx={{ color: "var(--text-main)" }}>{m.label}</Typography>
+                      </Box>
+                    }
+                  />
+                ))}
+              </Box>
+            </Box>
 
-              {/* Permissions Checklist */}
-              <div style={{ marginBottom: "2rem" }}>
-                <label className="input-label" style={{ marginBottom: "0.5rem", display: "block" }}>
-                  Permisos funcionales de lectura/escritura en plataforma
-                </label>
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.6rem",
-                  background: "hsla(0, 0%, 100%, 0.02)",
-                  border: "1px solid hsl(var(--border-glass))",
-                  padding: "1rem",
-                  borderRadius: "var(--radius-md)",
-                  maxHeight: "220px",
-                  overflowY: "auto"
-                }}>
-                  {permissions.map((p) => (
-                    <label key={p.id} style={{ display: "flex", alignItems: "start", gap: "0.5rem", cursor: "pointer", fontSize: "0.85rem" }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedPermissions.includes(p.id)}
-                        onChange={() => togglePermission(p.id)}
-                        style={{ width: "16px", height: "16px", marginTop: "2px" }}
-                        disabled={editingRole?.name === "ADMIN"} // ADMIN siempre tiene todo
-                      />
-                      <div>
-                        <div style={{ fontWeight: 600, color: "hsl(var(--text-primary))" }}>{p.name}</div>
-                        <div style={{ fontSize: "0.75rem", color: "hsl(var(--text-muted))" }}>{p.description}</div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem" }}>
-                <button type="button" onClick={() => setRoleModalOpen(false)} className="btn btn-secondary">
-                  Cancelar
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Guardar Perfil
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-muted)", display: "block", mb: 1 }}>
+                Permisos funcionales de lectura/escritura en plataforma
+              </Typography>
+              <Box sx={{ 
+                display: "flex", 
+                flexDirection: "column", 
+                gap: 1.5, 
+                p: 2, 
+                borderRadius: "6px", 
+                border: "1px solid var(--border-light)",
+                bgcolor: "rgba(115, 103, 240, 0.01)",
+                maxHeight: 220,
+                overflowY: "auto"
+              }}>
+                {permissions.map((p) => (
+                  <Box key={p.id} sx={{ display: "flex", alignItems: "start", gap: 1 }}>
+                    <Checkbox
+                      checked={selectedPermissions.includes(p.id)}
+                      onChange={() => togglePermission(p.id)}
+                      disabled={editingRole?.name === "ADMIN"}
+                      sx={{ color: "var(--border-light)", "&.Mui-checked": { color: "var(--primary)" }, p: 0.5 }}
+                    />
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-main)" }}>{p.name}</Typography>
+                      <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>{p.description}</Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ p: 3, gap: 1 }}>
+            <Button 
+              variant="outlined" 
+              onClick={() => setRoleModalOpen(false)}
+              sx={{ 
+                borderRadius: "6px", 
+                textTransform: "none", 
+                borderColor: "var(--border-light)", 
+                color: "var(--text-muted)" 
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              variant="contained"
+              sx={{ 
+                borderRadius: "6px", 
+                textTransform: "none", 
+                bgcolor: "var(--primary)",
+                "&:hover": { bgcolor: "var(--primary-hover)" }
+              }}
+            >
+              Guardar Perfil
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
       {/* MENU MODAL */}
-      {menuModalOpen && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0, 0, 0, 0.6)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-          padding: "1rem"
-        }}>
-          <div className="glass-card" style={{
-            width: "100%",
-            maxWidth: "500px",
-            padding: "2rem"
-          }}>
-            <h2 style={{ marginBottom: "1.5rem", color: "hsl(var(--primary))" }}>
-              {editingMenu ? `Editar Menú: ${menuLabel}` : "Crear Nuevo Menú de Barra Lateral"}
-            </h2>
-            <form onSubmit={handleSaveMenu}>
-              <div className="input-group">
-                <label className="input-label">Etiqueta del Menú (Label)</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={menuLabel}
-                  onChange={(e) => setMenuLabel(e.target.value)}
-                  placeholder="E.g. Inventario"
-                  required
-                />
-              </div>
+      <Dialog 
+        open={menuModalOpen} 
+        onClose={() => setMenuModalOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: { bgcolor: "var(--bg-card)", borderRadius: "6px", border: "1px solid var(--border-light)", p: 2 }
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: "var(--primary)", fontWeight: 700 }}>
+          {editingMenu ? `Editar Menú: ${menuLabel}` : "Crear Nuevo Menú de Barra Lateral"}
+        </DialogTitle>
+        <form onSubmit={handleSaveMenu}>
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <TextField
+              fullWidth
+              label="Etiqueta del Menú (Label)"
+              placeholder="E.g. Inventario"
+              value={menuLabel}
+              onChange={(e) => setMenuLabel(e.target.value)}
+              required
+              slotProps={{ inputLabel: { shrink: true } }}
+              sx={fieldStyle}
+            />
 
-              <div className="input-group">
-                <label className="input-label">Ruta (Route / Link)</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={menuRoute}
-                  onChange={(e) => setMenuRoute(e.target.value)}
-                  placeholder="E.g. /inventory"
-                  required
-                />
-              </div>
+            <TextField
+              fullWidth
+              label="Ruta (Route / Link)"
+              placeholder="E.g. /inventory"
+              value={menuRoute}
+              onChange={(e) => setMenuRoute(e.target.value)}
+              required
+              slotProps={{ inputLabel: { shrink: true } }}
+              sx={fieldStyle}
+            />
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-                <div className="input-group">
-                  <label className="input-label">Icono (Emoji o SVG)</label>
-                  <input
-                    type="text"
-                    className="input-field"
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12 }}>
+                <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
+                  <TextField
+                    fullWidth
+                    label="Icono (Código Material Design / Iconify)"
+                    placeholder="Ej: mdi:home, mdi:cctv, mdi:key-outline, mdi:shield"
                     value={menuIcon}
                     onChange={(e) => setMenuIcon(e.target.value)}
-                    placeholder="E.g. 📦"
                     required
+                    helperText="Puedes usar cualquier identificador de icono de Material Design (mdi). Usa el selector para buscar de forma interactiva."
+                    slotProps={{ 
+                      inputLabel: { shrink: true },
+                      input: {
+                        startAdornment: menuIcon ? (
+                          <InputAdornment position="start">
+                            <Box sx={{ color: "var(--primary)", display: "flex", alignItems: "center" }}>
+                              <Icon icon={menuIcon.includes(":") ? menuIcon : `mdi:${menuIcon}`} width="20" height="20" />
+                            </Box>
+                          </InputAdornment>
+                        ) : null
+                      }
+                    }}
+                    sx={fieldStyle}
                   />
-                </div>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setIconSearchQuery("");
+                      setIconSearchResults([]);
+                      setIconSelectorOpen(true);
+                    }}
+                    sx={{
+                      height: "56px",
+                      px: 2.5,
+                      minWidth: "120px",
+                      borderRadius: "6px",
+                      textTransform: "none",
+                      borderColor: "var(--border-light)",
+                      color: "var(--text-muted)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 1,
+                      "&:hover": {
+                        borderColor: "var(--primary)",
+                        color: "var(--primary)"
+                      }
+                    }}
+                  >
+                    <Icon icon="mdi:palette-outline" width="20" height="20" />
+                    Buscar
+                  </Button>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Orden de Despliegue"
+                  type="number"
+                  placeholder="E.g. 5"
+                  value={menuOrder}
+                  onChange={(e) => setMenuOrder(Number(e.target.value))}
+                  required
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={fieldStyle}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions sx={{ p: 3, gap: 1 }}>
+            <Button 
+              variant="outlined" 
+              onClick={() => setMenuModalOpen(false)}
+              sx={{ 
+                borderRadius: "6px", 
+                textTransform: "none", 
+                borderColor: "var(--border-light)", 
+                color: "var(--text-muted)" 
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              variant="contained"
+              sx={{ 
+                borderRadius: "6px", 
+                textTransform: "none", 
+                bgcolor: "var(--primary)",
+                "&:hover": { bgcolor: "var(--primary-hover)" }
+              }}
+            >
+              Guardar Menú
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
-                <div className="input-group">
-                  <label className="input-label">Orden de Despliegue</label>
-                  <input
-                    type="number"
-                    className="input-field"
-                    value={menuOrder}
-                    onChange={(e) => setMenuOrder(Number(e.target.value))}
-                    placeholder="E.g. 5"
-                    required
-                  />
-                </div>
-              </div>
+      {/* Selector de Iconos de Material Design */}
+      <Dialog
+        open={iconSelectorOpen}
+        onClose={() => setIconSelectorOpen(false)}
+        maxWidth="md"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              bgcolor: "var(--bg-card)",
+              backgroundImage: "none",
+              border: "1px solid var(--border-light)",
+              borderRadius: "8px",
+              color: "var(--text-main)"
+            }
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-main)" }}>
+            Seleccionar Icono (Material Design)
+          </Typography>
+          <IconButton onClick={() => setIconSelectorOpen(false)} sx={{ color: "var(--text-muted)" }}>
+            <Icon icon="mdi:close" width="20" height="20" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 3 }}>
+            <TextField
+              fullWidth
+              label="Buscar iconos de Material Design (ej: home, lock, user, chart, setting, project...)"
+              placeholder="Escribe para buscar..."
+              value={iconSearchQuery}
+              onChange={(e) => setIconSearchQuery(e.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              sx={fieldStyle}
+            />
+          </Box>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "1rem" }}>
-                <button type="button" onClick={() => setMenuModalOpen(false)} className="btn btn-secondary">
-                  Cancelar
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Guardar Menú
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: "var(--text-muted)" }}>
+            {iconSearchQuery ? "Resultados de la búsqueda" : "Iconos recomendados populares"}
+          </Typography>
+
+          {iconSearching ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress size={30} sx={{ color: "var(--primary)" }} />
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
+                gap: 1.5,
+                maxHeight: "350px",
+                overflowY: "auto",
+                p: 1
+              }}
+            >
+              {(iconSearchQuery ? iconSearchResults : POPULAR_ICONS).map((iconName) => (
+                <Button
+                  key={iconName}
+                  onClick={() => {
+                    setMenuIcon(iconName);
+                    setIconSelectorOpen(false);
+                  }}
+                  variant="outlined"
+                  sx={{
+                    flexDirection: "column",
+                    minHeight: "80px",
+                    borderRadius: "6px",
+                    p: 1,
+                    textTransform: "none",
+                    borderColor: "var(--border-light)",
+                    color: "var(--text-main)",
+                    gap: 1,
+                    "&:hover": {
+                      borderColor: "var(--primary)",
+                      bgcolor: "rgba(115, 103, 240, 0.05)",
+                      transform: "translateY(-2px)"
+                    },
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  <Icon icon={iconName} width="28" height="28" style={{ color: "var(--primary)" }} />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontSize: "0.7rem",
+                      color: "var(--text-muted)",
+                      textAlign: "center",
+                      wordBreak: "break-all",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden"
+                    }}
+                  >
+                    {iconName.replace("mdi:", "")}
+                  </Typography>
+                </Button>
+              ))}
+              {iconSearchQuery && iconSearchResults.length === 0 && (
+                <Box sx={{ gridColumn: "1 / -1", textAlign: "center", py: 3 }}>
+                  <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
+                    No se encontraron iconos para "{iconSearchQuery}"
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setIconSelectorOpen(false)}
+            sx={{
+              borderRadius: "6px",
+              textTransform: "none",
+              borderColor: "var(--border-light)",
+              color: "var(--text-muted)"
+            }}
+          >
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }
