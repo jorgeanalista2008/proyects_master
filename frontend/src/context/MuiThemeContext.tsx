@@ -3,7 +3,7 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { ThemeProvider, createTheme, responsiveFontSizes } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { useConfig } from "@/context/ConfigContext";
+import { useConfig, FONT_OPTIONS } from "@/context/ConfigContext";
 
 interface ThemeProviderProps {
   children: ReactNode;
@@ -45,7 +45,11 @@ export function MuiThemeProvider({ children }: ThemeProviderProps) {
         borderRadius: 6,
       },
       typography: {
-        fontFamily: "'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: (() => {
+          const fontKey = config?.fontStyle || "public-sans";
+          const found = FONT_OPTIONS.find(f => f.id === fontKey);
+          return found ? found.value : "'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        })(),
         h1: { fontWeight: 700 },
         h2: { fontWeight: 700 },
         h3: { fontWeight: 600 },

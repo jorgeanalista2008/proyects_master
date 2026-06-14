@@ -7,4 +7,5 @@ export declare class UpdateSettingDto {
     primaryColor?: string;
     accentColor?: string;
     defaultTheme?: string;
+    fontStyle?: string;
 }

@@ -4,30 +4,30 @@ export declare class SettingsService {
     private prisma;
     constructor(prisma: PrismaService);
     getSettings(): Promise<{
-        id: string;
-        updatedAt: Date;
-        email: string | null;
-        phone: string | null;
-        logoId: string | null;
         appName: string;
+        phone: string | null;
+        email: string | null;
         address: string | null;
         website: string | null;
         primaryColor: string;
         accentColor: string;
         defaultTheme: string;
+        id: string;
+        logoId: string | null;
+        updatedAt: Date;
     }>;
     updateSettings(dto: UpdateSettingDto): Promise<{
-        id: string;
-        updatedAt: Date;
-        email: string | null;
-        phone: string | null;
-        logoId: string | null;
         appName: string;
+        phone: string | null;
+        email: string | null;
         address: string | null;
         website: string | null;
         primaryColor: string;
         accentColor: string;
         defaultTheme: string;
+        id: string;
+        logoId: string | null;
+        updatedAt: Date;
     }>;
     uploadLogo(file: Express.Multer.File): Promise<{
         logoId: string;
@@ -36,23 +36,23 @@ export declare class SettingsService {
     }>;
     getCategories(): Promise<{
         id: string;
+        updatedAt: Date;
         name: string;
         createdAt: Date;
-        updatedAt: Date;
         label: string;
     }[]>;
     createCategory(name: string, label: string): Promise<{
         id: string;
+        updatedAt: Date;
         name: string;
         createdAt: Date;
-        updatedAt: Date;
         label: string;
     }>;
     deleteCategory(id: string): Promise<{
         id: string;
+        updatedAt: Date;
         name: string;
         createdAt: Date;
-        updatedAt: Date;
         label: string;
     }>;
 }

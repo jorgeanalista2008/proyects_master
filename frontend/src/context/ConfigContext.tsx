@@ -14,6 +14,7 @@ interface SystemConfig {
   primaryColor: string;
   accentColor: string;
   defaultTheme: string;
+  fontStyle?: string; // Add optional fontStyle property
 }
 
 interface ConfigContextProps {
@@ -61,6 +62,15 @@ function hexToHslSpace(hex: string): string {
   return `${hVal} ${sVal}% ${lVal}%`;
 }
 
+// Map key to real CSS font stacks
+export const FONT_OPTIONS = [
+  { id: "public-sans", label: "Public Sans (Por Defecto)", value: "'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" },
+  { id: "inter", label: "Inter (Moderna y Limpia)", value: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" },
+  { id: "outfit", label: "Outfit (Elegante y Geométrica)", value: "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" },
+  { id: "roboto", label: "Roboto (Corporativa)", value: "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" },
+  { id: "playfair", label: "Playfair Display (Premium Serif)", value: "'Playfair Display', Georgia, serif" }
+];
+
 export function ConfigProvider({ children }: { children: React.ReactNode }) {
   const [config, setConfig] = useState<SystemConfig | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -86,7 +96,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
     loadSettings();
   }, []);
 
-  // Apply color and theme variables to document root
+  // Apply color, font style and theme variables to document root
   useEffect(() => {
     if (config) {
       try {
@@ -94,6 +104,11 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
         const accentHsl = hexToHslSpace(config.accentColor);
         document.documentElement.style.setProperty("--primary", primaryHsl);
         document.documentElement.style.setProperty("--accent", accentHsl);
+
+        // Apply custom font-family
+        const fontStyleKey = config.fontStyle || "public-sans";
+        const selectedFont = FONT_OPTIONS.find(f => f.id === fontStyleKey) || FONT_OPTIONS[0];
+        document.documentElement.style.setProperty("--font-family", selectedFont.value);
         
         // Dynamically update document title
         const appName = config.appName || "Nexxos.pro";

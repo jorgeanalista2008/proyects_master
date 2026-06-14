@@ -20,6 +20,7 @@ class UpdateSettingDto {
     primaryColor;
     accentColor;
     defaultTheme;
+    fontStyle;
 }
 exports.UpdateSettingDto = UpdateSettingDto;
 __decorate([
@@ -54,4 +55,8 @@ __decorate([
     (0, swagger_1.ApiProperty)({ example: 'dark', required: false }),
     __metadata("design:type", String)
 ], UpdateSettingDto.prototype, "defaultTheme", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'public-sans', required: false }),
+    __metadata("design:type", String)
+], UpdateSettingDto.prototype, "fontStyle", void 0);
 //# sourceMappingURL=update-setting.dto.js.map

@@ -24,4 +24,7 @@ export class UpdateSettingDto {
 
   @ApiProperty({ example: 'dark', required: false })
   defaultTheme?: string;
+
+  @ApiProperty({ example: 'public-sans', required: false })
+  fontStyle?: string;
 }

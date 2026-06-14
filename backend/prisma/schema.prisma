@@ -300,5 +300,6 @@ model SystemConfig {
   primaryColor String   @default("#1e3a8a")
   accentColor  String   @default("#94a3b8")
   defaultTheme String   @default("dark")
+  fontStyle    String   @default("public-sans")
   updatedAt    DateTime @updatedAt
 }

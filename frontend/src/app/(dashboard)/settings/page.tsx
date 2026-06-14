@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useConfig } from "@/context/ConfigContext";
+import { useConfig, FONT_OPTIONS } from "@/context/ConfigContext";
 import { useAuth } from "@/hooks/useAuth";
 import { api, getApiUrl } from "@/lib/api";
 import {
@@ -60,6 +60,7 @@ export default function SettingsPage() {
   const [primaryColor, setPrimaryColor] = useState("#1e3a8a");
   const [accentColor, setAccentColor] = useState("#94a3b8");
   const [defaultTheme, setDefaultTheme] = useState("dark");
+  const [fontStyle, setFontStyle] = useState("public-sans");
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
@@ -85,6 +86,7 @@ export default function SettingsPage() {
       setPrimaryColor(config.primaryColor || "#1e3a8a");
       setAccentColor(config.accentColor || "#94a3b8");
       setDefaultTheme(config.defaultTheme || "dark");
+      setFontStyle(config.fontStyle || "public-sans");
 
       if (config.logoId) {
         setLogoPreviewUrl(getApiUrl(`/images/${config.logoId}`));
@@ -176,7 +178,8 @@ export default function SettingsPage() {
         website: website || null,
         primaryColor,
         accentColor,
-        defaultTheme
+        defaultTheme,
+        fontStyle
       });
       setSuccess("¡Configuración de personalización guardada con éxito!");
     } catch (err: any) {
@@ -478,6 +481,24 @@ export default function SettingsPage() {
                   >
                     <MenuItem value="dark">Tema Oscuro (Moderno)</MenuItem>
                     <MenuItem value="light">Tema Claro (Limpio)</MenuItem>
+                  </TextField>
+
+                  <TextField
+                    select
+                    label="Tipografía Corporativa"
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    value={fontStyle}
+                    onChange={(e) => setFontStyle(e.target.value)}
+                    disabled={saving}
+                    sx={fieldStyle}
+                  >
+                    {FONT_OPTIONS.map((f) => (
+                      <MenuItem key={f.id} value={f.id} style={{ fontFamily: f.value }}>
+                        {f.label}
+                      </MenuItem>
+                    ))}
                   </TextField>
 
                   <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1.5 }}>
