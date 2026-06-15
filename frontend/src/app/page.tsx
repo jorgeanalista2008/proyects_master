@@ -11,23 +11,20 @@ export default function RootPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
+    if (!loading) {
+      if (!user) {
+        router.replace("/login");
+      } else {
+        // Redirige a /projects o / para forzar la carga bajo el layout correcto
+        // Usamos '/projects' como página inicial segura con menú
+        router.replace("/projects");
+      }
     }
   }, [user, loading, router]);
 
-  if (loading) {
-    return (
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-        <CircularProgress color="primary" />
-      </Box>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
-  // Si ya tiene sesión, sirve directamente el Dashboard en el mismo layout
-  return <DashboardPage />;
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
+      <CircularProgress color="primary" />
+    </Box>
+  );
 }
