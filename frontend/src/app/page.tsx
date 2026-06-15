@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { Box, CircularProgress } from "@mui/material";
+import DashboardLayout from "./(dashboard)/layout";
 import DashboardPage from "./(dashboard)/page";
 
 export default function RootPage() {
@@ -11,20 +12,27 @@ export default function RootPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.replace("/login");
-      } else {
-        // Redirige a /projects o / para forzar la carga bajo el layout correcto
-        // Usamos '/projects' como página inicial segura con menú
-        router.replace("/projects");
-      }
+    if (!loading && !user) {
+      router.replace("/login");
     }
   }, [user, loading, router]);
 
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
+        <CircularProgress color="primary" />
+      </Box>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  // Sirve el inicio (Dashboard) envuelto correctamente con su menú lateral
   return (
-    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
-      <CircularProgress color="primary" />
-    </Box>
+    <DashboardLayout>
+      <DashboardPage />
+    </DashboardLayout>
   );
 }
