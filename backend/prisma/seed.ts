@@ -161,25 +161,42 @@ async function main() {
 
   console.log('Relaciones de roles y permisos sincronizadas.');
 
-  // 4. Crear Administrador Inicial
-  const adminPasswordHash = bcrypt.hashSync('AdminPassword123', 10);
-  const defaultAdmin = await prisma.user.upsert({
-    where: { email: 'admin@securitysystem.com' },
+  // 4. Crear Administradores Iniciales
+  const passwordCeoGuslaya = bcrypt.hashSync('Gustavo.8826##', 10);
+  const defaultAdmin1 = await prisma.user.upsert({
+    where: { email: 'ceo@guslaya.com' },
     update: {
       roleId: seededRoles['ADMIN'].id,
     },
     create: {
-      email: 'admin@securitysystem.com',
-      passwordHash: adminPasswordHash,
-      firstName: 'Admin',
-      lastName: 'Security',
-      phone: '+56912345678',
+      email: 'ceo@guslaya.com',
+      passwordHash: passwordCeoGuslaya,
+      firstName: 'Gustavo',
+      lastName: 'Guslaya',
+      phone: '+56900000001',
       roleId: seededRoles['ADMIN'].id,
       isActive: true,
     },
   });
+  console.log('Administrador 1 creado o actualizado:', defaultAdmin1.email);
 
-  console.log('Administrador por defecto creado o actualizado:', defaultAdmin.email);
+  const passwordCeoNexxos = bcrypt.hashSync('Jorge.8826##', 10);
+  const defaultAdmin2 = await prisma.user.upsert({
+    where: { email: 'ceo@nexxos.pro' },
+    update: {
+      roleId: seededRoles['ADMIN'].id,
+    },
+    create: {
+      email: 'ceo@nexxos.pro',
+      passwordHash: passwordCeoNexxos,
+      firstName: 'Jorge',
+      lastName: 'Nexxos',
+      phone: '+56900000002',
+      roleId: seededRoles['ADMIN'].id,
+      isActive: true,
+    },
+  });
+  console.log('Administrador 2 creado o actualizado:', defaultAdmin2.email);
 
   // 3. Crear Categorías de Prueba
   const categoriesList = [
