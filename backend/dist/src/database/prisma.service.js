@@ -16,11 +16,12 @@ const client_1 = require("@prisma/client");
 const adapter_mariadb_1 = require("@prisma/adapter-mariadb");
 let PrismaService = PrismaService_1 = class PrismaService extends client_1.PrismaClient {
     static getAdapter() {
-        const host = process.env.DB_HOST || 'localhost';
-        const port = parseInt(process.env.DB_PORT || '3306', 10);
-        const user = process.env.DB_USER || 'root';
-        const password = process.env.DB_PASSWORD || '';
-        const database = process.env.DB_NAME || 'projects_master_db';
+        const isProd = process.env.NODE_ENV === 'production';
+        const host = isProd ? 'srv1609.hstgr.io' : (process.env.DB_HOST || 'localhost');
+        const port = isProd ? 3306 : parseInt(process.env.DB_PORT || '3306', 10);
+        const user = isProd ? 'u646234231_proyects' : (process.env.DB_USER || 'root');
+        const password = isProd ? 'Proyects.8826##' : (process.env.DB_PASSWORD || '');
+        const database = isProd ? 'u646234231_proyects' : (process.env.DB_NAME || 'projects_master_db');
         return new adapter_mariadb_1.PrismaMariaDb({
             host,
             port,

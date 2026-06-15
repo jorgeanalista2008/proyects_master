@@ -4,30 +4,32 @@ export declare class SettingsController {
     private readonly settingsService;
     constructor(settingsService: SettingsService);
     findOne(): Promise<{
-        appName: string;
-        phone: string | null;
+        id: string;
+        updatedAt: Date;
         email: string | null;
+        phone: string | null;
+        logoId: string | null;
+        appName: string;
         address: string | null;
         website: string | null;
         primaryColor: string;
         accentColor: string;
         defaultTheme: string;
-        id: string;
-        logoId: string | null;
-        updatedAt: Date;
+        fontStyle: string;
     }>;
     update(updateSettingDto: UpdateSettingDto): Promise<{
-        appName: string;
-        phone: string | null;
+        id: string;
+        updatedAt: Date;
         email: string | null;
+        phone: string | null;
+        logoId: string | null;
+        appName: string;
         address: string | null;
         website: string | null;
         primaryColor: string;
         accentColor: string;
         defaultTheme: string;
-        id: string;
-        logoId: string | null;
-        updatedAt: Date;
+        fontStyle: string;
     }>;
     uploadLogo(file: Express.Multer.File): Promise<{
         logoId: string;
@@ -36,9 +38,9 @@ export declare class SettingsController {
     }>;
     findCategories(): Promise<{
         id: string;
-        updatedAt: Date;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
         label: string;
     }[]>;
     createCategory(body: {
@@ -46,16 +48,16 @@ export declare class SettingsController {
         label: string;
     }): Promise<{
         id: string;
-        updatedAt: Date;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
         label: string;
     }>;
     deleteCategory(id: string): Promise<{
         id: string;
-        updatedAt: Date;
         name: string;
         createdAt: Date;
+        updatedAt: Date;
         label: string;
     }>;
 }

@@ -6,38 +6,41 @@ export declare class QuotesService {
     private prisma;
     constructor(prisma: PrismaService);
     create(createQuoteDto: CreateQuoteDto, creatorId: string): Promise<{
+        items: ({
+            product: {
+                name: string;
+                category: {
+                    id: string;
+                    name: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    label: string;
+                };
+                sku: string;
+            };
+        } & {
+            id: string;
+            unitCost: Prisma.Decimal;
+            productId: string;
+            subtotal: Prisma.Decimal;
+            quantity: Prisma.Decimal;
+            priceType: string;
+            unitPrice: Prisma.Decimal;
+            margin: Prisma.Decimal;
+            quoteId: string;
+        })[];
         creator: {
             firstName: string;
             lastName: string;
         };
-        items: ({
-            product: {
-                category: {
-                    id: string;
-                    createdAt: Date;
-                    updatedAt: Date;
-                    name: string;
-                    label: string;
-                };
-                sku: string;
-                name: string;
-            };
-        } & {
-            id: string;
-            subtotal: Prisma.Decimal;
-            quantity: Prisma.Decimal;
-            unitCost: Prisma.Decimal;
-            unitPrice: Prisma.Decimal;
-            margin: Prisma.Decimal;
-            priceType: string;
-            productId: string;
-            quoteId: string;
-        })[];
     } & {
         id: string;
-        version: number;
-        status: import("@prisma/client").$Enums.QuoteStatus;
+        createdAt: Date;
+        updatedAt: Date;
         isActive: boolean;
+        projectId: string;
+        status: import("@prisma/client").$Enums.QuoteStatus;
+        version: number;
         currency: import("@prisma/client").$Enums.CurrencyCode;
         exchangeRate: Prisma.Decimal;
         subtotal: Prisma.Decimal;
@@ -47,11 +50,8 @@ export declare class QuotesService {
         total: Prisma.Decimal;
         totalCost: Prisma.Decimal;
         marginAmount: Prisma.Decimal;
-        validUntil: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
-        projectId: string;
         createdById: string;
+        validUntil: Date | null;
     }>;
     findAll(projectId?: string): Promise<({
         creator: {
@@ -60,9 +60,12 @@ export declare class QuotesService {
         };
     } & {
         id: string;
-        version: number;
-        status: import("@prisma/client").$Enums.QuoteStatus;
+        createdAt: Date;
+        updatedAt: Date;
         isActive: boolean;
+        projectId: string;
+        status: import("@prisma/client").$Enums.QuoteStatus;
+        version: number;
         currency: import("@prisma/client").$Enums.CurrencyCode;
         exchangeRate: Prisma.Decimal;
         subtotal: Prisma.Decimal;
@@ -72,23 +75,20 @@ export declare class QuotesService {
         total: Prisma.Decimal;
         totalCost: Prisma.Decimal;
         marginAmount: Prisma.Decimal;
-        validUntil: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
-        projectId: string;
         createdById: string;
+        validUntil: Date | null;
     })[]>;
     findOne(id: string): Promise<{
         project: {
             client: {
                 id: string;
+                name: string;
                 createdAt: Date;
                 updatedAt: Date;
-                name: string;
                 email: string;
                 phone: string;
-                rutOrId: string;
                 address: string | null;
+                rutOrId: string;
                 city: string | null;
             };
             surveyImages: {
@@ -99,27 +99,21 @@ export declare class QuotesService {
             }[];
         } & {
             id: string;
-            status: import("@prisma/client").$Enums.ProjectStatus;
-            createdAt: Date;
-            updatedAt: Date;
             name: string;
             description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            status: import("@prisma/client").$Enums.ProjectStatus;
             clientId: string;
             managerId: string | null;
-        };
-        creator: {
-            id: string;
-            email: string;
-            firstName: string;
-            lastName: string;
         };
         items: ({
             product: {
                 category: {
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    name: string;
                     label: string;
                 };
                 images: {
@@ -128,14 +122,14 @@ export declare class QuotesService {
                 }[];
             } & {
                 id: string;
-                isActive: boolean;
-                createdAt: Date;
-                updatedAt: Date;
-                unitCost: Prisma.Decimal;
-                sku: string;
                 name: string;
                 description: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                isActive: boolean;
+                sku: string;
                 categoryId: string;
+                unitCost: Prisma.Decimal;
                 marginCash: Prisma.Decimal;
                 priceCash: Prisma.Decimal;
                 marginCredit: Prisma.Decimal;
@@ -145,20 +139,29 @@ export declare class QuotesService {
             };
         } & {
             id: string;
+            unitCost: Prisma.Decimal;
+            productId: string;
             subtotal: Prisma.Decimal;
             quantity: Prisma.Decimal;
-            unitCost: Prisma.Decimal;
+            priceType: string;
             unitPrice: Prisma.Decimal;
             margin: Prisma.Decimal;
-            priceType: string;
-            productId: string;
             quoteId: string;
         })[];
+        creator: {
+            id: string;
+            email: string;
+            firstName: string;
+            lastName: string;
+        };
     } & {
         id: string;
-        version: number;
-        status: import("@prisma/client").$Enums.QuoteStatus;
+        createdAt: Date;
+        updatedAt: Date;
         isActive: boolean;
+        projectId: string;
+        status: import("@prisma/client").$Enums.QuoteStatus;
+        version: number;
         currency: import("@prisma/client").$Enums.CurrencyCode;
         exchangeRate: Prisma.Decimal;
         subtotal: Prisma.Decimal;
@@ -168,29 +171,29 @@ export declare class QuotesService {
         total: Prisma.Decimal;
         totalCost: Prisma.Decimal;
         marginAmount: Prisma.Decimal;
-        validUntil: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
-        projectId: string;
         createdById: string;
+        validUntil: Date | null;
     }>;
     update(id: string, updateQuoteDto: UpdateQuoteDto): Promise<{
         items: {
             id: string;
+            unitCost: Prisma.Decimal;
+            productId: string;
             subtotal: Prisma.Decimal;
             quantity: Prisma.Decimal;
-            unitCost: Prisma.Decimal;
+            priceType: string;
             unitPrice: Prisma.Decimal;
             margin: Prisma.Decimal;
-            priceType: string;
-            productId: string;
             quoteId: string;
         }[];
     } & {
         id: string;
-        version: number;
-        status: import("@prisma/client").$Enums.QuoteStatus;
+        createdAt: Date;
+        updatedAt: Date;
         isActive: boolean;
+        projectId: string;
+        status: import("@prisma/client").$Enums.QuoteStatus;
+        version: number;
         currency: import("@prisma/client").$Enums.CurrencyCode;
         exchangeRate: Prisma.Decimal;
         subtotal: Prisma.Decimal;
@@ -200,11 +203,8 @@ export declare class QuotesService {
         total: Prisma.Decimal;
         totalCost: Prisma.Decimal;
         marginAmount: Prisma.Decimal;
-        validUntil: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
-        projectId: string;
         createdById: string;
+        validUntil: Date | null;
     }>;
     remove(id: string): Promise<{
         success: boolean;
