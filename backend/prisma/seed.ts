@@ -31,11 +31,15 @@ async function main() {
     { name: 'catalog:write', description: 'Administrar catálogo (crear/editar/borrar)' },
     { name: 'clients:read', description: 'Ver directorio de clientes' },
     { name: 'clients:write', description: 'Administrar clientes' },
+    { name: 'suppliers:read', description: 'Ver directorio de proveedores' },
+    { name: 'suppliers:write', description: 'Administrar proveedores' },
     { name: 'technicians:read', description: 'Ver perfiles de técnicos' },
     { name: 'technicians:write', description: 'Administrar técnicos' },
     { name: 'analytics:read', description: 'Ver analíticas de rentabilidad y margen' },
     { name: 'settings:write', description: 'Modificar personalización del software' },
     { name: 'users:write', description: 'Administrar usuarios, perfiles, permisos y menús' },
+    { name: 'equipments:read', description: 'Ver recepciones de equipos' },
+    { name: 'equipments:write', description: 'Crear, asignar y cambiar estado de equipos' },
   ];
 
   // Definir Menús del Sistema
@@ -44,11 +48,13 @@ async function main() {
     { label: 'Proyectos', route: '/projects', icon: 'mdi:briefcase-outline', order: 2 },
     { label: 'Catálogo e Inventario', route: '/catalog', icon: 'mdi:archive-outline', order: 3 },
     { label: 'Clientes', route: '/clients', icon: 'mdi:account-group-outline', order: 4 },
-    { label: 'Técnicos', route: '/technicians', icon: 'mdi:account-wrench-outline', order: 5 },
-    { label: 'Analíticas y Margen', route: '/analytics', icon: 'mdi:chart-timeline-variant', order: 6 },
-    { label: 'Personalización', route: '/settings', icon: 'mdi:settings-outline', order: 7 },
-    { label: 'Documentación', route: '/documentation', icon: 'mdi:book-open-page-variant-outline', order: 8 },
-    { label: 'Administración', route: '/roles', icon: 'mdi:shield-key-outline', order: 9 },
+    { label: 'Proveedores', route: '/suppliers', icon: 'mdi:truck-delivery-outline', order: 5 },
+    { label: 'Soporte Técnico', route: '/equipments', icon: 'mdi:laptop-wrench', order: 6 },
+    { label: 'Técnicos', route: '/technicians', icon: 'mdi:account-wrench-outline', order: 7 },
+    { label: 'Analíticas y Margen', route: '/analytics', icon: 'mdi:chart-timeline-variant', order: 8 },
+    { label: 'Personalización', route: '/settings', icon: 'mdi:settings-outline', order: 9 },
+    { label: 'Documentación', route: '/documentation', icon: 'mdi:book-open-page-variant-outline', order: 10 },
+    { label: 'Administración', route: '/roles', icon: 'mdi:shield-key-outline', order: 11 },
   ];
 
   // 1. Sembrar Permisos
@@ -142,20 +148,22 @@ async function main() {
       'quotes:read', 'quotes:write',
       'catalog:read', 'catalog:write',
       'clients:read', 'clients:write',
-      'technicians:read', 'analytics:read'
+      'suppliers:read', 'suppliers:write',
+      'technicians:read', 'analytics:read',
+      'equipments:read', 'equipments:write'
     ],
-    ['/', '/projects', '/catalog', '/clients', '/technicians', '/analytics', '/documentation']
+    ['/', '/projects', '/catalog', '/clients', '/suppliers', '/equipments', '/technicians', '/analytics', '/documentation']
   );
 
   await syncRoleRelations(
     'TECHNICIAN',
-    ['projects:read', 'quotes:read', 'catalog:read'],
-    ['/', '/projects', '/catalog', '/documentation']
+    ['projects:read', 'quotes:read', 'catalog:read', 'equipments:read', 'equipments:write'],
+    ['/', '/projects', '/catalog', '/equipments', '/documentation']
   );
 
   await syncRoleRelations(
     'CLIENT',
-    ['projects:read', 'quotes:read'],
+    ['projects:read', 'quotes:read', 'equipments:read'],
     ['/', '/projects', '/documentation']
   );
 
@@ -388,7 +396,49 @@ async function main() {
 
   console.log('Productos de catálogo creados.');
 
-  // 4. Crear Configuración Global
+  // 5. Crear Proveedores de Prueba
+  console.log('Sembrando proveedores...');
+  const suppliersList = [
+    { name: 'Syscom Chile', contact: 'Juan Pérez', email: 'ventas@syscom.cl', phone: '+56911112222', address: 'Av. El Condor 123, Huechuraba' },
+    { name: 'Tecnosinergia', contact: 'Maria Gómez', email: 'contacto@tecnosinergia.cl', phone: '+56933334444', address: 'Av. Santa Maria 456, Providencia' },
+    { name: 'Intcomex', contact: 'Carlos Plaza', email: 'ventas.cl@intcomex.com', phone: '+56222223333', address: 'Av. Américo Vespucio 789, Pudahuel' }
+  ];
+  for (const sup of suppliersList) {
+    const existing = await prisma.supplier.findFirst({ where: { name: sup.name } });
+    if (!existing) {
+      await prisma.supplier.create({ data: sup });
+    }
+  }
+
+  // Asociar proveedores a productos de prueba
+  console.log('Asociando proveedores a productos de prueba...');
+  const syscom = await prisma.supplier.findFirst({ where: { name: 'Syscom Chile' } });
+  const tecnosinergia = await prisma.supplier.findFirst({ where: { name: 'Tecnosinergia' } });
+  
+  if (syscom && tecnosinergia) {
+    // CAM-DOM-001 -> Syscom y Tecnosinergia
+    const p1 = await prisma.product.findUnique({ where: { sku: 'CAM-DOM-001' } });
+    if (p1) {
+      await prisma.productSupplier.deleteMany({ where: { productId: p1.id } });
+      await prisma.productSupplier.createMany({
+        data: [
+          { productId: p1.id, supplierId: syscom.id },
+          { productId: p1.id, supplierId: tecnosinergia.id }
+        ]
+      });
+    }
+
+    // CAM-PTZ-002 -> Syscom
+    const p2 = await prisma.product.findUnique({ where: { sku: 'CAM-PTZ-002' } });
+    if (p2) {
+      await prisma.productSupplier.deleteMany({ where: { productId: p2.id } });
+      await prisma.productSupplier.create({
+        data: { productId: p2.id, supplierId: syscom.id }
+      });
+    }
+  }
+
+  // 6. Crear Configuración Global
   await prisma.systemConfig.upsert({
     where: { id: 'global' },
     update: {

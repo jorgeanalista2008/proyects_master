@@ -92,6 +92,8 @@ proyects_master/
 │   │   ├── users/          # Controlador y servicio de gestión de usuarios
 │   │   ├── projects/       # Flujo de proyectos y tareas
 │   │   ├── quotes/         # Gestión de cotizaciones y productos
+│   │   ├── equipments/     # Módulo de Soporte y Recepción de Equipos Informáticos
+│   │   ├── suppliers/      # Módulo de Gestión de Proveedores
 │   │   ├── settings/       # Configuración global del sistema
 │   │   └── main.ts         # Punto de entrada NestJS
 │   └── package.json
@@ -99,11 +101,11 @@ proyects_master/
 ├── frontend/
 │   ├── public/             # Recursos estáticos e imágenes generadas
 │   ├── src/
-│   │   ├── app/            # Rutas de Next.js (Dashboard, Autenticación, Proyectos, etc.)
+│   │   ├── app/            # Rutas Next.js (Dashboard, Proyectos, Equipos, Proveedores, etc.)
 │   │   ├── components/     # Componentes interactivos reutilizables (selectores de iconos, etc.)
 │   │   ├── context/        # ConfigContext (personalización de marca) y AuthContext
 │   │   ├── hooks/          # Custom hooks para peticiones y sesión
-│   │   └── lib/            # Cliente API e integraciones
+│   │   └── lib/            # Cliente API e integraciones de compresión
 │   └── package.json
 │
 ├── package.json            # Scripts globales de ejecución
@@ -118,3 +120,16 @@ proyects_master/
 2.  **Selector Dinámico de Iconos de Material Design**: Integración directa con Iconify para buscar y seleccionar cualquier icono oficial de Material Design para cada módulo de la plataforma.
 3.  **Métricas Basadas en Roles (RBAC)**: Los paneles del dashboard están optimizados. Los técnicos solo visualizan métricas, estados de instalación y proyectos asignados directamente, ocultando de forma segura la información y gráficos financieros reservados para administradores.
 4.  **Generación de Facturas y Cotizaciones**: Permite cambiar el estado de las cotizaciones a `APPROVED` o `REJECTED`, ofreciendo una visualización estructurada e impresión limpia y optimizada para PDFs de facturas.
+5.  **Módulo de Soporte Técnico (Recepción de Equipos)**: Ciclo completo para el soporte de equipos informáticos (Recibido -> Asignado -> En Revisión -> Reparado -> Entregado).
+    *   **Registro Obligatorio de Fotos**: Exige subir al menos 2 fotos del equipo al recibirlo, mostrando alertas del lado del cliente.
+    *   **Procesamiento de Imágenes en el Cliente**: Convierte y comprime automáticamente las imágenes seleccionadas a JPEG a través de un Canvas de HTML5 en el navegador (redimensionando a un máximo de 1200px y calidad del 80%) antes de enviarse por red. Esto evita el error de red `write ECONNRESET` y ahorra espacio de base de datos.
+    *   **Reportes de Trabajo**: Obliga al técnico a detallar mediante notas técnicas el trabajo realizado para poder marcar el equipo como Reparado.
+6.  **Sistema de Alertas y Notificaciones (Bell Menu)**:
+    *   Icono de campana con badge dinámico de notificaciones no leídas en el encabezado del panel superior.
+    *   Polling de fondo cada 10 segundos para descargar alertas del usuario autenticado.
+    *   Acción de marcado individual como leído (redireccionando automáticamente a la ficha del equipo en soporte) y de marcado masivo.
+    *   Alertas automáticas: notifica al técnico al ser asignado y a los administradores al completarse la reparación.
+7.  **Exportación a Microsoft Excel**:
+    *   Botones de descarga integrados en la lista de proyectos, cotizaciones por proyecto e ítems presupuestarios de cotizaciones individuales.
+    *   Genera archivos CSV codificados con la cabecera UTF-8 BOM (`\ufeff`) para garantizar que Microsoft Excel abra los archivos y renderice tildes y caracteres especiales de forma nativa e inmediata.
+    *   El reporte de ítems incluye costos, cantidades, SKU, márgenes, totales de cotización y métricas de rentabilidad total.

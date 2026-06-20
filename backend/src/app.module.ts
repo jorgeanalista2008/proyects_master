@@ -14,6 +14,8 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { TechniciansModule } from './technicians/technicians.module';
 import { SettingsModule } from './settings/settings.module';
 import { RolesModule } from './roles/roles.module';
+import { SuppliersModule } from './suppliers/suppliers.module';
+import { EquipmentsModule } from './equipments/equipments.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { RolesModule } from './roles/roles.module';
     TechniciansModule,
     SettingsModule,
     RolesModule,
+    SuppliersModule,
+    EquipmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

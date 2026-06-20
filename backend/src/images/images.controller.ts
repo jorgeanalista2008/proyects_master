@@ -55,6 +55,26 @@ export class ImagesController {
     return this.imagesService.uploadProjectSurveyImage(projectId, file);
   }
 
+  // Subir imagen para recepción de equipos informáticos
+  @Post('equipment/:equipmentId')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('equipments:write', 'equipments:read')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadEquipmentImage(
+    @Param('equipmentId') equipmentId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.imagesService.uploadEquipmentImage(equipmentId, file);
+  }
+
+  // Eliminar una imagen de equipo
+  @Delete('equipment/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('equipments:write', 'equipments:read')
+  removeEquipmentImage(@Param('id') id: string) {
+    return this.imagesService.remove(id);
+  }
+
   // Eliminar una imagen (Requiere projects:write)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, PermissionsGuard)

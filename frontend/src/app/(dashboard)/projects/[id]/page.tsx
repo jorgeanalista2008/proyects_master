@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, getApiUrl } from "@/lib/api";
+import { compressAndConvertToJpeg } from "@/lib/image";
 import {
   Box,
   Typography,
@@ -26,6 +27,7 @@ import {
   Paper,
   Chip
 } from "@mui/material";
+import { Download } from "lucide-react";
 
 interface Client {
   id: string;
@@ -184,6 +186,28 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
     }
   };
 
+  const handleDeleteProject = async () => {
+    if (!project) return;
+    if (
+      window.confirm(
+        "¿Estás seguro de que deseas eliminar este proyecto? Se borrarán permanentemente el proyecto, todas sus cotizaciones asociadas, ítems y fotos del levantamiento."
+      )
+    ) {
+      setError("");
+      setSuccess("");
+      try {
+        await api.delete(`/projects/${project.id}`);
+        setSuccess("Proyecto eliminado exitosamente.");
+        setTimeout(() => {
+          router.push("/projects");
+        }, 1500);
+      } catch (err: any) {
+        console.error("Error deleting project:", err);
+        setError(err.message || "No se pudo eliminar el proyecto.");
+      }
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
@@ -196,12 +220,15 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
     setError("");
     setSuccess("");
 
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
     try {
+      // Comprimir y convertir a JPG en el cliente
+      const compressedFile = await compressAndConvertToJpeg(selectedFile);
+
+      const formData = new FormData();
+      formData.append("file", compressedFile);
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
       const response = await fetch(getApiUrl(`/images/project/${project.id}`), {
         method: "POST",
         headers: {
@@ -339,6 +366,38 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
     );
   }
 
+  const handleExportQuotes = () => {
+    if (!project || !project.quotes) return;
+
+    const headers = ["Versión", "Estado", "Moneda", "Total", "Fecha de Creación"];
+    const rows = project.quotes.map((q: any) => {
+      const statusLabel = 
+        q.status === "DRAFT" ? "Borrador" :
+        q.status === "SENT" ? "Enviado" :
+        q.status === "APPROVED" ? "Aprobado" :
+        q.status === "REJECTED" ? "Rechazado" : "Expirado";
+
+      return [
+        `"v${q.version}"`,
+        `"${statusLabel}"`,
+        `"${q.currency}"`,
+        `"${q.total}"`,
+        `"${new Date(q.createdAt).toLocaleDateString("es-ES")}"`
+      ];
+    });
+
+    const csvContent = "\ufeff" + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Cotizaciones_${project.name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // --- RENDERING DETAIL VIEW ---
   if (!project) return null;
 
@@ -356,7 +415,7 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
           </Typography>
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Estado:</Typography>
           <TextField
             select
@@ -373,6 +432,14 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
             <MenuItem value="COMPLETED">Completado</MenuItem>
             <MenuItem value="CANCELLED">Cancelado</MenuItem>
           </TextField>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDeleteProject}
+            sx={{ textTransform: "none", fontWeight: 600, height: 40 }}
+          >
+            Eliminar Proyecto
+          </Button>
         </Box>
       </Box>
 
@@ -499,15 +566,30 @@ export default function ProjectDetailOrForm({ params }: PageProps) {
               title="Cotizaciones Asociadas"
               titleTypographyProps={{ variant: "subtitle1", sx: { fontWeight: 700 } }}
               action={
-                <Button
-                  component={Link}
-                  href={`/projects/${project.id}/quotes/new`}
-                  variant="contained"
-                  color="primary"
-                  size="small"
-                >
-                  Crear Nueva Cotización
-                </Button>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  {project.quotes && project.quotes.length > 0 && (
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      size="small"
+                      startIcon={<Download className="w-4 h-4" />}
+                      onClick={handleExportQuotes}
+                      sx={{ textTransform: "none", fontWeight: 600 }}
+                    >
+                      Exportar Excel
+                    </Button>
+                  )}
+                  <Button
+                    component={Link}
+                    href={`/projects/${project.id}/quotes/new`}
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    sx={{ textTransform: "none", fontWeight: 600 }}
+                  >
+                    Crear Nueva Cotización
+                  </Button>
+                </Box>
               }
             />
             <Divider />

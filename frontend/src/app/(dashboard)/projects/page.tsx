@@ -23,7 +23,7 @@ import {
   Alert,
   Chip
 } from "@mui/material";
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 
 interface Client {
   id: string;
@@ -68,6 +68,38 @@ export default function ProjectsPage() {
     }
     fetchProjects();
   }, []);
+
+  const handleExportExcel = () => {
+    const headers = ["Nombre del Proyecto", "Cliente", "Estado", "Responsable", "Fecha de Creación"];
+    const rows = filteredProjects.map((p) => {
+      const managerName = p.manager ? `${p.manager.firstName} ${p.manager.lastName}` : "No asignado";
+      const statusLabel = 
+        p.status === "PENDING" ? "Levantamiento" : 
+        p.status === "QUOTED" ? "Cotizado" : 
+        p.status === "APPROVED" ? "Aprobado" : 
+        p.status === "IN_PROGRESS" ? "Instalación" : 
+        p.status === "COMPLETED" ? "Completado" : "Cancelado";
+      
+      return [
+        `"${p.name.replace(/"/g, '""')}"`,
+        `"${p.client?.name?.replace(/"/g, '""') || ''}"`,
+        `"${statusLabel}"`,
+        `"${managerName.replace(/"/g, '""')}"`,
+        `"${new Date(p.createdAt).toLocaleDateString("es-ES")}"`
+      ];
+    });
+
+    const csvContent = "\ufeff" + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Proyectos_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
@@ -122,15 +154,27 @@ export default function ProjectsPage() {
             Supervisa el ciclo de vida de los proyectos de seguridad y cotizaciones de clientes
           </Typography>
         </Box>
-        <Button
-          component={Link}
-          href="/projects/new"
-          variant="contained"
-          color="primary"
-          startIcon={<Plus className="w-4 h-4" />}
-        >
-          Nuevo Proyecto
-        </Button>
+        <Box sx={{ display: "flex", gap: 1.5 }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={handleExportExcel}
+            startIcon={<Download className="w-4 h-4" />}
+            sx={{ textTransform: "none", fontWeight: 600 }}
+          >
+            Exportar a Excel
+          </Button>
+          <Button
+            component={Link}
+            href="/projects/new"
+            variant="contained"
+            color="primary"
+            startIcon={<Plus className="w-4 h-4" />}
+            sx={{ textTransform: "none", fontWeight: 600, boxShadow: "0 4px 8px 0 rgba(115, 103, 240, 0.3)" }}
+          >
+            Nuevo Proyecto
+          </Button>
+        </Box>
       </Box>
 
       {error && (

@@ -27,4 +27,7 @@ export class CreateCatalogDto {
 
   @ApiProperty({ example: true, description: 'Estado del producto en catálogo', required: false, default: true })
   isActive?: boolean;
+
+  @ApiProperty({ example: ['uuid-proveedor'], description: 'IDs de los proveedores que surten el producto', required: false })
+  supplierIds?: string[];
 }

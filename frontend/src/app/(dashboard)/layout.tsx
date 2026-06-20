@@ -19,7 +19,12 @@ import {
   Avatar, 
   AppBar, 
   Toolbar,
-  CircularProgress
+  CircularProgress,
+  Menu,
+  MenuItem,
+  Badge,
+  Divider,
+  Button
 } from '@mui/material';
 import { 
   ShieldAlert, 
@@ -49,6 +54,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [anchorElNotifications, setAnchorElNotifications] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
@@ -65,12 +72,60 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           { label: 'Proyectos', route: '/projects', icon: 'mdi:briefcase-outline' },
           { label: 'Catálogo', route: '/catalog', icon: 'mdi:archive-outline' },
           { label: 'Clientes', route: '/clients', icon: 'mdi:account-group-outline' },
+          { label: 'Proveedores', route: '/suppliers', icon: 'mdi:truck-delivery-outline' },
+          { label: 'Soporte Técnico', route: '/equipments', icon: 'mdi:laptop-wrench' },
           { label: 'Técnicos', route: '/technicians', icon: 'mdi:account-wrench-outline' },
         ]);
       }
     }
     if (user) fetchMenu();
   }, [user]);
+
+  useEffect(() => {
+    async function fetchAlerts() {
+      try {
+        const data = await api.get<any[]>('/equipments/alerts/my-alerts');
+        setAlerts(data);
+      } catch (err) {
+        console.error('Error fetching alerts:', err);
+      }
+    }
+
+    if (user) {
+      fetchAlerts();
+      const interval = setInterval(fetchAlerts, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const handleOpenNotifications = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorElNotifications(event.currentTarget);
+  };
+
+  const handleCloseNotifications = () => {
+    setAnchorElNotifications(null);
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.patch('/equipments/alerts/read-all', {});
+      setAlerts([]);
+      handleCloseNotifications();
+    } catch (err) {
+      console.error('Error marking all alerts as read:', err);
+    }
+  };
+
+  const handleMarkOneRead = async (alertId: string, equipmentId: string) => {
+    try {
+      await api.patch(`/equipments/alerts/${alertId}/read`, {});
+      setAlerts((prev) => prev.filter((a) => a.id !== alertId));
+      handleCloseNotifications();
+      router.push(`/equipments/${equipmentId}`);
+    } catch (err) {
+      console.error('Error marking alert as read:', err);
+    }
+  };
 
   if (loading || !user) {
     return (
@@ -218,6 +273,82 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <IconButton onClick={toggleTheme} sx={{ color: 'text.secondary' }}>
                 {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </IconButton>
+
+              {/* Campana de Notificaciones */}
+              <IconButton onClick={handleOpenNotifications} sx={{ color: 'text.secondary' }}>
+                <Badge badgeContent={alerts.length} color="error">
+                  <Bell className="w-5 h-5" />
+                </Badge>
+              </IconButton>
+
+              <Menu
+                anchorEl={anchorElNotifications}
+                open={Boolean(anchorElNotifications)}
+                onClose={handleCloseNotifications}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      width: 320,
+                      maxHeight: 400,
+                      mt: 1.5,
+                      boxShadow: '0 4px 20px 0 rgba(0,0,0,0.1)',
+                      borderRadius: 2,
+                    }
+                  }
+                }}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+              >
+                <Box sx={{ px: 2, py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    Notificaciones ({alerts.length})
+                  </Typography>
+                  {alerts.length > 0 && (
+                    <Button size="small" onClick={handleMarkAllRead} sx={{ fontSize: '12px', textTransform: 'none' }}>
+                      Marcar todo leído
+                    </Button>
+                  )}
+                </Box>
+                <Divider />
+                {alerts.length === 0 ? (
+                  <Box sx={{ p: 3, textAlign: 'center' }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      No tienes notificaciones pendientes.
+                    </Typography>
+                  </Box>
+                ) : (
+                  alerts.map((alert: any) => (
+                    <MenuItem
+                      key={alert.id}
+                      onClick={() => handleMarkOneRead(alert.id, alert.equipmentReceiptId)}
+                      sx={{
+                        py: 1.5,
+                        px: 2,
+                        whiteSpace: 'normal',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                        '&:last-child': { borderBottom: 0 },
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontSize: '13px', fontWeight: 500, color: 'text.primary', mb: 0.5 }}>
+                        {alert.message}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        {new Date(alert.createdAt).toLocaleString('es-ES', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          day: '2-digit',
+                          month: '2-digit',
+                        })}
+                      </Typography>
+                    </MenuItem>
+                  ))
+                )}
+              </Menu>
+
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Avatar sx={{ 
                   width: 36, 

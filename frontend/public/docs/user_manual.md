@@ -58,3 +58,33 @@ Los administradores pueden adaptar la estética de la plataforma a la identidad 
 2. **Edición Pre-Impresión:** Puedes reescribir cualquier dato del cliente (Atención, RIF, dirección) o la unidad de medida de las filas directamente en la hoja de previsualización antes de imprimir. ¡Los cambios son solo para la impresión y no alteran la base de datos!
 3. **Salto de Página Inteligente:** Activa los checks en la parte superior para forzar saltos de página antes de las secciones "Empotramiento", "Servicio Técnico" o "Totales" según la cantidad de ítems.
 4. Pulsa en **Imprimir / Guardar PDF**. Se abrirá el diálogo del sistema. En el PDF resultante no se mostrará ningún botón, menú ni borde de formulario; solo la cotización en limpio con el logo, tablas de desglose, plano del proyecto y firmas al pie.
+
+---
+
+## 💻 8. Soporte Técnico y Recepción de Equipos Informáticos
+El módulo de soporte gestiona el ciclo completo de revisión y reparación de equipos informáticos (ej. laptops, DVRs, switches):
+1. **Registro de Ingreso (Recepción):** Navega a **Soporte Técnico** y haz clic en **Registrar Recepción de Equipo**.
+2. **Campos Requeridos:** Rellena los datos obligatorios del equipo (tipo de equipo, marca, modelo, número de serie y descripción detallada de la falla).
+3. **Registro Obligatorio de Fotos (Mínimo 2):** Por política de la empresa, debes adjuntar al menos 2 fotos del estado físico del equipo al momento de recibirlo. El sistema procesa y comprime automáticamente las fotos en tu navegador a formato JPEG (redimensionando a un máximo de 1200px) para ahorrar espacio y optimizar la subida.
+4. **Asignación a Técnico:** Se puede asignar de inmediato un técnico de reparación o dejarlo pendiente. El técnico asignado recibirá una alerta instantánea en su panel de notificaciones.
+5. **Ciclo de Servicio (Estados):**
+   - El técnico asignado inicia la revisión cambiando el estado a **"En Revisión"**.
+   - Al finalizar, el técnico cambia el estado a **"Reparado"** y debe rellenar un modal detallando de forma obligatoria las **Notas de Reparación / Trabajo Realizado**. Los administradores recibirán una alerta automática al instante.
+   - El administrador realiza la entrega formal al cliente cambiando el estado a **"Entregado"**.
+
+---
+
+## 🔔 9. Notificaciones y Alertas en Tiempo Real
+1. En la parte superior derecha de la plataforma, dispones de una campana de notificaciones con un indicador numérico en rojo que muestra tus alertas pendientes.
+2. El sistema realiza una consulta en segundo plano de forma automática cada 10 segundos para descargar tus nuevas alertas sin necesidad de recargar la página.
+3. Haz clic en la campana para abrir la lista flotante de alertas.
+4. Puedes hacer clic en una alerta específica para marcarla como leída; el sistema te redireccionará automáticamente a la ficha del equipo en soporte correspondiente.
+5. También puedes utilizar el botón **"Marcar todo como leído"** para limpiar tus alertas masivamente.
+
+---
+
+## 📊 10. Exportación de Reportes a Microsoft Excel
+La plataforma te permite descargar la información operativa y financiera en archivos de formato CSV optimizados con la cabecera UTF-8 BOM, asegurando que Microsoft Excel los reconozca y abra de forma nativa manteniendo las tildes y eñes correctamente:
+1. **Lista de Proyectos:** En el módulo de proyectos, haz clic en **Exportar a Excel** para descargar los proyectos filtrados actualmente.
+2. **Cotizaciones del Proyecto:** En el detalle de un proyecto, exporta la lista de cotizaciones y sus estados.
+3. **Presupuesto Detallado (Ítems):** En la vista de una cotización, haz clic en **Exportar Detalle a Excel** para descargar una sábana de datos completa del presupuesto, incluyendo SKU, producto, cantidades, precios unitarios, costos unitarios, márgenes aplicados, totales y, para administradores, un desglose detallado de la rentabilidad del proyecto.

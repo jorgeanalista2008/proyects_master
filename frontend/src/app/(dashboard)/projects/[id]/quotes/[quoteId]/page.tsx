@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { api, getApiUrl } from "@/lib/api";
+import { compressAndConvertToJpeg } from "@/lib/image";
 import { useConfig } from "@/context/ConfigContext";
 import { 
   ArrowLeft, 
@@ -12,7 +13,8 @@ import {
   Loader2, 
   FileText,
   UploadCloud,
-  Check
+  Check,
+  Download
 } from "lucide-react";
 import {
   Box,
@@ -211,6 +213,77 @@ export default function QuoteDetailView({ params }: PageProps) {
       }
     }
   }, [quote, project, sysConfig]);
+
+  const handleExportExcel = () => {
+    if (!quote || !project) return;
+
+    const headers = [
+      "SKU",
+      "Producto",
+      "Cantidad",
+      "Unidad",
+      "Tipo de Precio",
+      "Costo Unitario",
+      "Margen (%)",
+      "Precio Unitario",
+      "Subtotal"
+    ];
+
+    const rows = quote.items.map((item) => {
+      const unit = itemUnits[item.id] || "Pza";
+      const costVal = (item as any).unitCost || 0;
+      const marginVal = (item as any).margin || 0;
+      const priceVal = item.unitPrice || 0;
+      const subtotalVal = item.quantity * priceVal;
+
+      return [
+        `"${item.product.sku.replace(/"/g, '""')}"`,
+        `"${item.product.name.replace(/"/g, '""')}"`,
+        item.quantity,
+        `"${unit}"`,
+        `"${item.priceType || 'CASH'}"`,
+        costVal,
+        marginVal,
+        priceVal,
+        subtotalVal
+      ];
+    });
+
+    const emptyRow = ["", "", "", "", "", "", "", "", ""];
+    
+    const summaryRows = [
+      emptyRow,
+      ["Resumen Financiero", "", "", "", "", "", "", "", ""],
+      ["Subtotal", "", "", "", "", "", "", "", quote.subtotal],
+      ["Tasa IVA (%)", "", "", "", "", "", "", "", `${quote.taxRate}%`],
+      ["Monto IVA", "", "", "", "", "", "", "", quote.taxAmount],
+      ["Descuento", "", "", "", "", "", "", "", quote.discount],
+      ["Total Final", "", "", "", "", "", "", "", quote.total],
+    ];
+
+    if ((quote as any).totalCost !== undefined) {
+      summaryRows.push(
+        ["Costo Total Adquisición", "", "", "", "", "", "", "", (quote as any).totalCost],
+        ["Margen de Ganancia Neto", "", "", "", "", "", "", "", (quote as any).marginAmount]
+      );
+    }
+
+    const csvContent = "\ufeff" + [
+      headers.join(","),
+      ...rows.map(e => e.join(",")),
+      ...summaryRows.map(e => e.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Cotizacion_v${quote.version}_${project.name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleUpdateStatus = async (newStatus: "APPROVED" | "REJECTED") => {
     if (!quote) return;
@@ -490,6 +563,22 @@ export default function QuoteDetailView({ params }: PageProps) {
             <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
               <Button
                 variant="outlined"
+                onClick={handleExportExcel}
+                startIcon={<Download size={16} />}
+                sx={{
+                  borderColor: "var(--border-light)",
+                  color: "var(--text-main)",
+                  borderRadius: "6px",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  "&:hover": { borderColor: "var(--primary)", color: "var(--primary)" }
+                }}
+              >
+                Exportar a Excel
+              </Button>
+
+              <Button
+                variant="outlined"
                 onClick={handlePrint}
                 startIcon={<Printer size={16} />}
                 sx={{
@@ -648,11 +737,13 @@ export default function QuoteDetailView({ params }: PageProps) {
                       onChange={async (e) => {
                         if (e.target.files && e.target.files[0]) {
                           const file = e.target.files[0];
-                          const formData = new FormData();
-                          formData.append("file", file);
-                          const token = localStorage.getItem("token");
                           try {
                             setUpdating(true);
+                            // Comprimir y convertir a JPG en el cliente
+                            const compressedFile = await compressAndConvertToJpeg(file);
+                            const formData = new FormData();
+                            formData.append("file", compressedFile);
+                            const token = localStorage.getItem("token");
                             const res = await fetch(getApiUrl(`/images/project/${project.id}`), {
                               method: "POST",
                               headers: {

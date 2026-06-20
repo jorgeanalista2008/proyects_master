@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, getApiUrl } from "@/lib/api";
+import { compressAndConvertToJpeg } from "@/lib/image";
 import {
   Box,
   Typography,
@@ -120,8 +121,11 @@ export default function TechnicianForm({ params }: PageProps) {
   const handlePhotoUpload = async (techId: string) => {
     if (!selectedFile) return;
 
+    // Comprimir y convertir a JPG en el cliente
+    const compressedFile = await compressAndConvertToJpeg(selectedFile);
+
     const formData = new FormData();
-    formData.append("file", selectedFile);
+    formData.append("file", compressedFile);
 
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 

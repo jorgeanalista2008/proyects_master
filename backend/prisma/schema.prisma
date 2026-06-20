@@ -74,6 +74,8 @@ model User {
   managedProjects    Project[]          @relation("ProjectManager")
   createdQuotes      Quote[]            @relation("QuoteCreator")
   technicianProfile  TechnicianProfile?
+  repairs            EquipmentReceipt[] @relation("TechnicianRepairs")
+  alerts             EquipmentAlert[]   @relation("UserAlerts")
   
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -86,16 +88,17 @@ model User {
 // ----------------------------------------------------
 
 model Client {
-  id           String    @id @default(uuid())
-  name         String    // Nombre completo o Razón Social
-  rutOrId      String    @unique // Identificación fiscal (RUT, RFC, DNI)
+  id           String             @id @default(uuid())
+  name         String             // Nombre completo o Razón Social
+  rutOrId      String             @unique // Identificación fiscal (RUT, RFC, DNI)
   email        String
   phone        String
   address      String?
   city         String?
   projects     Project[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  equipments   EquipmentReceipt[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 }
 
 model Category {
@@ -125,6 +128,7 @@ model Product {
   
   images       Image[]       @relation("ProductImage")
   quoteItems   QuoteItem[]
+  suppliers    ProductSupplier[]
   
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -240,6 +244,7 @@ enum ImageType {
   PROJECT_SURVEY
   TECHNICIAN_PHOTO
   COMPANY_LOGO
+  EQUIPMENT_PHOTO
 }
 
 model Image {
@@ -256,6 +261,9 @@ model Image {
   projectId   String?
   project     Project?  @relation("ProjectSurveyImage", fields: [projectId], references: [id], onDelete: Cascade)
   
+  equipmentReceiptId String?
+  equipmentReceipt   EquipmentReceipt? @relation("EquipmentReceiptImages", fields: [equipmentReceiptId], references: [id], onDelete: Cascade)
+
   createdAt   DateTime  @default(now())
 }
 
@@ -302,4 +310,85 @@ model SystemConfig {
   defaultTheme String   @default("dark")
   fontStyle    String   @default("public-sans")
   updatedAt    DateTime @updatedAt
+}
+
+model Supplier {
+  id        String   @id @default(uuid())
+  name      String   // Nombre del proveedor (ej. Syscom, Tecnosinergia)
+  contact   String?  // Nombre de contacto
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  products  ProductSupplier[]
+}
+
+// ----------------------------------------------------
+// Módulo de Soporte Técnico (Recepción y Alertas)
+// ----------------------------------------------------
+
+enum EquipmentStatus {
+  RECEIVED
+  ASSIGNED
+  IN_PROGRESS
+  REPAIRED
+  DELIVERED
+}
+
+model EquipmentReceipt {
+  id               String          @id @default(uuid())
+  clientName       String          // Nombre del cliente
+  clientId         String?         // Opcional, si está en el sistema
+  client           Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  equipmentType    String          // Tipo de equipo (ej. Laptop, Impresora)
+  brand            String          // Marca
+  model            String          // Modelo
+  serialNumber     String          // Número de Serie
+  issueDescription String          @db.Text // Texto de lo que presenta el equipo
+  status           EquipmentStatus @default(RECEIVED)
+  technicalNotes   String?         @db.Text // Notas técnicas de la reparación (detallado de lo realizado)
+  
+  // Técnico asignado
+  technicianId     String?
+  technician       User?           @relation("TechnicianRepairs", fields: [technicianId], references: [id], onDelete: SetNull)
+  
+  // Fotos adjuntas
+  images           Image[]         @relation("EquipmentReceiptImages")
+  
+  // Alertas asociadas
+  alerts           EquipmentAlert[]
+  
+  // Historial / Tiempos
+  receivedAt       DateTime        @default(now())
+  assignedAt       DateTime?
+  repairedAt       DateTime?
+  deliveredAt      DateTime?
+  
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model EquipmentAlert {
+  id                 String            @id @default(uuid())
+  equipmentReceiptId String
+  equipmentReceipt   EquipmentReceipt  @relation(fields: [equipmentReceiptId], references: [id], onDelete: Cascade)
+  message            String            // Mensaje de la alerta
+  isRead             Boolean           @default(false)
+  
+  // Usuario destinatario de la alerta (técnico o admin)
+  userId             String
+  user               User              @relation("UserAlerts", fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt          DateTime          @default(now())
+}
+
+model ProductSupplier {
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@id([productId, supplierId])
+  @@index([supplierId])
 }

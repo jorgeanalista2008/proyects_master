@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, getApiUrl } from "@/lib/api";
+import { compressAndConvertToJpeg } from "@/lib/image";
 import {
   Box,
   Typography,
@@ -19,7 +20,8 @@ import {
   MenuItem,
   Select,
   InputLabel,
-  FormControl
+  FormControl,
+  Chip
 } from "@mui/material";
 
 interface PageProps {
@@ -66,6 +68,8 @@ export default function CatalogItemForm({ params }: PageProps) {
   const [success, setSuccess] = useState("");
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>([]);
 
   // Fetch product and categories data
   useEffect(() => {
@@ -75,6 +79,14 @@ export default function CatalogItemForm({ params }: PageProps) {
         // Load categories first
         const categoriesData = await api.get<Category[]>("/settings/categories");
         setCategories(categoriesData);
+
+        // Fetch all suppliers
+        try {
+          const suppliersData = await api.get<any[]>("/suppliers");
+          setSuppliers(suppliersData);
+        } catch (e) {
+          console.warn("Could not load suppliers list", e);
+        }
 
         if (!isNew) {
           const data = await api.get<any>(`/catalog/${id}`);
@@ -90,6 +102,7 @@ export default function CatalogItemForm({ params }: PageProps) {
           setPriceCredit(Number(data.priceCredit) || 0);
           setPricePreferred(Number(data.pricePreferred) || 0);
           setImageId((data.images && data.images.length > 0) ? data.images[0].id : null);
+          setSelectedSupplierIds(data.suppliers ? data.suppliers.map((s: any) => s.id) : []);
         }
       } catch (err: any) {
         console.error("Error loading catalog details and categories:", err);
@@ -125,8 +138,11 @@ export default function CatalogItemForm({ params }: PageProps) {
   const uploadImage = async (productId: string) => {
     if (!imageFile) return;
 
+    // Comprimir y convertir a JPG en el cliente
+    const compressedFile = await compressAndConvertToJpeg(imageFile);
+
     const formData = new FormData();
-    formData.append("file", imageFile);
+    formData.append("file", compressedFile);
 
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -139,7 +155,21 @@ export default function CatalogItemForm({ params }: PageProps) {
     });
 
     if (!response.ok) {
-      throw new Error("El producto se guardó, pero la carga de la imagen falló.");
+      let errorMessage = `La carga de la imagen falló (Status ${response.status}).`;
+      try {
+        const errData = await response.json();
+        if (Array.isArray(errData.message)) {
+          errorMessage = errData.message.join(", ");
+        } else {
+          errorMessage = errData.message || errData.error || errorMessage;
+        }
+      } catch {
+        try {
+          const text = await response.text();
+          if (text) errorMessage += ` Detalle: ${text}`;
+        } catch {}
+      }
+      throw new Error(errorMessage);
     }
   };
 
@@ -167,7 +197,8 @@ export default function CatalogItemForm({ params }: PageProps) {
         marginCredit,
         priceCredit,
         marginPreferred,
-        pricePreferred
+        pricePreferred,
+        supplierIds: selectedSupplierIds
       };
 
       let savedItem: any;
@@ -320,6 +351,36 @@ export default function CatalogItemForm({ params }: PageProps) {
                   slotProps={{ inputLabel: { shrink: true } }}
                   sx={fieldStyle}
                 />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <FormControl fullWidth sx={fieldStyle}>
+                  <InputLabel shrink id="suppliers-label">Proveedores</InputLabel>
+                  <Select
+                    labelId="suppliers-label"
+                    label="Proveedores"
+                    multiple
+                    notched
+                    value={selectedSupplierIds}
+                    onChange={(e) => setSelectedSupplierIds(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value as string[])}
+                    disabled={loading}
+                    renderValue={(selected) => (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {selected.map((value) => {
+                          const sup = suppliers.find(s => s.id === value);
+                          return <Chip key={value} label={sup ? sup.name : value} size="small" sx={{ bgcolor: "rgba(115, 103, 240, 0.08)", color: "var(--primary)" }} />;
+                        })}
+                      </Box>
+                    )}
+                    sx={{ borderRadius: "6px" }}
+                  >
+                    {suppliers.map((sup) => (
+                      <MenuItem key={sup.id} value={sup.id}>
+                        {sup.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
 
               {/* Pricing Structure Box */}

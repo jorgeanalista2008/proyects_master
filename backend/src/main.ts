@@ -33,5 +33,5 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 }
-// Reload trigger
+// Reload trigger - Force reload to pick up new Prisma Client schema (v3)
 bootstrap();

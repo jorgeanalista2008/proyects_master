@@ -16,7 +16,8 @@ import {
   CircularProgress,
   Alert,
   Divider,
-  Chip
+  Chip,
+  Dialog
 } from "@mui/material";
 import { Plus } from "lucide-react";
 
@@ -41,6 +42,7 @@ interface CatalogItem {
   pricePreferred: number;
   images?: { id: string; fileName: string; mimeType: string }[];
   description?: string;
+  suppliers?: { id: string; name: string }[];
 }
 
 export default function CatalogPage() {
@@ -50,6 +52,7 @@ export default function CatalogPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -202,24 +205,37 @@ export default function CatalogPage() {
               <Card sx={{ bgcolor: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: "6px", boxShadow: "var(--shadow-sm)", height: "100%", display: "flex", flexDirection: "column" }}>
                 <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
                   {/* Thumbnail */}
-                  <Box sx={{ 
-                    position: "relative",
-                    width: "100%", 
-                    height: 160, 
-                    bgcolor: "rgba(115, 103, 240, 0.01)",
-                    borderRadius: "6px",
-                    overflow: "hidden",
-                    border: "1px solid var(--border-light)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                  }}>
+                  <Box 
+                    onClick={() => {
+                      if (item.images && item.images.length > 0) {
+                        setSelectedImage(getApiUrl(`/images/${item.images[0].id}`));
+                      }
+                    }}
+                    sx={{ 
+                      position: "relative",
+                      width: "100%", 
+                      height: 160, 
+                      bgcolor: "rgba(115, 103, 240, 0.01)",
+                      borderRadius: "6px",
+                      overflow: "hidden",
+                      border: "1px solid var(--border-light)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: item.images && item.images.length > 0 ? "pointer" : "default",
+                      "&:hover": item.images && item.images.length > 0 ? {
+                        "& img": {
+                          transform: "scale(1.06)"
+                        }
+                      } : {}
+                    }}
+                  >
                     {item.images && item.images.length > 0 ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={getApiUrl(`/images/${item.images[0].id}`)}
                         alt={item.name}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s ease-in-out" }}
                       />
                     ) : (
                       <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
@@ -253,6 +269,24 @@ export default function CatalogPage() {
                       <Typography variant="body2" color="var(--text-muted)" sx={{ lineClamp: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", height: 36, overflow: "hidden", mt: 1 }}>
                         {item.description}
                       </Typography>
+                    )}
+                    {item.suppliers && item.suppliers.length > 0 && (
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 1.5 }}>
+                        {item.suppliers.map((sup: any) => (
+                          <Chip 
+                            key={sup.id} 
+                            label={sup.name} 
+                            size="small" 
+                            variant="outlined"
+                            sx={{ 
+                              fontSize: "0.7rem", 
+                              height: 20, 
+                              borderColor: "var(--border-light)", 
+                              color: "var(--text-muted)" 
+                            }} 
+                          />
+                        ))}
+                      </Box>
                     )}
                   </Box>
 
@@ -293,6 +327,37 @@ export default function CatalogPage() {
           ))}
         </Grid>
       )}
+
+      <Dialog
+        open={Boolean(selectedImage)}
+        onClose={() => setSelectedImage(null)}
+        maxWidth="md"
+        sx={{
+          "& .MuiPaper-root": {
+            bgcolor: "transparent",
+            boxShadow: "none",
+            overflow: "hidden"
+          }
+        }}
+      >
+        {selectedImage && (
+          <Box sx={{ position: "relative", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={selectedImage}
+              alt="Visualización del Producto"
+              style={{
+                maxWidth: "100%",
+                maxHeight: "85vh",
+                objectFit: "contain",
+                borderRadius: "8px",
+                border: "1px solid var(--border-light)",
+                backgroundColor: "var(--bg-card)"
+              }}
+            />
+          </Box>
+        )}
+      </Dialog>
     </Box>
   );
 }

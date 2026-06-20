@@ -8,7 +8,7 @@ export class CatalogService {
   constructor(private prisma: PrismaService) {}
 
   async create(createCatalogDto: CreateCatalogDto) {
-    const { sku, name, description, categoryId, unitCost, marginCash, marginCredit, marginPreferred, isActive } = createCatalogDto;
+    const { sku, name, description, categoryId, unitCost, marginCash, marginCredit, marginPreferred, isActive, supplierIds } = createCatalogDto;
 
     // Verificar si el SKU ya existe
     const existingProduct = await this.prisma.product.findUnique({
@@ -24,7 +24,7 @@ export class CatalogService {
     const priceCredit = unitCost * (1 + marginCredit / 100);
     const pricePreferred = unitCost * (1 + marginPreferred / 100);
 
-    return this.prisma.product.create({
+    const product = await this.prisma.product.create({
       data: {
         sku,
         name,
@@ -38,9 +38,17 @@ export class CatalogService {
         marginPreferred,
         pricePreferred,
         isActive: isActive ?? true,
+        suppliers: supplierIds && supplierIds.length > 0 ? {
+          create: supplierIds.map(id => ({ supplierId: id }))
+        } : undefined
       },
       include: {
         category: true,
+        suppliers: {
+          include: {
+            supplier: true
+          }
+        },
         images: {
           select: {
             id: true,
@@ -50,12 +58,22 @@ export class CatalogService {
         },
       },
     });
+
+    return {
+      ...product,
+      suppliers: product.suppliers.map(ps => ps.supplier)
+    };
   }
 
   async findAll() {
-    return this.prisma.product.findMany({
+    const products = await this.prisma.product.findMany({
       include: {
         category: true,
+        suppliers: {
+          include: {
+            supplier: true
+          }
+        },
         images: {
           select: {
             id: true,
@@ -65,6 +83,11 @@ export class CatalogService {
         },
       },
     });
+
+    return products.map(product => ({
+      ...product,
+      suppliers: product.suppliers.map(ps => ps.supplier)
+    }));
   }
 
   async findOne(id: string) {
@@ -72,6 +95,11 @@ export class CatalogService {
       where: { id },
       include: {
         category: true,
+        suppliers: {
+          include: {
+            supplier: true
+          }
+        },
         images: {
           select: {
             id: true,
@@ -86,7 +114,10 @@ export class CatalogService {
       throw new NotFoundException('El producto del catálogo no fue encontrado.');
     }
 
-    return product;
+    return {
+      ...product,
+      suppliers: product.suppliers.map(ps => ps.supplier)
+    };
   }
 
   async update(id: string, updateCatalogDto: UpdateCatalogDto) {
@@ -95,7 +126,7 @@ export class CatalogService {
       throw new NotFoundException('El producto del catálogo no fue encontrado.');
     }
 
-    const { unitCost, marginCash, marginCredit, marginPreferred, ...rest } = updateCatalogDto;
+    const { unitCost, marginCash, marginCredit, marginPreferred, supplierIds, ...rest } = updateCatalogDto;
     const updateData: any = { ...rest };
 
     const finalUnitCost = unitCost !== undefined ? unitCost : Number(product.unitCost);
@@ -118,11 +149,23 @@ export class CatalogService {
       updateData.pricePreferred = finalUnitCost * (1 + finalMarginPreferred / 100);
     }
 
-    return this.prisma.product.update({
+    if (supplierIds) {
+      updateData.suppliers = {
+        deleteMany: {},
+        create: supplierIds.map(id => ({ supplierId: id }))
+      };
+    }
+
+    const updatedProduct = await this.prisma.product.update({
       where: { id },
       data: updateData,
       include: {
         category: true,
+        suppliers: {
+          include: {
+            supplier: true
+          }
+        },
         images: {
           select: {
             id: true,
@@ -132,6 +175,11 @@ export class CatalogService {
         },
       },
     });
+
+    return {
+      ...updatedProduct,
+      suppliers: updatedProduct.suppliers.map(ps => ps.supplier)
+    };
   }
 
   async remove(id: string) {

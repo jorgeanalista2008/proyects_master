@@ -403,10 +403,16 @@ export default function DashboardPage() {
         <Grid size={{ xs: 12, md: isStaff ? 6 : 12 }}>
           <Card sx={{ border: "1px solid", borderColor: "divider" }}>
             <CardHeader 
-              title="Resumen de Instalaciones" 
-              subheader={isStaff ? "Distribución porcentual de proyectos activos" : "Distribución de tus proyectos de instalación"}
-              titleTypographyProps={{ variant: "h6", sx: { fontWeight: 600 } }}
-              subheaderTypographyProps={{ variant: "caption" }}
+              title={
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Resumen de Instalaciones
+                </Typography>
+              }
+              subheader={
+                <Typography variant="caption" color="text.secondary">
+                  {isStaff ? "Distribución porcentual de proyectos activos" : "Distribución de tus proyectos de instalación"}
+                </Typography>
+              }
             />
             <CardContent sx={{ pt: 0, display: "flex", flexDirection: "column", gap: 3.5 }}>
               <Box sx={{ display: "flex", height: 8, borderRadius: 999, overflow: "hidden", bgcolor: "divider" }}>
@@ -448,10 +454,16 @@ export default function DashboardPage() {
           <Grid size={{ xs: 12, md: 6 }}>
             <Card ref={chartContainerRef} sx={{ border: "1px solid", borderColor: "divider", position: "relative" }}>
             <CardHeader
-              title="Estadísticas de Presupuestos"
-              subheader="Historial de cotizaciones versus costos operativos"
-              titleTypographyProps={{ variant: "h6", sx: { fontWeight: 600 } }}
-              subheaderTypographyProps={{ variant: "caption" }}
+              title={
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Estadísticas de Presupuestos
+                </Typography>
+              }
+              subheader={
+                <Typography variant="caption" color="text.secondary">
+                  Historial de cotizaciones versus costos operativos
+                </Typography>
+              }
               action={
                 <Box sx={{ display: "flex", gap: 2, pr: 1 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -584,10 +596,16 @@ export default function DashboardPage() {
           <Grid size={{ xs: 12, md: 4 }}>
             <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%" }}>
               <CardHeader 
-                title="Rentabilidad Comercial" 
-                subheader="Márgenes netos del mes"
-                titleTypographyProps={{ variant: "h6", sx: { fontWeight: 600 } }}
-                subheaderTypographyProps={{ variant: "caption" }}
+                title={
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Rentabilidad Comercial
+                  </Typography>
+                }
+                subheader={
+                  <Typography variant="caption" color="text.secondary">
+                    Márgenes netos del mes
+                  </Typography>
+                }
               />
               <CardContent sx={{ pt: 0, display: "flex", flexDirection: "column", gap: 3 }}>
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -649,10 +667,16 @@ export default function DashboardPage() {
         <Grid size={{ xs: 12, md: isStaff ? 4 : 6 }}>
           <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%", display: "flex", flexDirection: "column" }}>
             <CardHeader
-              title="Avance de Obras"
-              subheader="Entregas culminadas"
-              titleTypographyProps={{ variant: "h6", sx: { fontWeight: 600 } }}
-              subheaderTypographyProps={{ variant: "caption" }}
+              title={
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Avance de Obras
+                </Typography>
+              }
+              subheader={
+                <Typography variant="caption" color="text.secondary">
+                  Entregas culminadas
+                </Typography>
+              }
             />
             <CardContent sx={{ pt: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 2 }}>
               <Box sx={{ position: "relative", width: 110, height: 110 }}>
@@ -693,10 +717,16 @@ export default function DashboardPage() {
         <Grid size={{ xs: 12, md: isStaff ? 4 : 6 }}>
           <Card sx={{ border: "1px solid", borderColor: "divider", height: "100%" }}>
             <CardHeader
-              title="Proyectos por Clientes"
-              subheader="Últimas órdenes en curso"
-              titleTypographyProps={{ variant: "h6", sx: { fontWeight: 600 } }}
-              subheaderTypographyProps={{ variant: "caption" }}
+              title={
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Proyectos por Clientes
+                </Typography>
+              }
+              subheader={
+                <Typography variant="caption" color="text.secondary">
+                  Últimas órdenes en curso
+                </Typography>
+              }
             />
             <CardContent sx={{ pt: 0 }}>
               <Tabs 

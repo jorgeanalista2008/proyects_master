@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, getApiUrl } from "@/lib/api";
+import { compressAndConvertToJpeg } from "@/lib/image";
 import {
   Box,
   Typography,
@@ -230,12 +231,15 @@ export default function NewQuoteBuilder({ params }: PageProps) {
       setError("");
       setSuccess("");
 
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
       try {
+        // Comprimir y convertir a JPG en el cliente
+        const compressedFile = await compressAndConvertToJpeg(file);
+
+        const formData = new FormData();
+        formData.append("file", compressedFile);
+
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
         const response = await fetch(getApiUrl(`/images/project/${projectId}`), {
           method: "POST",
           headers: {
